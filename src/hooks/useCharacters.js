@@ -43,10 +43,13 @@ function toDB(char, profileId, sortOrder) {
 export function useCharacters() {
   const { user } = useAuth()
   const [characters, setCharacters] = useState([])
+  const [loading,    setLoading]    = useState(true)
 
   // Load on mount / user change
   useEffect(() => {
-    if (!user) { setCharacters([]); return }
+    if (!user) { setCharacters([]); setLoading(false); return }
+
+    setLoading(true)
 
     if (hasSupabase) {
       supabase
@@ -57,6 +60,7 @@ export function useCharacters() {
         .then(({ data }) => {
           if (data) setCharacters(data.map(fromDB))
         })
+        .finally(() => setLoading(false))
     } else {
       try {
         const raw = localStorage.getItem(lsKey(user.id))
@@ -64,6 +68,7 @@ export function useCharacters() {
       } catch {
         setCharacters([])
       }
+      setLoading(false)
     }
   }, [user?.id])
 
@@ -84,5 +89,5 @@ export function useCharacters() {
     }
   }, [user, characters])
 
-  return { characters, addCharacter }
+  return { characters, addCharacter, loading }
 }

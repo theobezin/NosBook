@@ -8,7 +8,7 @@ export default {
   },
   hub: {
     badge: '◆ Inoffizieller NosTale-Begleiter ◆',
-    heroSub: 'Der soziale Hub für Arcadia-Abenteurer.\nProfil, Raids, Markt und mehr — alles an einem Ort.',
+    heroSub: 'Der soziale Hub für NosTale-Abenteurer.\nProfil, Raids, Markt und mehr — alles an einem Ort.',
     myProfile: 'Mein Profil',
     startAdventure: 'Abenteuer beginnen',
     signIn: 'Anmelden',

@@ -8,7 +8,7 @@ export default {
   },
   hub: {
     badge: '◆ Compagnon Officieux de NosTale ◆',
-    heroSub: "Le hub social des aventuriers d'Arcadia.\nProfil, raids, marché et bien plus — tout en un seul endroit.",
+    heroSub: "Le hub social des aventuriers de NosTale.\nProfil, raids, marché et bien plus — tout en un seul endroit.",
     myProfile: 'Mon Profil',
     startAdventure: "Commencer l'aventure",
     signIn: 'Se connecter',

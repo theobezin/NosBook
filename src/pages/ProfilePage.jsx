@@ -190,7 +190,7 @@ function BooksTab() {
 export default function ProfilePage() {
   const { isAuthenticated } = useAuth()
   const { t } = useLang()
-  const { characters, addCharacter } = useCharacters()
+  const { characters, addCharacter, loading } = useCharacters()
 
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [showCreate,  setShowCreate]  = useState(false)
@@ -232,7 +232,11 @@ export default function ProfilePage() {
       <div className={styles.selectorSection}>
         <h2 className={styles.selectorTitle}>{t('profile.myCharacters')}</h2>
         <div className={styles.selectorGrid}>
-          {Array.from({ length: MAX_CHARS }).map((_, i) => {
+          {loading ? (
+            Array.from({ length: MAX_CHARS }).map((_, i) => (
+              <div key={i} className={`${styles.slot} ${styles.slotSkeleton}`} />
+            ))
+          ) : Array.from({ length: MAX_CHARS }).map((_, i) => {
             const char    = characters[i]
             const charCls = char ? (CLASSES[char.class] ?? CLASSES.Archer) : null
             const active  = i === selectedIdx && !!char
@@ -284,7 +288,9 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Character detail ───────────────────────────────────────── */}
-      {data ? (
+      {loading ? (
+        <div className={styles.detailSkeleton} />
+      ) : data ? (
         <div className={styles.detail}>
 
           <div className={styles.banner}>

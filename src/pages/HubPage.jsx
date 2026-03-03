@@ -104,20 +104,6 @@ export default function HubPage() {
             </>
           )}
         </div>
-
-        {/* Stats bar */}
-        <div className={styles.statsBar}>
-          {[
-            { val: mockHubStats.players,   key: t('hub.players')   },
-            { val: mockHubStats.guilds,    key: t('hub.guilds')    },
-            { val: mockHubStats.raidsDone, key: t('hub.raidsDone') },
-          ].map(({ val, key }) => (
-            <div key={key} className={styles.statItem}>
-              <span className={styles.statVal}>{val}</span>
-              <span className={styles.statKey}>{key}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Features grid */}
