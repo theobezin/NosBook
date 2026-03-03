@@ -1,11 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
-import { mockAccounts, CLASSES, EQUIP_KEYS } from '@/lib/mockData'
+import { supabase, hasSupabase } from '@/lib/supabase'
+import { CLASSES, EQUIP_KEYS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
+
+// ── DB mapping ─────────────────────────────────────────────────────────────
+
+function fromDB(row) {
+  return {
+    id:          row.id,
+    name:        row.name,
+    class:       row.class,
+    level:       row.level,
+    heroLevel:   row.hero_level,
+    prestige:    row.prestige,
+    element:     row.element,
+    stats:       row.stats       ?? {},
+    equipment:   row.equipment   ?? {},
+    resistances: row.resistances ?? {},
+  }
+}
 
 // ── Read-only tab components ───────────────────────────────────────────────
 
@@ -71,14 +89,72 @@ export default function PlayerProfilePage() {
   const { isAuthenticated } = useAuth()
   const { t } = useLang()
 
-  const account = mockAccounts.find(
-    a => a.username.toLowerCase() === decodeURIComponent(usernameParam).toLowerCase()
-  ) ?? null
+  const [username,   setUsername]   = useState(null)
+  const [characters, setCharacters] = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [notFound,   setNotFound]   = useState(false)
 
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [activeTab,   setActiveTab]   = useState('equipment')
 
-  if (!account) {
+  const decoded = decodeURIComponent(usernameParam)
+
+  useEffect(() => {
+    if (!hasSupabase) { setLoading(false); setNotFound(true); return }
+
+    setLoading(true)
+    setNotFound(false)
+    setSelectedIdx(0)
+    setActiveTab('equipment')
+
+    supabase
+      .from('profiles')
+      .select('username, characters(*)')
+      .ilike('username', decoded)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setNotFound(true)
+        } else {
+          setUsername(data.username)
+          setCharacters(
+            [...(data.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(fromDB)
+          )
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [decoded])
+
+  const TABS = [
+    { key: 'equipment',   label: t('tabs.equipment')   },
+    { key: 'specialists', label: t('tabs.specialists')  },
+    { key: 'fairies',     label: t('tabs.fairies')      },
+    { key: 'books',       label: t('tabs.books')        },
+  ]
+
+  // ── Loading ──────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={pageStyles.backRow}>
+          <Link to="/players">
+            <Button variant="ghost" size="sm">{t('players.back')}</Button>
+          </Link>
+        </div>
+        <div className={styles.selectorSection}>
+          <div className={styles.selectorGrid}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className={`${styles.slot} ${styles.slotSkeleton}`} />
+            ))}
+          </div>
+        </div>
+        <div className={styles.detailSkeleton} />
+      </div>
+    )
+  }
+
+  // ── Not found ────────────────────────────────────────────────────────────
+  if (notFound) {
     return (
       <div className={pageStyles.notFoundPage}>
         <div className={pageStyles.notFoundIcon}>🔍</div>
@@ -91,16 +167,8 @@ export default function PlayerProfilePage() {
     )
   }
 
-  const { username, characters } = account
   const data = characters[selectedIdx] ?? null
   const cls  = data ? (CLASSES[data.class] ?? CLASSES.Archer) : null
-
-  const TABS = [
-    { key: 'equipment',   label: t('tabs.equipment')   },
-    { key: 'specialists', label: t('tabs.specialists')  },
-    { key: 'fairies',     label: t('tabs.fairies')      },
-    { key: 'books',       label: t('tabs.books')        },
-  ]
 
   return (
     <div className={styles.page}>

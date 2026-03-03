@@ -1,21 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
-import { mockAccounts, CLASSES } from '@/lib/mockData'
+import { supabase, hasSupabase } from '@/lib/supabase'
+import { CLASSES } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './PlayersPage.module.css'
 
 export default function PlayersPage() {
   const { isAuthenticated } = useAuth()
   const { t } = useLang()
-  const [query, setQuery] = useState('')
+
+  const [query,    setQuery]    = useState('')
+  const [accounts, setAccounts] = useState([])
+  const [loading,  setLoading]  = useState(true)
+
+  useEffect(() => {
+    if (!hasSupabase) { setLoading(false); return }
+
+    supabase
+      .from('profiles')
+      .select('username, characters(id, name, class, sort_order)')
+      .order('username')
+      .limit(50)
+      .then(({ data }) => {
+        if (data) {
+          setAccounts(data.map(p => ({
+            username:   p.username,
+            characters: [...(p.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+          })))
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = query.trim()
-    ? mockAccounts.filter(a =>
-        a.username.toLowerCase().includes(query.toLowerCase())
-      )
-    : mockAccounts
+    ? accounts.filter(a => a.username.toLowerCase().includes(query.toLowerCase()))
+    : accounts
 
   return (
     <div className={styles.page}>
@@ -50,7 +71,11 @@ export default function PlayersPage() {
       </div>
 
       <div className={styles.list}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={`${styles.playerCard} ${styles.playerCardSkeleton}`} />
+          ))
+        ) : filtered.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🔎</span>
             <span>{t('players.noResults')}</span>

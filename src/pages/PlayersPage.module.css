@@ -167,6 +167,25 @@
   transform: translateX(3px);
 }
 
+/* ── Skeleton ───────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.playerCardSkeleton {
+  pointer-events: none;
+  height: 70px;
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--card-bg) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
 /* ── Empty state ─────────────────────────────────────────────── */
 .empty {
   display: flex;
