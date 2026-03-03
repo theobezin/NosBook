@@ -8,12 +8,17 @@ import Card from '@/components/ui/Card'
 import styles from './HubPage.module.css'
 
 // ── RSS helpers ────────────────────────────────────────────────────────────
+// Fetched via allorigins.win to bypass browser CORS restrictions.
+// No API key required.
+const STEAM_RSS  = 'https://store.steampowered.com/feeds/news/app/550470'
+const FEED_URL   = `https://api.allorigins.win/raw?url=${encodeURIComponent(STEAM_RSS)}`
 
-const STEAM_RSS = 'https://store.steampowered.com/feeds/news/app/550470'
-const RSS_API   = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(STEAM_RSS)}&count=4`
+function getText(item, tag) {
+  return item.querySelector(tag)?.textContent?.trim() ?? ''
+}
 
 function stripHtml(html = '') {
-  return html.replace(/<[^>]*>/g, '').replace(/&[a-zA-Z]+;/g, ' ').replace(/\s+/g, ' ').trim()
+  return html.replace(/<[^>]*>/g, '').replace(/&[a-zA-Z#\d]+;/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 function formatDate(dateStr) {
@@ -34,18 +39,22 @@ export default function HubPage() {
   const [newsLoading, setNewsLoading] = useState(true)
 
   useEffect(() => {
-    fetch(RSS_API)
-      .then(r => r.json())
-      .then(({ status, items }) => {
-        if (status === 'ok' && items?.length) {
-          setNews(items.slice(0, 4).map(item => ({
-            id:      item.guid || item.link,
-            title:   item.title,
-            date:    formatDate(item.pubDate),
-            excerpt: stripHtml(item.description).slice(0, 150) + (stripHtml(item.description).length > 150 ? '…' : ''),
-            link:    item.link,
-          })))
-        }
+    fetch(FEED_URL)
+      .then(r => r.text())
+      .then(xml => {
+        const doc   = new DOMParser().parseFromString(xml, 'text/xml')
+        const items = [...doc.querySelectorAll('item')].slice(0, 4)
+        setNews(items.map(item => {
+          const raw     = stripHtml(getText(item, 'description'))
+          const excerpt = raw.slice(0, 150) + (raw.length > 150 ? '…' : '')
+          return {
+            id:      getText(item, 'guid') || getText(item, 'link'),
+            title:   getText(item, 'title'),
+            date:    formatDate(getText(item, 'pubDate')),
+            excerpt,
+            link:    getText(item, 'link'),
+          }
+        }))
       })
       .catch(() => {})
       .finally(() => setNewsLoading(false))

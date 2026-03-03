@@ -1,132 +1,50 @@
-# NosBook 📖⚔️
+# NosBook
 
-> Le compagnon social des aventuriers de NosTale — Profil, Raids, Marché et plus.
+Companion web app for [NosTale](https://store.steampowered.com/app/550470/NosTale/). Track your characters, browse player profiles, follow game news.
+
+Built with React + Supabase, no UI library.
 
 ## Stack
 
-- **React 18** + **Vite 5**
-- **React Router v6** — routing côté client
-- **Supabase** — BDD PostgreSQL + authentification
-- **CSS Modules** — styles scopés, zéro dépendance UI
+React 18 · Vite · React Router v6 · Supabase (auth + Postgres) · CSS Modules · i18n (EN / FR / DE)
 
----
-
-## Démarrage rapide
-
-### 1. Installe les dépendances
+## Setup
 
 ```bash
 npm install
-```
-
-### 2. Configure Supabase
-
-1. Crée un projet sur [supabase.com](https://supabase.com)
-2. Dans **Settings > API**, copie l'URL et la clé anon
-3. Copie le fichier d'exemple et remplis tes clés :
-
-```bash
 cp .env.example .env
-```
-
-```env
-VITE_SUPABASE_URL=https://ton-projet.supabase.co
-VITE_SUPABASE_ANON_KEY=ta-cle-anon-publique
-```
-
-### 3. Crée le schéma de base de données
-
-Dans ton dashboard Supabase, va dans **SQL Editor** et exécute le contenu du fichier :
-
-```
-supabase_schema.sql
-```
-
-### 4. Lance le serveur de dev
-
-```bash
 npm run dev
 ```
 
-L'app tourne sur [http://localhost:5173](http://localhost:5173)
+Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your [Supabase project settings](https://supabase.com). Then run `supabase_schema.sql` in the SQL editor to create the tables.
 
----
+The app runs without Supabase — it falls back to mock data so you can work on the UI without any backend config.
 
-## Structure du projet
+## Routes
+
+| Path | |
+|---|---|
+| `/` | Hub — news, stats, top players |
+| `/players` | Player search |
+| `/players/:username` | Public profile (read-only) |
+| `/profile` | Your account + characters |
+| `/auth` | Sign in / Register |
+
+## Project layout
 
 ```
-nosbook/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Navbar.jsx / .module.css
-│   │   │   └── PageLayout.jsx / .module.css
-│   │   └── ui/
-│   │       ├── Background.jsx / .module.css
-│   │       ├── Button.jsx / .module.css
-│   │       ├── Card.jsx / .module.css
-│   │       ├── Input.jsx / .module.css
-│   │       └── Spinner.jsx / .module.css
-│   ├── hooks/
-│   │   ├── useAuth.jsx       ← AuthContext + Provider
-│   │   └── useProfile.js     ← Chargement profil (Supabase ou mock)
-│   ├── lib/
-│   │   ├── supabase.js       ← Client Supabase
-│   │   └── mockData.js       ← Données de dev
-│   ├── pages/
-│   │   ├── HubPage.jsx / .module.css
-│   │   ├── ProfilePage.jsx / .module.css
-│   │   ├── AuthPage.jsx / .module.css
-│   │   └── NotFoundPage.jsx / .module.css
-│   ├── styles/
-│   │   └── globals.css       ← Variables CSS + reset
-│   ├── App.jsx               ← Routing principal
-│   └── main.jsx              ← Point d'entrée
-├── .env.example
-├── .gitignore
-├── index.html
-├── package.json
-├── supabase_schema.sql
-└── vite.config.js
+src/
+├── components/layout/    Navbar, PageLayout
+├── components/ui/        Button, Card, Input, Spinner…
+├── hooks/                useAuth, useCharacters
+├── i18n/                 en.js, fr.js, de.js
+├── lib/                  supabase.js, mockData.js
+└── pages/                one folder per route
 ```
 
----
-
-## Pages disponibles
-
-| Route      | Page             | État       |
-|------------|------------------|------------|
-| `/`        | Hub / Accueil    | ✅ Prêt   |
-| `/profile` | Profil joueur    | ✅ Prêt   |
-| `/auth`    | Connexion / Inscription | ✅ Prêt |
-| `/raids`   | Raids            | 🔜 Bientôt |
-| `/market`  | Marché           | 🔜 Bientôt |
-| `/guild`   | Guilde           | 🔜 Bientôt |
-| `/ranking` | Classement       | 🔜 Bientôt |
-
----
-
-## Mode développement sans Supabase
-
-Si le `.env` n'est pas configuré, l'app tourne en **mode mock** : elle charge automatiquement des données fictives pour tester l'interface. Aucune configuration nécessaire pour commencer à développer.
-
----
-
-## Build production
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
-
----
-
-## Prochaines étapes suggérées
-
-- [ ] Page profil connectée à Supabase (remplacer les mocks)
-- [ ] Upload d'avatar / bannière (Supabase Storage)
-- [ ] Page Raids avec système de rooms
-- [ ] Marketplace avec offres d'items
-- [ ] Système d'amis / recherche de joueurs
