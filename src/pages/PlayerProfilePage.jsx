@@ -46,13 +46,42 @@ function EquipmentTab({ char }) {
 
 function SpecialistsTab({ char }) {
   const { t } = useLang()
+  const specialists = char.equipment.specialists ?? []
+
+  if (specialists.length === 0) {
+    return <div className={styles.spEmpty}>{t('sp.empty')}</div>
+  }
+
   return (
     <div className={styles.spTab}>
-      <div className={styles.spCard}>
-        <div className={styles.spCardLabel}>{t('equipKeys.sp')}</div>
-        <div className={`${styles.spCardName} ${!char.equipment.sp ? styles.equipTabEmpty : ''}`}>
-          {char.equipment.sp || t('equipKeys.empty')}
-        </div>
+      <div className={styles.spGrid}>
+        {specialists.map(sp => (
+          <div key={sp.id} className={styles.spCard}>
+            <div className={styles.spCardTop}>
+              <span className={styles.spCardName}>{sp.name}</span>
+            </div>
+            <div className={styles.spCardBadges}>
+              <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
+              <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
+              {sp.wings && (
+                <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>🪶 {sp.wings}</span>
+              )}
+            </div>
+            <div className={styles.spStats}>
+              {[
+                [t('sp.statAtk'),  sp.stats.attack],
+                [t('sp.statDef'),  sp.stats.defense],
+                [t('sp.statElem'), sp.stats.element],
+                [t('sp.statHpmp'), sp.stats.hpmp],
+              ].map(([label, val]) => (
+                <div key={label} className={styles.spStatItem}>
+                  <span className={styles.spStatLabel}>{label}</span>
+                  <span className={styles.spStatVal}>{val || '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

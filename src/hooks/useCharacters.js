@@ -89,5 +89,37 @@ export function useCharacters() {
     }
   }, [user, characters])
 
-  return { characters, addCharacter, loading }
+  const updateCharacter = useCallback(async (id, updates) => {
+    if (!user) return
+    const char = characters.find(c => c.id === id)
+    if (!char) return
+    const merged = { ...char, ...updates }
+
+    if (hasSupabase) {
+      const { data, error } = await supabase
+        .from('characters')
+        .update({
+          name:        merged.name,
+          class:       merged.class,
+          level:       merged.level,
+          hero_level:  merged.heroLevel,
+          prestige:    merged.prestige,
+          element:     merged.element,
+          stats:       merged.stats,
+          equipment:   merged.equipment,
+          resistances: merged.resistances,
+        })
+        .eq('id', id)
+        .eq('profile_id', user.id)
+        .select()
+        .single()
+      if (!error && data) setCharacters(prev => prev.map(c => c.id === id ? fromDB(data) : c))
+    } else {
+      const next = characters.map(c => c.id === id ? merged : c)
+      setCharacters(next)
+      localStorage.setItem(lsKey(user.id), JSON.stringify(next))
+    }
+  }, [user, characters])
+
+  return { characters, addCharacter, updateCharacter, loading }
 }

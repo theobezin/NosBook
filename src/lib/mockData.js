@@ -15,9 +15,32 @@ export const RARITY_COLORS = {
 // ── Shared character constants ─────────────────────────────────────────────
 
 export const STAT_KEYS    = ['atk', 'def', 'matk', 'mdef', 'hp', 'mp', 'speed', 'critRate', 'critDmg', 'hit', 'avoid']
-export const EQUIP_KEYS   = ['weapon', 'offhand', 'armor', 'hat', 'gloves', 'shoes', 'necklace', 'ring', 'bracelet']
-export const SPECIAL_KEYS = ['sp', 'fairy']
+export const EQUIP_KEYS   = ['weapon', 'offhand', 'armor', 'hat', 'gloves', 'shoes', 'necklace', 'ring', 'bracelet', 'costumeWings', 'costumeTop', 'costumeBottom']
+export const SPECIAL_KEYS = ['fairy']
 export const ELEMENTS     = ['Neutral', 'Fire', 'Water', 'Light', 'Shadow']
+
+// ── Specialist cards (SP) by class ────────────────────────────────────────
+export const SPECIALISTS = {
+  Archer: [
+    'Ranger', 'Assassin', 'Destructeur', 'Garde-chasse',
+    'Canonnier de feu', 'Éclaireur', 'Chasseur de démons',
+    'Ange vengeur', 'Traqueur solaire', 'Grenadier', 'Chasseur nébuleux',
+  ],
+  Swordsman: [
+    'Guerrier', 'Ninja', 'Croisé', 'Berserk', 'Gladiateur',
+    'Moine pugnace', 'Mortifère', 'Renégat', 'Hacheur',
+    'Chevalier dragon', 'Broyeur de pierre',
+  ],
+  Mage: [
+    'Mage du feu', 'Mage sacré', 'Mage de glace', 'Mage ténébreux',
+    'Volcanor', 'Sa Majesté des marées', 'Devin', 'Archimage',
+    'Prêtre vaudou', 'Gravitas', 'Tempête de feu',
+  ],
+  Martial: [
+    'Jajamaru', 'Arts mystiques', 'Maître loup',
+    'Guerrier-démon', 'Druide ardent', 'Hydraupoing', 'Foudroyeur',
+  ],
+}
 
 export const ELEMENT_COLORS = {
   Neutral: '#9ca3af',

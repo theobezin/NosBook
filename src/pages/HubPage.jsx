@@ -43,6 +43,7 @@ export default function HubPage() {
 
   useEffect(() => {
     setNewsLoading(true)
+    console.log('Fetching news from', feedUrl(lang))
     fetch(feedUrl(lang))
       .then(r => r.text())
       .then(xml => {

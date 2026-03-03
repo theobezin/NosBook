@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -21,7 +21,10 @@ function makeCharacter(name, cls, level, heroLevel) {
     prestige:    0,
     element:     'Neutral',
     stats:       Object.fromEntries(STAT_KEYS.map(k => [k, null])),
-    equipment:   Object.fromEntries([...EQUIP_KEYS, ...SPECIAL_KEYS].map(k => [k, null])),
+    equipment:   {
+      ...Object.fromEntries([...EQUIP_KEYS, ...SPECIAL_KEYS].map(k => [k, null])),
+      specialists: [],
+    },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
   }
 }
@@ -141,18 +144,199 @@ function EquipmentTab({ char }) {
   )
 }
 
+// ── AddSPModal ─────────────────────────────────────────────────────────────
+
+function AddSPModal({ charClass, onClose, onAdd }) {
+  const { t } = useLang()
+  const spList = SPECIALISTS[charClass] ?? []
+
+  const [name,        setName]        = useState(spList[0] ?? '')
+  const [improvement, setImprovement] = useState(0)
+  const [perfection,  setPerfection]  = useState(0)
+  const [statAtk,     setStatAtk]     = useState(0)
+  const [statDef,     setStatDef]     = useState(0)
+  const [statElem,    setStatElem]    = useState(0)
+  const [statHpmp,    setStatHpmp]    = useState(0)
+  const [wings,       setWings]       = useState('')
+
+  const handleAdd = () => {
+    if (!name) return
+    onAdd({
+      id:          `sp-${Date.now()}`,
+      name,
+      improvement: Math.max(0, Math.min(20,  parseInt(improvement) || 0)),
+      perfection:  Math.max(0, Math.min(100, parseInt(perfection)  || 0)),
+      stats: {
+        attack:  parseInt(statAtk)  || 0,
+        defense: parseInt(statDef)  || 0,
+        element: parseInt(statElem) || 0,
+        hpmp:    parseInt(statHpmp) || 0,
+      },
+      wings: wings.trim() || null,
+    })
+    onClose()
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('sp.modalTitle')}</h2>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.spLabel')}</label>
+          <select
+            className={styles.modalInput}
+            value={name}
+            onChange={e => setName(e.target.value)}
+          >
+            {spList.map(sp => <option key={sp} value={sp}>{sp}</option>)}
+          </select>
+        </div>
+
+        <div className={styles.modalRow}>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('sp.improvement')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={improvement}
+              min={0} max={20}
+              onChange={e => setImprovement(e.target.value)}
+            />
+          </div>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('sp.perfection')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={perfection}
+              min={0} max={100}
+              onChange={e => setPerfection(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.statsLabel')}</label>
+          <div className={styles.spModalStats}>
+            {[
+              [t('sp.statAtk'),  statAtk,  setStatAtk],
+              [t('sp.statDef'),  statDef,  setStatDef],
+              [t('sp.statElem'), statElem, setStatElem],
+              [t('sp.statHpmp'), statHpmp, setStatHpmp],
+            ].map(([label, val, setter]) => (
+              <div key={label}>
+                <div className={styles.spModalStatLabel}>{label}</div>
+                <input
+                  className={styles.modalInput}
+                  type="number"
+                  value={val}
+                  min={0}
+                  onChange={e => setter(e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.wings')}</label>
+          <input
+            className={styles.modalInput}
+            type="text"
+            value={wings}
+            onChange={e => setWings(e.target.value)}
+            placeholder={t('sp.wingsPlaceholder')}
+          />
+        </div>
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleAdd} disabled={!name}>
+            {t('sp.addBtn')}
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── SpecialistsTab ─────────────────────────────────────────────────────────
 
-function SpecialistsTab({ char }) {
+function SpecialistsTab({ char, onUpdate }) {
   const { t } = useLang()
+  const [showAdd, setShowAdd] = useState(false)
+
+  const specialists = char.equipment.specialists ?? []
+
+  const handleAdd = (sp) => {
+    onUpdate(char.id, {
+      equipment: { ...char.equipment, specialists: [...specialists, sp] },
+    })
+  }
+
+  const handleDelete = (spId) => {
+    onUpdate(char.id, {
+      equipment: { ...char.equipment, specialists: specialists.filter(s => s.id !== spId) },
+    })
+  }
+
   return (
     <div className={styles.spTab}>
-      <div className={styles.spCard}>
-        <div className={styles.spCardLabel}>{t('equipKeys.sp')}</div>
-        <div className={`${styles.spCardName} ${!char.equipment.sp ? styles.equipTabEmpty : ''}`}>
-          {char.equipment.sp || t('equipKeys.empty')}
-        </div>
+      <div className={styles.spHeader}>
+        <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>
+          {t('sp.addBtn')}
+        </Button>
       </div>
+
+      {specialists.length === 0 ? (
+        <div className={styles.spEmpty}>{t('sp.empty')}</div>
+      ) : (
+        <div className={styles.spGrid}>
+          {specialists.map(sp => (
+            <div key={sp.id} className={styles.spCard}>
+              <div className={styles.spCardTop}>
+                <span className={styles.spCardName}>{sp.name}</span>
+                <button
+                  className={styles.spCardDelete}
+                  onClick={() => handleDelete(sp.id)}
+                  title="Remove"
+                >✕</button>
+              </div>
+              <div className={styles.spCardBadges}>
+                <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
+                <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
+                {sp.wings && (
+                  <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>🪶 {sp.wings}</span>
+                )}
+              </div>
+              <div className={styles.spStats}>
+                {[
+                  [t('sp.statAtk'),  sp.stats.attack],
+                  [t('sp.statDef'),  sp.stats.defense],
+                  [t('sp.statElem'), sp.stats.element],
+                  [t('sp.statHpmp'), sp.stats.hpmp],
+                ].map(([label, val]) => (
+                  <div key={label} className={styles.spStatItem}>
+                    <span className={styles.spStatLabel}>{label}</span>
+                    <span className={styles.spStatVal}>{val || '—'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showAdd && (
+        <AddSPModal
+          charClass={char.class}
+          onClose={() => setShowAdd(false)}
+          onAdd={handleAdd}
+        />
+      )}
     </div>
   )
 }
@@ -190,7 +374,7 @@ function BooksTab() {
 export default function ProfilePage() {
   const { isAuthenticated } = useAuth()
   const { t } = useLang()
-  const { characters, addCharacter, loading } = useCharacters()
+  const { characters, addCharacter, updateCharacter, loading } = useCharacters()
 
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [showCreate,  setShowCreate]  = useState(false)
@@ -336,7 +520,7 @@ export default function ProfilePage() {
 
           <div className={styles.tabPanel}>
             {activeTab === 'equipment'   && <EquipmentTab   char={data} />}
-            {activeTab === 'specialists' && <SpecialistsTab char={data} />}
+            {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
             {activeTab === 'fairies'     && <FairiesTab     char={data} />}
             {activeTab === 'books'       && <BooksTab />}
           </div>
