@@ -183,16 +183,8 @@
   transform: translateX(3px);
 }
 
-/* ── Bottom grid ───────────────────────────── */
-.bottomGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
 @media (max-width: 700px) {
-  .bottomGrid { grid-template-columns: 1fr; }
-  .statsBar   { gap: 1.5rem; }
+  .statsBar { gap: 1.5rem; }
 }
 
 /* ── News ──────────────────────────────────── */
@@ -203,12 +195,29 @@
 }
 
 .newsItem {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
 }
 .newsItem:last-child {
   padding-bottom: 0;
   border-bottom: none;
+}
+
+.newsThumb {
+  width: 96px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  background: var(--card-bg);
+}
+
+.newsContent {
+  flex: 1;
+  min-width: 0;
 }
 
 .newsTop {
@@ -258,62 +267,3 @@
   text-align: center;
 }
 
-/* ── Top players ───────────────────────────── */
-.topList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.topItem {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: var(--radius-sm);
-  transition: background 0.2s;
-}
-.topItem:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.rank {
-  font-size: 1rem;
-  width: 28px;
-  text-align: center;
-  flex-shrink: 0;
-  color: var(--text-faint);
-}
-.rankTop {
-  color: var(--text);
-}
-
-.topIcon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.topInfo {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.topName {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.topMeta {
-  font-size: 0.75rem;
-  color: var(--text-faint);
-}
-
-.topLevel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--gold-dim);
-  flex-shrink: 0;
-}

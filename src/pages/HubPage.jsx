@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
-import { mockHubStats, mockTopPlayers, CLASSES } from '@/lib/mockData'
+import { mockHubStats } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import styles from './HubPage.module.css'
 
 // ── RSS helpers ────────────────────────────────────────────────────────────
 // Fetched via allorigins.win to bypass browser CORS restrictions.
-// No API key required.
-const STEAM_RSS  = 'https://store.steampowered.com/feeds/news/app/550470'
-const FEED_URL   = `https://api.allorigins.win/raw?url=${encodeURIComponent(STEAM_RSS)}`
+const STEAM_LANG = { en: 'en', fr: 'fr', de: 'german' }
+
+function feedUrl(lang) {
+  const l = STEAM_LANG[lang] ?? 'en'
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://store.steampowered.com/feeds/news/app/550470/?l=${l}`)}`
+}
 
 function getText(item, tag) {
   return item.querySelector(tag)?.textContent?.trim() ?? ''
@@ -33,13 +36,14 @@ function formatDate(dateStr) {
 
 export default function HubPage() {
   const { isAuthenticated } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   const [news,        setNews]        = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
 
   useEffect(() => {
-    fetch(FEED_URL)
+    setNewsLoading(true)
+    fetch(feedUrl(lang))
       .then(r => r.text())
       .then(xml => {
         const doc   = new DOMParser().parseFromString(xml, 'text/xml')
@@ -48,17 +52,18 @@ export default function HubPage() {
           const raw     = stripHtml(getText(item, 'description'))
           const excerpt = raw.slice(0, 150) + (raw.length > 150 ? '…' : '')
           return {
-            id:      getText(item, 'guid') || getText(item, 'link'),
-            title:   getText(item, 'title'),
-            date:    formatDate(getText(item, 'pubDate')),
+            id:        getText(item, 'guid') || getText(item, 'link'),
+            title:     getText(item, 'title'),
+            date:      formatDate(getText(item, 'pubDate')),
             excerpt,
-            link:    getText(item, 'link'),
+            link:      getText(item, 'link'),
+            thumbnail: item.querySelector('enclosure')?.getAttribute('url') ?? null,
           }
         }))
       })
       .catch(() => {})
       .finally(() => setNewsLoading(false))
-  }, [])
+  }, [lang])
 
   const HUB_FEATURES = [
     { to: '/profile', icon: '⚔️', key: 'featureProfile', color: '#c9a84c', ready: true  },
@@ -141,19 +146,21 @@ export default function HubPage() {
         </div>
       </section>
 
-      {/* Bottom: News + Top players */}
-      <div className={styles.bottomGrid}>
-
-        <section>
-          <Card title={t('hub.news')}>
-            <div className={styles.newsList}>
-              {newsLoading ? (
-                <div className={styles.newsLoading}>{t('hub.newsLoading')}</div>
-              ) : news.length === 0 ? (
-                <div className={styles.newsEmpty}>{t('hub.newsEmpty')}</div>
-              ) : (
-                news.map(n => (
-                  <div key={n.id} className={styles.newsItem}>
+      {/* News */}
+      <section>
+        <Card title={t('hub.news')}>
+          <div className={styles.newsList}>
+            {newsLoading ? (
+              <div className={styles.newsLoading}>{t('hub.newsLoading')}</div>
+            ) : news.length === 0 ? (
+              <div className={styles.newsEmpty}>{t('hub.newsEmpty')}</div>
+            ) : (
+              news.map(n => (
+                <div key={n.id} className={styles.newsItem}>
+                  {n.thumbnail && (
+                    <img src={n.thumbnail} alt="" className={styles.newsThumb} />
+                  )}
+                  <div className={styles.newsContent}>
                     <div className={styles.newsTop}>
                       <span className={styles.newsTag} style={{ color: '#c9a84c', borderColor: '#c9a84c44' }}>
                         Steam
@@ -170,36 +177,13 @@ export default function HubPage() {
                     </a>
                     {n.excerpt && <div className={styles.newsExcerpt}>{n.excerpt}</div>}
                   </div>
-                ))
-              )}
-            </div>
-          </Card>
-        </section>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      </section>
 
-        <section>
-          <Card title={t('hub.topPlayers')}>
-            <div className={styles.topList}>
-              {mockTopPlayers.map((p) => {
-                const cls = CLASSES[p.class]
-                return (
-                  <div key={p.rank} className={styles.topItem}>
-                    <span className={`${styles.rank} ${p.rank <= 3 ? styles.rankTop : ''}`}>
-                      {p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : `#${p.rank}`}
-                    </span>
-                    <span className={styles.topIcon} style={{ color: cls.color }}>{cls.icon}</span>
-                    <div className={styles.topInfo}>
-                      <span className={styles.topName}>{p.name}</span>
-                      <span className={styles.topMeta}>{p.server} · {t('hub.heroLevel')} {p.heroLevel}</span>
-                    </div>
-                    <span className={styles.topLevel}>{t('hub.lv')} {p.level}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </Card>
-        </section>
-
-      </div>
     </div>
   )
 }
