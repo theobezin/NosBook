@@ -1,0 +1,955 @@
+/* ═══════════════════════════════════════════════════════════════
+   PAGE
+═══════════════════════════════════════════════════════════════ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER SELECTOR
+═══════════════════════════════════════════════════════════════ */
+.selectorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.selectorTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.selectorGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.875rem;
+}
+
+/* ── Slot (base) ───────────────────────────── */
+.slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 1.25rem 0.75rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-align: center;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  /* reset button styles */
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.slot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cls, var(--gold)) 6%, transparent) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.22s;
+}
+
+.slot:hover::before {
+  opacity: 1;
+}
+
+.slot:hover:not(.slotEmpty):not(.slotActive) {
+  border-color: color-mix(in srgb, var(--cls, var(--gold)) 50%, transparent);
+  transform: translateY(-2px);
+}
+
+/* ── Slot active ───────────────────────────── */
+.slotActive {
+  border-color: var(--cls, var(--gold));
+  background: color-mix(in srgb, var(--cls, var(--gold)) 8%, var(--card-bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--cls, var(--gold)) 40%, transparent),
+    0 8px 32px -4px color-mix(in srgb, var(--cls, var(--gold)) 25%, transparent);
+}
+
+.slotActive::before {
+  opacity: 1;
+}
+
+/* ── Slot empty ────────────────────────────── */
+.slotEmpty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: default;
+  opacity: 0.5;
+  gap: 0.6rem;
+}
+
+.slotEmpty:hover {
+  opacity: 0.7;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Slot active bottom bar ────────────────── */
+.slotActiveBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--cls, var(--gold));
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* ── Slot prestige stars ───────────────────── */
+.slotPrestige {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  display: flex;
+  gap: 0.1rem;
+}
+
+.slotStar {
+  font-size: 0.6rem;
+  color: var(--gold);
+}
+
+/* ── Slot avatar circle ────────────────────── */
+.slotAvatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  transition: border-color 0.22s, box-shadow 0.22s;
+  flex-shrink: 0;
+}
+
+.slotActive .slotAvatar {
+  box-shadow: 0 0 16px -2px var(--cls, var(--gold));
+}
+
+/* ── Slot text ─────────────────────────────── */
+.slotName {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.slotLevels {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.slotLvl  { font-weight: 600; color: var(--text); }
+.slotDot  { color: var(--text-faint); }
+.slotHero { color: var(--gold-dim); }
+
+.slotClass {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Empty slot icons ──────────────────────── */
+.slotAddIcon {
+  font-size: 1.8rem;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
+.slotAddLabel {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  line-height: 1.3;
+  max-width: 90px;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 640px) {
+  .selectorGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE DETAIL
+═══════════════════════════════════════════════════════════════ */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ── Banner ─────────────────────────────────── */
+.banner {
+  position: relative;
+  height: 160px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow: hidden;
+}
+
+.bannerBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--cls-color, var(--gold)) 18%, var(--bg2)) 0%,
+    var(--bg2) 65%
+  );
+}
+
+.bannerOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 20%, var(--bg) 100%);
+}
+
+.bannerRune {
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 5rem;
+  opacity: 0.13;
+  filter: blur(2px);
+  user-select: none;
+}
+
+.bannerPrestige {
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star {
+  font-size: 1rem;
+  animation: starPulse 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes starPulse {
+  from { opacity: 0.5; transform: scale(0.9); }
+  to   { opacity: 1;   transform: scale(1.1); }
+}
+
+/* ── Header ─────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 0 1.5rem 1.5rem;
+  flex-wrap: wrap;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  margin-top: -40px;
+  position: relative;
+  z-index: 1;
+}
+
+.avatarWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.avatarFrame {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  box-shadow: 0 0 20px -4px currentColor;
+}
+
+.classBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-bottom: 0.25rem;
+}
+
+.name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.subClass {
+  font-size: 0.85rem;
+  color: var(--gold-dim);
+  font-style: italic;
+}
+
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.badgeMain   { color: #f97316; border-color: rgba(249,115,22,.35);  background: rgba(249,115,22,.08);  }
+.badgeHero   { color: #a78bfa; border-color: rgba(167,139,250,.35); background: rgba(167,139,250,.08); }
+.badgeFamily { color: #60a5fa; border-color: rgba(96,165,250,.35);  background: rgba(96,165,250,.08);  }
+
+.meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.metaItem strong { color: var(--text); font-weight: 600; }
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  padding-bottom: 0.25rem;
+}
+
+/* ── Body grid ──────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 750px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.left, .right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Bio ─────────────────────────────────────── */
+.bio {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* ── Stats ───────────────────────────────────── */
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.barWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.barLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.barTrack {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.statRow:last-child { border-bottom: none; }
+
+.statLabel { font-size: 0.85rem; color: var(--text-dim); }
+.statVal   { font-size: 0.92rem; font-weight: 700; }
+
+/* ── Achievements ───────────────────────────── */
+.achievGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.achievItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.achievItem:hover { border-color: var(--border-hover); }
+
+.rare {
+  background: rgba(201, 168, 76, 0.06);
+  border-color: rgba(201, 168, 76, 0.3);
+}
+
+.achievIcon  { font-size: 1.4rem; }
+.achievLabel { font-size: 0.72rem; color: var(--text-dim); line-height: 1.3; }
+
+/* ── Equipment ──────────────────────────────── */
+.equipList {
+  display: flex;
+  flex-direction: column;
+}
+
+.equipItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.equipItem:last-child { border-bottom: none; }
+
+.equipSlot {
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  min-width: 105px;
+  flex-shrink: 0;
+}
+
+.equipName {
+  font-size: 0.87rem;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipRarity {
+  font-size: 0.74rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ── Activity ───────────────────────────────── */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.activityIconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.activityEvent { font-size: 0.85rem; color: var(--text); line-height: 1.4; }
+.activityTime  { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.15rem; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PROMPT
+═══════════════════════════════════════════════════════════════ */
+.loginPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 6rem 2rem;
+  text-align: center;
+}
+.loginPromptIcon  { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.loginPromptTitle { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700; color: var(--text); }
+.loginPromptSub   { font-size: 0.88rem; color: var(--text-dim); max-width: 320px; margin-bottom: 0.5rem; }
+
+/* ═══════════════════════════════════════════════════════════════
+   EMPTY STATE (no character selected)
+═══════════════════════════════════════════════════════════════ */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+}
+.emptyIcon { font-size: 2.5rem; opacity: 0.4; }
+.emptyText { font-size: 0.9rem; color: var(--text-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB BAR
+═══════════════════════════════════════════════════════════════ */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  margin-top: 0.25rem;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.tabBtn {
+  padding: 0.75rem 1.35rem;
+  font-size: 0.87rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
+  margin-bottom: -1px;
+}
+.tabBtn:hover     { color: var(--text); }
+.tabBtnActive     { color: var(--gold-light); border-bottom-color: var(--gold-light); }
+
+/* ── Tab panel ───────────────────────────────── */
+.tabPanel {
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  min-height: 260px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATS TAB
+═══════════════════════════════════════════════════════════════ */
+.statsTabGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+}
+@media (max-width: 580px) { .statsTabGrid { grid-template-columns: 1fr; } }
+
+.statTabRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.statTabRow:hover { background: rgba(255, 255, 255, 0.03); }
+
+.statTabLabel { font-size: 0.83rem; color: var(--text-dim); flex: 1; }
+.statTabVal   { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 50px; text-align: right; }
+.statTabEmpty { color: var(--text-faint) !important; font-weight: 400; }
+
+/* ═══════════════════════════════════════════════════════════════
+   EQUIPMENT TAB
+═══════════════════════════════════════════════════════════════ */
+.equipTabSection {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 580px) { .equipTabSection { grid-template-columns: 1fr; } }
+
+.equipTabList {
+  display: flex;
+  flex-direction: column;
+}
+
+.equipTabRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.equipTabRow:last-child { border-bottom: none; }
+
+.equipTabLabel  { font-size: 0.8rem; color: var(--text-faint); flex-shrink: 0; }
+.equipTabFilled { font-size: 0.85rem; color: var(--text); text-align: right; }
+.equipTabEmpty  { font-size: 0.82rem; color: var(--text-faint); font-style: italic; text-align: right; }
+
+.equipTabSpecials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.equipSpecialCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.equipSpecialTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gold-dim);
+}
+
+.equipSpecialValue { font-size: 0.85rem; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ELEMENTS TAB
+═══════════════════════════════════════════════════════════════ */
+.elementsTab {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.elemSection {}
+
+.elemLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold-dim);
+  margin-bottom: 0.75rem;
+}
+
+.elemBadgeRow {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.elemBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-faint);
+  cursor: default;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.elemBadgeActive {
+  border-color: var(--elem-color, var(--gold));
+  color: var(--elem-color, var(--gold));
+  background: color-mix(in srgb, var(--elem-color, var(--gold)) 12%, transparent);
+}
+
+.elemResList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.elemResRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.elemResRow:last-child { border-bottom: none; }
+.elemResVal { font-weight: 600; color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER CREATION MODAL
+═══════════════════════════════════════════════════════════════ */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 32px 80px -8px rgba(0, 0, 0, 0.65);
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
+.modalTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  text-align: center;
+}
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modalLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.modalInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.9rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.modalInput:focus { border-color: var(--gold-dim); }
+
+.modalRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ── Class selector ──────────────────────────── */
+.classGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+@media (max-width: 440px) { .classGrid { grid-template-columns: repeat(2, 1fr); } }
+
+.classBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.8rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.classBtn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+.classBtnActive {
+  border-color: var(--cls-color, var(--gold));
+  color: var(--cls-color, var(--gold));
+  background: color-mix(in srgb, var(--cls-color, var(--gold)) 14%, transparent);
+}
+
+.classBtnIcon  { font-size: 1.6rem; }
+.classBtnLabel { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-align: center; }
+
+/* ── Modal error ─────────────────────────────── */
+.modalError {
+  font-size: 0.82rem;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+/* ── Modal actions ───────────────────────────── */
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SPECIALISTS TAB
+═══════════════════════════════════════════════════════════════ */
+.spTab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.spCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  max-width: 380px;
+}
+
+.spCardLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gold-dim);
+  margin-bottom: 0.5rem;
+}
+
+.spCardName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FAIRIES TAB
+═══════════════════════════════════════════════════════════════ */
+.fairyTab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fairyCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  max-width: 380px;
+}
+
+.fairyCardLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gold-dim);
+  margin-bottom: 0.5rem;
+}
+
+.fairyCardName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOKS TAB
+═══════════════════════════════════════════════════════════════ */
+.booksTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 2rem;
+  opacity: 0.45;
+}
+
+.booksTabIcon { font-size: 2.5rem; }
+.booksTabText { font-size: 0.88rem; color: var(--text-dim); }

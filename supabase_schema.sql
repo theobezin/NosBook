@@ -1,0 +1,117 @@
+-- ============================================================
+-- NosBook — Supabase Schema
+-- Run in the SQL editor of your Supabase dashboard.
+--
+-- If you already ran the previous schema, execute the
+-- migration block at the bottom first to clean up old tables.
+-- ============================================================
+
+create extension if not exists "uuid-ossp";
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: profiles
+-- One row per auth user (created automatically on sign-up).
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.profiles (
+  id         uuid references auth.users(id) on delete cascade primary key,
+  username   text unique not null,
+  bio        text,
+  avatar_url text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: characters
+-- Up to 4 characters per player account.
+-- Stats, equipment and resistances stored as JSONB so the
+-- schema doesn't need to change when new fields are added.
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.characters (
+  id          text primary key,                -- client-generated, e.g. "char-1234567890"
+  profile_id  uuid references public.profiles(id) on delete cascade not null,
+  sort_order  int  not null default 0,         -- slot index 0-3
+  name        text not null,
+  class       text not null check (class in ('Archer', 'Swordsman', 'Mage', 'Martial')),
+  level       int  not null default 1 check (level between 1 and 99),
+  hero_level  int  not null default 0,
+  prestige    int  not null default 0,
+  element     text not null default 'Neutral'
+                   check (element in ('Neutral', 'Fire', 'Water', 'Light', 'Shadow')),
+  -- { atk, def, matk, mdef, hp, mp, speed, critRate, critDmg, hit, avoid } — null = not set
+  stats       jsonb not null default '{}',
+  -- { weapon, offhand, armor, hat, gloves, shoes, necklace, ring, bracelet, sp, fairy }
+  equipment   jsonb not null default '{}',
+  -- { fire, water, light, shadow }
+  resistances jsonb not null default '{}',
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+create index if not exists characters_profile_id_idx on public.characters (profile_id);
+
+-- ────────────────────────────────────────────────────────────
+-- RLS — profiles
+-- ────────────────────────────────────────────────────────────
+alter table public.profiles enable row level security;
+
+create policy "Profiles visible to everyone"
+  on public.profiles for select using (true);
+
+create policy "Owner can update their profile"
+  on public.profiles for update
+  using (auth.uid() = id);
+
+-- ────────────────────────────────────────────────────────────
+-- RLS — characters
+-- ────────────────────────────────────────────────────────────
+alter table public.characters enable row level security;
+
+create policy "Characters visible to everyone"
+  on public.characters for select using (true);
+
+create policy "Owner manages their characters"
+  on public.characters for all
+  using (auth.uid() = profile_id);
+
+-- ────────────────────────────────────────────────────────────
+-- TRIGGER: auto-create profile on user registration
+-- ────────────────────────────────────────────────────────────
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, username)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_auth_user_created on auth.users;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION — only needed if you ran the old schema before.
+-- Uncomment and run these lines to clean up old tables:
+-- ────────────────────────────────────────────────────────────
+-- drop table if exists public.activity_log;
+-- drop table if exists public.achievements;
+-- drop table if exists public.equipment;
+-- drop table if exists public.player_stats;
+--
+-- alter table public.profiles
+--   drop column if exists name,
+--   drop column if exists class,
+--   drop column if exists sub_class,
+--   drop column if exists level,
+--   drop column if exists hero_level,
+--   drop column if exists server,
+--   drop column if exists family,
+--   drop column if exists family_level,
+--   drop column if exists prestige,
+--   drop column if exists banner_url;

@@ -1,0 +1,107 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import { useLang } from '@/i18n'
+import { mockAccounts, CLASSES } from '@/lib/mockData'
+import Button from '@/components/ui/Button'
+import styles from './PlayersPage.module.css'
+
+export default function PlayersPage() {
+  const { isAuthenticated } = useAuth()
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const filtered = query.trim()
+    ? mockAccounts.filter(a =>
+        a.username.toLowerCase().includes(query.toLowerCase())
+      )
+    : mockAccounts
+
+  return (
+    <div className={styles.page}>
+
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>{t('players.title')}</h1>
+          <p className={styles.sub}>{t('players.sub')}</p>
+        </div>
+        {isAuthenticated && (
+          <Link to="/profile">
+            <Button variant="solid" size="md">{t('players.myProfile')}</Button>
+          </Link>
+        )}
+      </div>
+
+      <div className={styles.searchWrap}>
+        <div className={styles.searchInner}>
+          <span className={styles.searchIcon}>🔍</span>
+          <input
+            className={styles.searchInput}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('players.searchPlaceholder')}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {query && (
+            <button className={styles.clearBtn} onClick={() => setQuery('')}>✕</button>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.list}>
+        {filtered.length === 0 ? (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>🔎</span>
+            <span>{t('players.noResults')}</span>
+          </div>
+        ) : (
+          filtered.map((account, i) => {
+            const mainChar  = account.characters[0]
+            const cls       = mainChar ? (CLASSES[mainChar.class] ?? null) : null
+            const icon      = cls ? cls.icon  : '👤'
+            const iconColor = cls ? cls.color : 'var(--text-faint)'
+
+            return (
+              <Link
+                key={i}
+                to={`/players/${encodeURIComponent(account.username)}`}
+                className={styles.playerCard}
+              >
+                <div
+                  className={styles.playerAvatar}
+                  style={{ borderColor: iconColor + '66', color: iconColor }}
+                >
+                  {icon}
+                </div>
+
+                <div className={styles.playerInfo}>
+                  <span className={styles.playerName}>{account.username}</span>
+                  <span className={styles.playerMeta}>
+                    {account.characters.length} {t('players.chars')}
+                    {account.characters.length > 0 && (
+                      <>
+                        <span className={styles.dot}>·</span>
+                        {account.characters.map((c, j) => {
+                          const cc = CLASSES[c.class] ?? CLASSES.Archer
+                          return (
+                            <span key={j} title={c.name} style={{ color: cc.color }}>
+                              {cc.icon}
+                            </span>
+                          )
+                        })}
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                <span className={styles.arrow}>→</span>
+              </Link>
+            )
+          })
+        )}
+      </div>
+
+    </div>
+  )
+}

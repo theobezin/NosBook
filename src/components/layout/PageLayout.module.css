@@ -1,0 +1,63 @@
+.root {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ── Background ───────────────────────────── */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201, 168, 76, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 168, 76, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.glow1 {
+  position: absolute;
+  top: -300px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 700px;
+  background: radial-gradient(ellipse at center,
+    rgba(201, 168, 76, 0.07) 0%,
+    transparent 65%
+  );
+  animation: pulse 8s ease-in-out infinite alternate;
+}
+
+.glow2 {
+  position: absolute;
+  bottom: -200px;
+  right: -100px;
+  width: 700px;
+  height: 500px;
+  background: radial-gradient(ellipse at center,
+    rgba(120, 80, 200, 0.05) 0%,
+    transparent 65%
+  );
+  animation: pulse 12s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes pulse {
+  from { opacity: 0.6; transform: translateX(-50%) scale(1);     }
+  to   { opacity: 1;   transform: translateX(-50%) scale(1.08);  }
+}
+
+/* ── Main content ─────────────────────────── */
+.main {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
