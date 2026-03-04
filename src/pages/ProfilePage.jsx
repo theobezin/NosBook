@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -125,13 +125,390 @@ function CreateModal({ onClose, onCreate }) {
   )
 }
 
+// ── WeaponModal ────────────────────────────────────────────────────────────
+
+function WeaponModal({ char, onClose, onSelect }) {
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const allWeapons = WEAPONS[char.class] ?? []
+
+  const available = allWeapons.filter(w => {
+    if (w.minHero !== null) return char.heroLevel >= w.minHero
+    return char.level >= w.minLevel
+  })
+
+  const filtered = available.filter(w =>
+    w.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const equipped = char.equipment.weapon
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('weapon.selectTitle')}</h2>
+
+        <div className={styles.weaponSearch}>
+          <input
+            className={styles.modalInput}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('weapon.searchPlaceholder')}
+            autoFocus
+          />
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className={styles.weaponEmpty}>{t('weapon.noResults')}</div>
+        ) : (
+          <div className={styles.weaponList}>
+            {filtered.map(w => {
+              const isEquipped = equipped?.name === w.name
+              return (
+                <button
+                  key={`${w.name}-${w.minLevel ?? w.minHero}`}
+                  type="button"
+                  className={`${styles.weaponItem} ${isEquipped ? styles.weaponItemActive : ''}`}
+                  onClick={() => { onSelect({ name: w.name, icon: w.icon }); onClose() }}
+                >
+                  <img src={w.icon} alt="" className={styles.weaponItemIcon} />
+                  <span className={styles.weaponItemName}>{w.name}</span>
+                  <span className={styles.weaponItemLevel}>
+                    {w.minHero !== null
+                      ? `${t('weapon.heroReq')} ${w.minHero}`
+                      : `${t('weapon.lvReq')} ${w.minLevel}`}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          {equipped && (
+            <Button variant="ghost" size="md" onClick={() => { onSelect(null); onClose() }}>
+              {t('weapon.remove')}
+            </Button>
+          )}
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ── WeaponEnhanceModal ─────────────────────────────────────────────────────
+
+const ENHANCE_ICON = 'https://nosapki.com/images/icons/2620.png'
+
+function WeaponEnhanceModal({ weapon, onClose, onSave }) {
+  const { t } = useLang()
+  const [rarity,      setRarity]      = useState(weapon.rarity      ?? 'r0')
+  const [improvement, setImprovement] = useState(weapon.improvement ?? 0)
+
+  const handleSave = () => {
+    onSave({ ...weapon, rarity, improvement })
+    onClose()
+  }
+
+  const currentRarity = WEAPON_RARITIES.find(r => r.key === rarity)
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('weapon.enhanceTitle')}</h2>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('weapon.rarityLabel')}</label>
+          <div className={styles.rarityGrid}>
+            {WEAPON_RARITIES.map(r => (
+              <button
+                key={r.key}
+                type="button"
+                className={styles.rarityBtn}
+                style={{
+                  color: r.color,
+                  borderColor:     rarity === r.key ? r.color : 'transparent',
+                  backgroundColor: rarity === r.key ? `${r.color}22` : 'transparent',
+                }}
+                onClick={() => setRarity(r.key)}
+              >
+                <span className={styles.rarityBtnRank}>{r.rank}</span>
+                <span className={styles.rarityBtnLabel}>{r.label || '—'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('weapon.improvementLabel')}</label>
+          <div className={styles.improvementRow}>
+            <button
+              type="button"
+              className={styles.improvementBtn}
+              onClick={() => setImprovement(v => Math.max(0, v - 1))}
+              disabled={improvement === 0}
+            >−</button>
+            <span
+              className={styles.improvementVal}
+              style={{ color: currentRarity?.color }}
+            >+{improvement}</span>
+            <button
+              type="button"
+              className={styles.improvementBtn}
+              onClick={() => setImprovement(v => Math.min(13, v + 1))}
+              disabled={improvement === 13}
+            >+</button>
+          </div>
+        </div>
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave}>{t('weapon.saveEnhance')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ── WeaponShellModal ───────────────────────────────────────────────────────
+
+const SHELL_ICON  = 'https://nosapki.com/images/icons/574.png'
+const SHELL_MAX   = 8
+
+const SHELL_RANK_ORDER = { C: 0, B: 1, A: 2, S: 3 }
+
+function ShellEffectSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = SHELL_EFFECTS.find(e => e.key === value) ?? SHELL_EFFECTS[0]
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className={styles.shellEffectSelect} ref={ref}>
+      <button type="button" className={styles.shellEffectSelectTrigger} onClick={() => setOpen(o => !o)}>
+        <span className={styles.shellEffectSelectName}>{selected?.label}</span>
+        <span className={styles.spSelectArrow}>▾</span>
+      </button>
+      {open && (
+        <div className={styles.shellEffectSelectDropdown}>
+          {SHELL_EFFECTS.map(e => (
+            <button
+              key={e.key}
+              type="button"
+              className={`${styles.shellEffectSelectOption} ${value === e.key ? styles.shellEffectSelectOptionActive : ''}`}
+              onClick={() => { onChange(e.key); setOpen(false) }}
+            >
+              {e.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WeaponShellModal({ weapon, onClose, onSave }) {
+  const { t } = useLang()
+  const [effects,   setEffects]   = useState(weapon.shell ?? [])
+  const [selEffect, setSelEffect] = useState(SHELL_EFFECTS[0].key)
+  const [selRank,   setSelRank]   = useState(Object.keys(SHELL_EFFECTS[0].ranges)[0])
+  const [selValue,  setSelValue]  = useState('')
+
+  const currentDef = SHELL_EFFECTS.find(e => e.key === selEffect)
+  const availRanks = Object.keys(currentDef?.ranges ?? {})
+
+  const handleEffectChange = (key) => {
+    setSelEffect(key)
+    const def = SHELL_EFFECTS.find(e => e.key === key)
+    setSelRank(Object.keys(def?.ranges ?? {})[0] ?? 'C')
+    setSelValue('')
+  }
+
+  const handleAdd = () => {
+    if (!selRank || selValue === '') return
+    setEffects(prev => [...prev, { key: selEffect, rank: selRank, value: Number(selValue) }])
+    setSelValue('')
+  }
+
+  const handleDelete = (eff) => setEffects(prev => { const i = prev.indexOf(eff); return prev.filter((_, j) => j !== i) })
+
+  const handleSave = () => { onSave({ ...weapon, shell: effects }); onClose() }
+
+  const sorted = [...effects].sort((a, b) => (SHELL_RANK_ORDER[a.rank] ?? 0) - (SHELL_RANK_ORDER[b.rank] ?? 0))
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>
+          <img src={SHELL_ICON} alt="" className={styles.shellTitleIcon} />
+          {t('weapon.shellTitle')}
+        </h2>
+
+        {/* Current effects */}
+        <div className={styles.shellEffectsList}>
+          {effects.length === 0 ? (
+            <div className={styles.shellEmpty}>{t('weapon.shellEmpty')}</div>
+          ) : sorted.map((eff, idx) => {
+            const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
+            const color = SHELL_RANK_COLORS[eff.rank]
+            return (
+              <div key={idx} className={styles.shellEffectRow} style={{ color }}>
+                <span className={styles.shellEffectRank}>{eff.rank}</span>
+                <span className={styles.shellEffectLabel}>{def?.label ?? eff.key}</span>
+                <span className={styles.shellEffectValue}>{eff.value}</span>
+                <button className={styles.shellDeleteBtn} onClick={() => handleDelete(eff)}>✕</button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Add new effect */}
+        {effects.length < SHELL_MAX && (
+          <div className={styles.shellAddSection}>
+            <div className={styles.modalField}>
+              <label className={styles.modalLabel}>{t('weapon.shellEffect')}</label>
+              <ShellEffectSelect value={selEffect} onChange={handleEffectChange} />
+            </div>
+
+            <div className={styles.shellAddRow}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>{t('weapon.shellRank')}</label>
+                <div className={styles.rankButtons}>
+                  {availRanks.map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      className={styles.rankBtn}
+                      style={{
+                        color:           SHELL_RANK_COLORS[r],
+                        borderColor:     selRank === r ? SHELL_RANK_COLORS[r] : 'transparent',
+                        backgroundColor: selRank === r ? `${SHELL_RANK_COLORS[r]}22` : 'transparent',
+                      }}
+                      onClick={() => setSelRank(r)}
+                    >{r}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>{t('weapon.shellValue')}</label>
+                <input
+                  className={styles.modalInput}
+                  type="number"
+                  value={selValue}
+                  min={0}
+                  onChange={e => setSelValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
+                />
+              </div>
+            </div>
+
+            <Button variant="primary" size="sm" onClick={handleAdd} disabled={!selRank || selValue === ''}>
+              {t('weapon.shellAdd')}
+            </Button>
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave}>{t('weapon.saveEnhance')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
-function EquipmentTab({ char }) {
+function EquipmentTab({ char, onUpdate }) {
   const { t } = useLang()
+  const [showWeapon,  setShowWeapon]  = useState(false)
+  const [showEnhance, setShowEnhance] = useState(false)
+  const [showShell,   setShowShell]   = useState(false)
+
+  const saveWeapon = (weapon) => onUpdate(char.id, { equipment: { ...char.equipment, weapon } })
+
+  const weapon = char.equipment.weapon
+
+  // Build display text + color for the equipped weapon
+  const weaponRarity = weapon?.rarity ? WEAPON_RARITIES.find(r => r.key === weapon.rarity) : null
+  const weaponSuffix = (weapon?.improvement ?? 0) > 0 ? ` +${weapon.improvement}` : ''
+  const weaponPrefix = weaponRarity?.label ? `${weaponRarity.label} : ` : ''
+  const weaponText   = weapon ? `${weaponPrefix}${weapon.name}${weaponSuffix}` : null
+
   return (
     <div className={styles.equipTabList}>
-      {EQUIP_KEYS.map(key => (
+      {/* Weapon slot — interactive */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowWeapon(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowWeapon(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.weapon')}</span>
+        <div className={styles.equipTabRight}>
+          {weapon ? (
+            <span className={styles.equipTabFilled} style={weaponRarity ? { color: weaponRarity.color } : {}}>
+              <img src={weapon.icon} alt="" className={styles.equipTabIcon} />
+              {weaponText}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          {weapon && (
+            <>
+              <button
+                type="button"
+                className={styles.equipTabEnhanceBtn}
+                onClick={e => { e.stopPropagation(); setShowEnhance(true) }}
+                title={t('weapon.enhanceTitle')}
+              ><img src={ENHANCE_ICON} alt="" /></button>
+              <button
+                type="button"
+                className={`${styles.equipTabEnhanceBtn} ${weapon.shell?.length ? styles.equipTabEnhanceBtnActive : ''}`}
+                onClick={e => { e.stopPropagation(); setShowShell(true) }}
+                title={t('weapon.shellTitle')}
+              ><img src={SHELL_ICON} alt="" /></button>
+            </>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* Shell effects card — game-style display */}
+      {weapon?.shell?.length > 0 && (
+        <div className={styles.shellCard}>
+          {[...weapon.shell]
+            .sort((a, b) => (SHELL_RANK_ORDER[a.rank] ?? 0) - (SHELL_RANK_ORDER[b.rank] ?? 0))
+            .map((eff, idx) => {
+              const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
+              const color = SHELL_RANK_COLORS[eff.rank]
+              return (
+                <div key={idx} className={styles.shellCardLine} style={{ color }}>
+                  {eff.rank}-{def?.label ?? eff.key} : {eff.value}
+                </div>
+              )
+            })}
+        </div>
+      )}
+
+      {/* Other slots — display only for now */}
+      {EQUIP_KEYS.filter(k => k !== 'weapon').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -140,6 +517,10 @@ function EquipmentTab({ char }) {
           }
         </div>
       ))}
+
+      {showWeapon  && <WeaponModal        char={char}   onClose={() => setShowWeapon(false)}  onSelect={saveWeapon} />}
+      {showEnhance && weapon && <WeaponEnhanceModal weapon={weapon} onClose={() => setShowEnhance(false)} onSave={saveWeapon} />}
+      {showShell   && weapon && <WeaponShellModal   weapon={weapon} onClose={() => setShowShell(false)}   onSave={saveWeapon} />}
     </div>
   )
 }
@@ -556,7 +937,7 @@ export default function ProfilePage() {
           </div>
 
           <div className={styles.tabPanel}>
-            {activeTab === 'equipment'   && <EquipmentTab   char={data} />}
+            {activeTab === 'equipment'   && <EquipmentTab   char={data} onUpdate={updateCharacter} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
             {activeTab === 'fairies'     && <FairiesTab     char={data} />}
             {activeTab === 'books'       && <BooksTab />}
