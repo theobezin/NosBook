@@ -88,6 +88,20 @@ export const WEAPON_RARITIES = [
   { key: 'r8',  rank: 'R8',  label: 'Phénoménal',        color: '#FF5E00' },
 ]
 
+// ── Runic skills (compétences runiques) ───────────────────────────────────
+export const RUNIC_COLOR = '#cd6f29'
+export const RUNIC_EFFECTS = [
+  { key: 'runicAtkFlat',    label: 'Toutes les attaques augmentent de' },
+  { key: 'runicDmgMonster', label: 'Les dégâts contre les monstres augmentent de %' },
+  { key: 'runicCritRate',   label: 'La probabilité de provoquer un coup critique augmente de %' },
+  { key: 'runicCritDmg',    label: 'Les dégâts infligés par coups critiques augmentent de %' },
+  { key: 'runicDmgDragon',  label: 'Les dégâts contre les dragons de haut niveau augmentent de %' },
+  { key: 'runicFairyElem',  label: "L'élément de la fée équipée augmente de" },
+  { key: 'runicSpAtk',      label: "Les points de compétence d'attaque de ton spécialiste augmentent de" },
+  { key: 'runicSpElem',     label: "Les points de compétence de l'élément de ton spécialiste augmentent de" },
+  { key: 'runicAtkPct',     label: 'Toutes les attaques augmentent de %' },
+]
+
 // ── Shell (coquillage) rune system ────────────────────────────────────────
 export const SHELL_RANK_COLORS = {
   C: '#e6bb13',

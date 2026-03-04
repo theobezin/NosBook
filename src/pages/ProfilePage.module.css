@@ -879,11 +879,16 @@
   letter-spacing: 0.02em;
 }
 
-/* ── Shell button active state ────────────────────────────────────────── */
+/* ── Shell / Runic button active states ──────────────────────────────── */
 
 .equipTabEnhanceBtnActive {
   border-color: rgba(201, 168, 76, 0.4) !important;
   background:   rgba(201, 168, 76, 0.08) !important;
+}
+
+.equipTabRunicBtnActive {
+  border-color: rgba(205, 111, 41, 0.45) !important;
+  background:   rgba(205, 111, 41, 0.10) !important;
 }
 
 /* ── Shell card (in-game tooltip style) ────────────────────────────────── */
@@ -899,6 +904,12 @@
   line-height: 1.6;
 }
 
+
+.shellCardDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 0.25rem 0;
+}
 
 .shellCardLine {
   font-family: inherit;

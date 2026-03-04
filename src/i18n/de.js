@@ -172,6 +172,9 @@ export default {
     shellRank:        'Rang',
     shellValue:       'Wert',
     shellAdd:         '+ Hinzufügen',
+    runicTitle:       'Runenfähigkeiten',
+    runicEmpty:       'Keine Runenfähigkeiten hinzugefügt.',
+    runicEffect:      'Fähigkeit',
   },
   elements: {
     mainElement:  'Hauptelement',

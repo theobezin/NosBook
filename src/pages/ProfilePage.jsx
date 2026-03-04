@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -279,14 +279,16 @@ function WeaponEnhanceModal({ weapon, onClose, onSave }) {
 // ── WeaponShellModal ───────────────────────────────────────────────────────
 
 const SHELL_ICON  = 'https://nosapki.com/images/icons/574.png'
+const RUNIC_ICON  = 'https://nosapki.com/images/icons/4280.png'
 const SHELL_MAX   = 8
+const RUNIC_MAX   = 9
 
 const SHELL_RANK_ORDER = { C: 0, B: 1, A: 2, S: 3 }
 
-function ShellEffectSelect({ value, onChange }) {
+function EffectSelect({ effects, value, onChange }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  const selected = SHELL_EFFECTS.find(e => e.key === value) ?? SHELL_EFFECTS[0]
+  const selected = effects.find(e => e.key === value) ?? effects[0]
 
   useEffect(() => {
     if (!open) return
@@ -303,7 +305,7 @@ function ShellEffectSelect({ value, onChange }) {
       </button>
       {open && (
         <div className={styles.shellEffectSelectDropdown}>
-          {SHELL_EFFECTS.map(e => (
+          {effects.map(e => (
             <button
               key={e.key}
               type="button"
@@ -380,7 +382,7 @@ function WeaponShellModal({ weapon, onClose, onSave }) {
           <div className={styles.shellAddSection}>
             <div className={styles.modalField}>
               <label className={styles.modalLabel}>{t('weapon.shellEffect')}</label>
-              <ShellEffectSelect value={selEffect} onChange={handleEffectChange} />
+              <EffectSelect effects={SHELL_EFFECTS} value={selEffect} onChange={handleEffectChange} />
             </div>
 
             <div className={styles.shellAddRow}>
@@ -432,6 +434,81 @@ function WeaponShellModal({ weapon, onClose, onSave }) {
   )
 }
 
+// ── WeaponRunicModal ───────────────────────────────────────────────────────
+
+function WeaponRunicModal({ weapon, onClose, onSave }) {
+  const { t } = useLang()
+  const [effects,   setEffects]   = useState(weapon.runic ?? [])
+  const [selEffect, setSelEffect] = useState(RUNIC_EFFECTS[0].key)
+  const [selValue,  setSelValue]  = useState('')
+
+  const handleAdd = () => {
+    if (selValue === '') return
+    setEffects(prev => [...prev, { key: selEffect, value: Number(selValue) }])
+    setSelValue('')
+  }
+
+  const handleDelete = (eff) => setEffects(prev => { const i = prev.indexOf(eff); return prev.filter((_, j) => j !== i) })
+
+  const handleSave = () => { onSave({ ...weapon, runic: effects }); onClose() }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>
+          <img src={RUNIC_ICON} alt="" className={styles.shellTitleIcon} />
+          {t('weapon.runicTitle')}
+        </h2>
+
+        <div className={styles.shellEffectsList}>
+          {effects.length === 0 ? (
+            <div className={styles.shellEmpty}>{t('weapon.runicEmpty')}</div>
+          ) : effects.map((eff, idx) => {
+            const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
+            return (
+              <div key={idx} className={styles.shellEffectRow} style={{ color: RUNIC_COLOR }}>
+                <span className={styles.shellEffectLabel}>{def?.label ?? eff.key}</span>
+                <span className={styles.shellEffectValue}>{eff.value}</span>
+                <button className={styles.shellDeleteBtn} onClick={() => handleDelete(eff)}>✕</button>
+              </div>
+            )
+          })}
+        </div>
+
+        {effects.length < RUNIC_MAX && (
+          <div className={styles.shellAddSection}>
+            <div className={styles.modalField}>
+              <label className={styles.modalLabel}>{t('weapon.runicEffect')}</label>
+              <EffectSelect effects={RUNIC_EFFECTS} value={selEffect} onChange={setSelEffect} />
+            </div>
+            <div className={styles.modalField}>
+              <label className={styles.modalLabel}>{t('weapon.shellValue')}</label>
+              <input
+                className={styles.modalInput}
+                type="number"
+                value={selValue}
+                min={0}
+                onChange={e => setSelValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
+              />
+            </div>
+            <Button variant="primary" size="sm" onClick={handleAdd} disabled={selValue === ''}>
+              {t('weapon.shellAdd')}
+            </Button>
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave}>{t('weapon.saveEnhance')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
 function EquipmentTab({ char, onUpdate }) {
@@ -439,6 +516,7 @@ function EquipmentTab({ char, onUpdate }) {
   const [showWeapon,  setShowWeapon]  = useState(false)
   const [showEnhance, setShowEnhance] = useState(false)
   const [showShell,   setShowShell]   = useState(false)
+  const [showRunic,   setShowRunic]   = useState(false)
 
   const saveWeapon = (weapon) => onUpdate(char.id, { equipment: { ...char.equipment, weapon } })
 
@@ -484,26 +562,43 @@ function EquipmentTab({ char, onUpdate }) {
                 onClick={e => { e.stopPropagation(); setShowShell(true) }}
                 title={t('weapon.shellTitle')}
               ><img src={SHELL_ICON} alt="" /></button>
+              <button
+                type="button"
+                className={`${styles.equipTabEnhanceBtn} ${weapon.runic?.length ? styles.equipTabRunicBtnActive : ''}`}
+                onClick={e => { e.stopPropagation(); setShowRunic(true) }}
+                title={t('weapon.runicTitle')}
+              ><img src={RUNIC_ICON} alt="" /></button>
             </>
           )}
           <span className={styles.equipTabEdit}>✏️</span>
         </div>
       </div>
 
-      {/* Shell effects card — game-style display */}
-      {weapon?.shell?.length > 0 && (
+      {/* Shell + Runic combined card — game-style display */}
+      {(weapon?.shell?.length > 0 || weapon?.runic?.length > 0) && (
         <div className={styles.shellCard}>
-          {[...weapon.shell]
+          {[...weapon.shell ?? []]
             .sort((a, b) => (SHELL_RANK_ORDER[a.rank] ?? 0) - (SHELL_RANK_ORDER[b.rank] ?? 0))
             .map((eff, idx) => {
               const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
               const color = SHELL_RANK_COLORS[eff.rank]
               return (
-                <div key={idx} className={styles.shellCardLine} style={{ color }}>
+                <div key={`s${idx}`} className={styles.shellCardLine} style={{ color }}>
                   {eff.rank}-{def?.label ?? eff.key} : {eff.value}
                 </div>
               )
             })}
+          {weapon?.shell?.length > 0 && weapon?.runic?.length > 0 && (
+            <div className={styles.shellCardDivider} />
+          )}
+          {(weapon.runic ?? []).map((eff, idx) => {
+            const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
+            return (
+              <div key={`r${idx}`} className={styles.shellCardLine} style={{ color: RUNIC_COLOR }}>
+                ✦ {def?.label ?? eff.key} : {eff.value}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -521,6 +616,7 @@ function EquipmentTab({ char, onUpdate }) {
       {showWeapon  && <WeaponModal        char={char}   onClose={() => setShowWeapon(false)}  onSelect={saveWeapon} />}
       {showEnhance && weapon && <WeaponEnhanceModal weapon={weapon} onClose={() => setShowEnhance(false)} onSave={saveWeapon} />}
       {showShell   && weapon && <WeaponShellModal   weapon={weapon} onClose={() => setShowShell(false)}   onSave={saveWeapon} />}
+      {showRunic   && weapon && <WeaponRunicModal   weapon={weapon} onClose={() => setShowRunic(false)}   onSave={saveWeapon} />}
     </div>
   )
 }

@@ -172,6 +172,9 @@ export default {
     shellRank:        'Rank',
     shellValue:       'Value',
     shellAdd:         '+ Add',
+    runicTitle:       'Runic Skills',
+    runicEmpty:       'No runic skills added.',
+    runicEffect:      'Skill',
   },
   elements: {
     mainElement:  'Main Element',
