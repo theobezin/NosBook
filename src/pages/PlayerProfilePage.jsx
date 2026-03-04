@@ -58,6 +58,7 @@ function SpecialistsTab({ char }) {
         {specialists.map(sp => (
           <div key={sp.id} className={styles.spCard}>
             <div className={styles.spCardTop}>
+              {sp.icon && <img src={sp.icon} alt="" className={styles.spCardIcon} />}
               <span className={styles.spCardName}>{sp.name}</span>
             </div>
             <div className={styles.spCardBadges}>

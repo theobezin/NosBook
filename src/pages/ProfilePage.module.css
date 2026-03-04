@@ -1069,6 +1069,107 @@ select.modalInput {
   cursor: pointer;
 }
 
+/* SP card icon */
+.spCardIcon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  border-radius: var(--radius-sm);
+}
+
+/* ── SPSelect custom dropdown ────────────────────────────────── */
+.spSelect {
+  position: relative;
+}
+
+.spSelectTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.875rem;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+  text-align: left;
+}
+
+.spSelectTrigger:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.spSelectName {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.spSelectArrow {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.spSelectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: var(--bg, #0f0f1a);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.spSelectDropdown::-webkit-scrollbar        { width: 4px; }
+.spSelectDropdown::-webkit-scrollbar-track  { background: transparent; }
+.spSelectDropdown::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+.spSelectOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.875rem;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.spSelectOption:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.spSelectOptionActive {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--gold-light);
+}
+
+.spSelectIcon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    FAIRIES TAB
 ═══════════════════════════════════════════════════════════════ */

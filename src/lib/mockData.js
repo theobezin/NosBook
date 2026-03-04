@@ -20,25 +20,55 @@ export const SPECIAL_KEYS = ['fairy']
 export const ELEMENTS     = ['Neutral', 'Fire', 'Water', 'Light', 'Shadow']
 
 // ── Specialist cards (SP) by class ────────────────────────────────────────
+const I = (id) => `https://nosapki.com/images/icons/${id}.png`
+
 export const SPECIALISTS = {
   Archer: [
-    'Ranger', 'Assassin', 'Destructeur', 'Garde-chasse',
-    'Canonnier de feu', 'Éclaireur', 'Chasseur de démons',
-    'Ange vengeur', 'Traqueur solaire', 'Grenadier', 'Chasseur nébuleux',
+    { name: 'Ranger',               icon: I(903)  },
+    { name: 'Assassin',             icon: I(904)  },
+    { name: 'Destructeur',          icon: I(911)  },
+    { name: 'Garde-chasse',         icon: I(912)  },
+    { name: 'Canonnier de feu',     icon: I(2545) },
+    { name: 'Éclaireur',            icon: I(2589) },
+    { name: 'Chasseur de démons',   icon: I(2655) },
+    { name: 'Ange vengeur',         icon: I(2707) },
+    { name: 'Traqueur solaire',     icon: I(4494) },
+    { name: 'Grenadier',            icon: I(4860) },
+    { name: 'Chasseur nébuleux',    icon: I(7139) },
   ],
   Swordsman: [
-    'Guerrier', 'Ninja', 'Croisé', 'Berserk', 'Gladiateur',
-    'Moine pugnace', 'Mortifère', 'Renégat', 'Hacheur',
-    'Chevalier dragon', 'Broyeur de pierre',
+    { name: 'Guerrier',             icon: I(901)  },
+    { name: 'Ninja',                icon: I(902)  },
+    { name: 'Croisé',               icon: I(909)  },
+    { name: 'Berserk',              icon: I(910)  },
+    { name: 'Gladiateur',           icon: I(2544) },
+    { name: 'Moine pugnace',        icon: I(2588) },
+    { name: 'Mortifère',            icon: I(2654) },
+    { name: 'Renégat',              icon: I(2706) },
+    { name: 'Hacheur',              icon: I(4496) },
+    { name: 'Chevalier dragon',     icon: I(4862) },
+    { name: 'Broyeur de pierre',    icon: I(7138) },
   ],
   Mage: [
-    'Mage du feu', 'Mage sacré', 'Mage de glace', 'Mage ténébreux',
-    'Volcanor', 'Sa Majesté des marées', 'Devin', 'Archimage',
-    'Prêtre vaudou', 'Gravitas', 'Tempête de feu',
+    { name: 'Mage du feu',          icon: I(905)  },
+    { name: 'Mage sacré',           icon: I(906)  },
+    { name: 'Mage de glace',        icon: I(913)  },
+    { name: 'Mage ténébreux',       icon: I(914)  },
+    { name: 'Volcanor',             icon: I(2546) },
+    { name: 'Sa Majesté des marées',icon: I(2590) },
+    { name: 'Devin',                icon: I(2656) },
+    { name: 'Archimage',            icon: I(2708) },
+    { name: 'Prêtre vaudou',        icon: I(4497) },
+    { name: 'Gravitas',             icon: I(4863) },
+    { name: 'Tempête de feu',       icon: I(7140) },
   ],
   Martial: [
-    'Jajamaru', 'Arts mystiques', 'Maître loup',
-    'Guerrier-démon', 'Druide ardent', 'Hydraupoing', 'Foudroyeur',
+    { name: 'Arts mystiques',       icon: I(4093) },
+    { name: 'Maître loup',          icon: I(4126) },
+    { name: 'Guerrier-démon',       icon: I(4151) },
+    { name: 'Druide ardent',        icon: I(4495) },
+    { name: 'Hydraupoing',          icon: I(4861) },
+    { name: 'Foudroyeur',           icon: I(7141) },
   ],
 }
 

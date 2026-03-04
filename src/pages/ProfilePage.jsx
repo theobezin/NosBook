@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
@@ -144,13 +144,53 @@ function EquipmentTab({ char }) {
   )
 }
 
+// ── SPSelect ────────────────────────────────────────────────────────────────
+
+function SPSelect({ spList, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = spList.find(sp => sp.name === value) ?? spList[0]
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className={styles.spSelect} ref={ref}>
+      <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
+        {selected?.icon && <img src={selected.icon} alt="" className={styles.spSelectIcon} />}
+        <span className={styles.spSelectName}>{selected?.name}</span>
+        <span className={styles.spSelectArrow}>▾</span>
+      </button>
+      {open && (
+        <div className={styles.spSelectDropdown}>
+          {spList.map(sp => (
+            <button
+              key={sp.name}
+              type="button"
+              className={`${styles.spSelectOption} ${value === sp.name ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange(sp.name); setOpen(false) }}
+            >
+              <img src={sp.icon} alt="" className={styles.spSelectIcon} />
+              <span>{sp.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── AddSPModal ─────────────────────────────────────────────────────────────
 
 function AddSPModal({ charClass, onClose, onAdd }) {
   const { t } = useLang()
   const spList = SPECIALISTS[charClass] ?? []
 
-  const [name,        setName]        = useState(spList[0] ?? '')
+  const [name,        setName]        = useState(spList[0]?.name ?? '')
   const [improvement, setImprovement] = useState(0)
   const [perfection,  setPerfection]  = useState(0)
   const [statAtk,     setStatAtk]     = useState(0)
@@ -161,9 +201,11 @@ function AddSPModal({ charClass, onClose, onAdd }) {
 
   const handleAdd = () => {
     if (!name) return
+    const spData = spList.find(sp => sp.name === name)
     onAdd({
       id:          `sp-${Date.now()}`,
       name,
+      icon:        spData?.icon ?? null,
       improvement: Math.max(0, Math.min(20,  parseInt(improvement) || 0)),
       perfection:  Math.max(0, Math.min(100, parseInt(perfection)  || 0)),
       stats: {
@@ -185,13 +227,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
 
         <div className={styles.modalField}>
           <label className={styles.modalLabel}>{t('sp.spLabel')}</label>
-          <select
-            className={styles.modalInput}
-            value={name}
-            onChange={e => setName(e.target.value)}
-          >
-            {spList.map(sp => <option key={sp} value={sp}>{sp}</option>)}
-          </select>
+          <SPSelect spList={spList} value={name} onChange={setName} />
         </div>
 
         <div className={styles.modalRow}>
@@ -298,6 +334,7 @@ function SpecialistsTab({ char, onUpdate }) {
           {specialists.map(sp => (
             <div key={sp.id} className={styles.spCard}>
               <div className={styles.spCardTop}>
+                {sp.icon && <img src={sp.icon} alt="" className={styles.spCardIcon} />}
                 <span className={styles.spCardName}>{sp.name}</span>
                 <button
                   className={styles.spCardDelete}
