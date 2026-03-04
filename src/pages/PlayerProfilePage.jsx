@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -27,11 +27,62 @@ function fromDB(row) {
 
 // ── Read-only tab components ───────────────────────────────────────────────
 
+const RANK_ORDER_RO = { C: 0, B: 1, A: 2, S: 3 }
+
+function WeaponSlotRO({ label, w, t }) {
+  const rarity = w?.rarity ? WEAPON_RARITIES.find(r => r.key === w.rarity) : null
+  const suffix = (w?.improvement ?? 0) > 0 ? ` +${w.improvement}` : ''
+  const prefix = rarity?.label ? `${rarity.label} : ` : ''
+  const text   = w ? `${prefix}${w.name}${suffix}` : null
+
+  return (
+    <>
+      <div className={styles.equipTabRow}>
+        <span className={styles.equipTabLabel}>{label}</span>
+        {text ? (
+          <span className={styles.equipTabFilled} style={rarity ? { color: rarity.color } : {}}>
+            <img src={w.icon} alt="" className={styles.equipTabIcon} />
+            {text}
+          </span>
+        ) : (
+          <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+        )}
+      </div>
+      {(w?.shell?.length > 0 || w?.runic?.length > 0) && (
+        <div className={styles.shellCard}>
+          {[...w.shell ?? []]
+            .sort((a, b) => (RANK_ORDER_RO[a.rank] ?? 0) - (RANK_ORDER_RO[b.rank] ?? 0))
+            .map((eff, idx) => {
+              const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
+              const color = SHELL_RANK_COLORS[eff.rank]
+              return (
+                <div key={`s${idx}`} className={styles.shellCardLine} style={{ color }}>
+                  {eff.rank}-{def?.label ?? eff.key} : {eff.value}
+                </div>
+              )
+            })}
+          {w.shell?.length > 0 && w.runic?.length > 0 && <div className={styles.shellCardDivider} />}
+          {(w.runic ?? []).map((eff, idx) => {
+            const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
+            return (
+              <div key={`r${idx}`} className={styles.shellCardLine} style={{ color: RUNIC_COLOR }}>
+                ✦ {def?.label ?? eff.key} : {eff.value}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
+  )
+}
+
 function EquipmentTab({ char }) {
   const { t } = useLang()
   return (
     <div className={styles.equipTabList}>
-      {EQUIP_KEYS.map(key => (
+      <WeaponSlotRO label={t('equipKeys.weapon')}  w={char.equipment.weapon}  t={t} />
+      <WeaponSlotRO label={t('equipKeys.offhand')} w={char.equipment.offhand} t={t} />
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]

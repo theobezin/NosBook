@@ -156,6 +156,7 @@ export default {
   },
   weapon: {
     selectTitle:      'Choisir une arme',
+    offhandTitle:     'Choisir une arme secondaire',
     searchPlaceholder:'Rechercher une arme…',
     lvReq:            'Niv.',
     heroReq:          'Héros',

@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -127,11 +127,11 @@ function CreateModal({ onClose, onCreate }) {
 
 // ── WeaponModal ────────────────────────────────────────────────────────────
 
-function WeaponModal({ char, onClose, onSelect }) {
+function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, equippedWeapon }) {
   const { t } = useLang()
   const [query, setQuery] = useState('')
 
-  const allWeapons = WEAPONS[char.class] ?? []
+  const allWeapons = weaponsSource[char.class] ?? []
 
   const available = allWeapons.filter(w => {
     if (w.minHero !== null) return char.heroLevel >= w.minHero
@@ -142,13 +142,13 @@ function WeaponModal({ char, onClose, onSelect }) {
     w.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  const equipped = char.equipment.weapon
+  const equipped = equippedWeapon
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
 
-        <h2 className={styles.modalTitle}>{t('weapon.selectTitle')}</h2>
+        <h2 className={styles.modalTitle}>{title ?? t('weapon.selectTitle')}</h2>
 
         <div className={styles.weaponSearch}>
           <input
@@ -511,31 +511,71 @@ function WeaponRunicModal({ weapon, onClose, onSave }) {
 
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
+// Helper to build the display text for a weapon-like slot
+function weaponDisplayInfo(w, rarities) {
+  if (!w) return { text: null, rarity: null }
+  const rarity  = w.rarity ? rarities.find(r => r.key === w.rarity) : null
+  const suffix  = (w.improvement ?? 0) > 0 ? ` +${w.improvement}` : ''
+  const prefix  = rarity?.label ? `${rarity.label} : ` : ''
+  return { text: `${prefix}${w.name}${suffix}`, rarity }
+}
+
+// Reusable weapon card display (shell + runic effects)
+function WeaponCard({ w }) {
+  if (!w?.shell?.length && !w?.runic?.length) return null
+  return (
+    <div className={styles.shellCard}>
+      {[...w.shell ?? []]
+        .sort((a, b) => (SHELL_RANK_ORDER[a.rank] ?? 0) - (SHELL_RANK_ORDER[b.rank] ?? 0))
+        .map((eff, idx) => {
+          const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
+          const color = SHELL_RANK_COLORS[eff.rank]
+          return (
+            <div key={`s${idx}`} className={styles.shellCardLine} style={{ color }}>
+              {eff.rank}-{def?.label ?? eff.key} : {eff.value}
+            </div>
+          )
+        })}
+      {w.shell?.length > 0 && w.runic?.length > 0 && <div className={styles.shellCardDivider} />}
+      {(w.runic ?? []).map((eff, idx) => {
+        const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
+        return (
+          <div key={`r${idx}`} className={styles.shellCardLine} style={{ color: RUNIC_COLOR }}>
+            ✦ {def?.label ?? eff.key} : {eff.value}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function EquipmentTab({ char, onUpdate }) {
   const { t } = useLang()
-  const [showWeapon,  setShowWeapon]  = useState(false)
-  const [showEnhance, setShowEnhance] = useState(false)
-  const [showShell,   setShowShell]   = useState(false)
-  const [showRunic,   setShowRunic]   = useState(false)
+  const [showWeapon,         setShowWeapon]         = useState(false)
+  const [showEnhance,        setShowEnhance]        = useState(false)
+  const [showShell,          setShowShell]          = useState(false)
+  const [showRunic,          setShowRunic]          = useState(false)
+  const [showOffhand,        setShowOffhand]        = useState(false)
+  const [showOffhandEnhance, setShowOffhandEnhance] = useState(false)
+  const [showOffhandShell,   setShowOffhandShell]   = useState(false)
 
-  const saveWeapon = (weapon) => onUpdate(char.id, { equipment: { ...char.equipment, weapon } })
+  const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
+  const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
 
-  const weapon = char.equipment.weapon
+  const weapon  = char.equipment.weapon  ?? null
+  const offhand = char.equipment.offhand ?? null
 
-  // Build display text + color for the equipped weapon
-  const weaponRarity = weapon?.rarity ? WEAPON_RARITIES.find(r => r.key === weapon.rarity) : null
-  const weaponSuffix = (weapon?.improvement ?? 0) > 0 ? ` +${weapon.improvement}` : ''
-  const weaponPrefix = weaponRarity?.label ? `${weaponRarity.label} : ` : ''
-  const weaponText   = weapon ? `${weaponPrefix}${weapon.name}${weaponSuffix}` : null
+  const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
+  const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
 
   return (
     <div className={styles.equipTabList}>
-      {/* Weapon slot — interactive */}
+
+      {/* ── Main weapon slot ─────────────────────────────────── */}
       <div
         className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
         onClick={() => setShowWeapon(true)}
-        role="button"
-        tabIndex={0}
+        role="button" tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowWeapon(true) }}
       >
         <span className={styles.equipTabLabel}>{t('equipKeys.weapon')}</span>
@@ -550,60 +590,59 @@ function EquipmentTab({ char, onUpdate }) {
           )}
           {weapon && (
             <>
-              <button
-                type="button"
-                className={styles.equipTabEnhanceBtn}
-                onClick={e => { e.stopPropagation(); setShowEnhance(true) }}
-                title={t('weapon.enhanceTitle')}
-              ><img src={ENHANCE_ICON} alt="" /></button>
-              <button
-                type="button"
+              <button type="button" className={styles.equipTabEnhanceBtn}
+                onClick={e => { e.stopPropagation(); setShowEnhance(true) }} title={t('weapon.enhanceTitle')}>
+                <img src={ENHANCE_ICON} alt="" /></button>
+              <button type="button"
                 className={`${styles.equipTabEnhanceBtn} ${weapon.shell?.length ? styles.equipTabEnhanceBtnActive : ''}`}
-                onClick={e => { e.stopPropagation(); setShowShell(true) }}
-                title={t('weapon.shellTitle')}
-              ><img src={SHELL_ICON} alt="" /></button>
-              <button
-                type="button"
+                onClick={e => { e.stopPropagation(); setShowShell(true) }} title={t('weapon.shellTitle')}>
+                <img src={SHELL_ICON} alt="" /></button>
+              <button type="button"
                 className={`${styles.equipTabEnhanceBtn} ${weapon.runic?.length ? styles.equipTabRunicBtnActive : ''}`}
-                onClick={e => { e.stopPropagation(); setShowRunic(true) }}
-                title={t('weapon.runicTitle')}
-              ><img src={RUNIC_ICON} alt="" /></button>
+                onClick={e => { e.stopPropagation(); setShowRunic(true) }} title={t('weapon.runicTitle')}>
+                <img src={RUNIC_ICON} alt="" /></button>
             </>
           )}
           <span className={styles.equipTabEdit}>✏️</span>
         </div>
       </div>
+      <WeaponCard w={weapon} />
 
-      {/* Shell + Runic combined card — game-style display */}
-      {(weapon?.shell?.length > 0 || weapon?.runic?.length > 0) && (
-        <div className={styles.shellCard}>
-          {[...weapon.shell ?? []]
-            .sort((a, b) => (SHELL_RANK_ORDER[a.rank] ?? 0) - (SHELL_RANK_ORDER[b.rank] ?? 0))
-            .map((eff, idx) => {
-              const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
-              const color = SHELL_RANK_COLORS[eff.rank]
-              return (
-                <div key={`s${idx}`} className={styles.shellCardLine} style={{ color }}>
-                  {eff.rank}-{def?.label ?? eff.key} : {eff.value}
-                </div>
-              )
-            })}
-          {weapon?.shell?.length > 0 && weapon?.runic?.length > 0 && (
-            <div className={styles.shellCardDivider} />
+      {/* ── Secondary weapon (offhand) slot ─────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowOffhand(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowOffhand(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.offhand')}</span>
+        <div className={styles.equipTabRight}>
+          {offhand ? (
+            <span className={styles.equipTabFilled} style={offhandRarity ? { color: offhandRarity.color } : {}}>
+              <img src={offhand.icon} alt="" className={styles.equipTabIcon} />
+              {offhandText}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
           )}
-          {(weapon.runic ?? []).map((eff, idx) => {
-            const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
-            return (
-              <div key={`r${idx}`} className={styles.shellCardLine} style={{ color: RUNIC_COLOR }}>
-                ✦ {def?.label ?? eff.key} : {eff.value}
-              </div>
-            )
-          })}
+          {offhand && (
+            <>
+              <button type="button" className={styles.equipTabEnhanceBtn}
+                onClick={e => { e.stopPropagation(); setShowOffhandEnhance(true) }} title={t('weapon.enhanceTitle')}>
+                <img src={ENHANCE_ICON} alt="" /></button>
+              <button type="button"
+                className={`${styles.equipTabEnhanceBtn} ${offhand.shell?.length ? styles.equipTabEnhanceBtnActive : ''}`}
+                onClick={e => { e.stopPropagation(); setShowOffhandShell(true) }} title={t('weapon.shellTitle')}>
+                <img src={SHELL_ICON} alt="" /></button>
+            </>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
         </div>
-      )}
+      </div>
+      <WeaponCard w={offhand} />
 
-      {/* Other slots — display only for now */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon').map(key => (
+      {/* ── Other slots — display only ───────────────────────── */}
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -613,10 +652,13 @@ function EquipmentTab({ char, onUpdate }) {
         </div>
       ))}
 
-      {showWeapon  && <WeaponModal        char={char}   onClose={() => setShowWeapon(false)}  onSelect={saveWeapon} />}
-      {showEnhance && weapon && <WeaponEnhanceModal weapon={weapon} onClose={() => setShowEnhance(false)} onSave={saveWeapon} />}
-      {showShell   && weapon && <WeaponShellModal   weapon={weapon} onClose={() => setShowShell(false)}   onSave={saveWeapon} />}
-      {showRunic   && weapon && <WeaponRunicModal   weapon={weapon} onClose={() => setShowRunic(false)}   onSave={saveWeapon} />}
+      {showWeapon         && <WeaponModal char={char} onClose={() => setShowWeapon(false)}  onSelect={saveWeapon}  equippedWeapon={weapon} />}
+      {showEnhance        && weapon  && <WeaponEnhanceModal weapon={weapon}  onClose={() => setShowEnhance(false)}        onSave={saveWeapon}  />}
+      {showShell          && weapon  && <WeaponShellModal   weapon={weapon}  onClose={() => setShowShell(false)}           onSave={saveWeapon}  />}
+      {showRunic          && weapon  && <WeaponRunicModal   weapon={weapon}  onClose={() => setShowRunic(false)}            onSave={saveWeapon}  />}
+      {showOffhand        && <WeaponModal char={char} onClose={() => setShowOffhand(false)} onSelect={saveOffhand} equippedWeapon={offhand} weaponsSource={SECONDARY_WEAPONS} title={t('weapon.offhandTitle')} />}
+      {showOffhandEnhance && offhand && <WeaponEnhanceModal weapon={offhand} onClose={() => setShowOffhandEnhance(false)} onSave={saveOffhand} />}
+      {showOffhandShell   && offhand && <WeaponShellModal   weapon={offhand} onClose={() => setShowOffhandShell(false)}   onSave={saveOffhand} />}
     </div>
   )
 }
