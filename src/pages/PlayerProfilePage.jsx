@@ -82,7 +82,8 @@ function EquipmentTab({ char }) {
     <div className={styles.equipTabList}>
       <WeaponSlotRO label={t('equipKeys.weapon')}  w={char.equipment.weapon}  t={t} />
       <WeaponSlotRO label={t('equipKeys.offhand')} w={char.equipment.offhand} t={t} />
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand').map(key => (
+      <WeaponSlotRO label={t('equipKeys.armor')}   w={char.equipment.armor}   t={t} />
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]

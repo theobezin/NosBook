@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -558,15 +558,20 @@ function EquipmentTab({ char, onUpdate }) {
   const [showOffhand,        setShowOffhand]        = useState(false)
   const [showOffhandEnhance, setShowOffhandEnhance] = useState(false)
   const [showOffhandShell,   setShowOffhandShell]   = useState(false)
+  const [showArmor,          setShowArmor]          = useState(false)
+  const [showArmorEnhance,   setShowArmorEnhance]   = useState(false)
 
   const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
   const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
+  const saveArmor   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, armor:   w } })
 
   const weapon  = char.equipment.weapon  ?? null
   const offhand = char.equipment.offhand ?? null
+  const armor   = char.equipment.armor   ?? null
 
   const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
   const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
+  const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES)
 
   return (
     <div className={styles.equipTabList}>
@@ -641,8 +646,35 @@ function EquipmentTab({ char, onUpdate }) {
       </div>
       <WeaponCard w={offhand} />
 
+      {/* ── Armor slot ──────────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowArmor(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowArmor(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.armor')}</span>
+        <div className={styles.equipTabRight}>
+          {armor ? (
+            <span className={styles.equipTabFilled} style={armorRarity ? { color: armorRarity.color } : {}}>
+              <img src={armor.icon} alt="" className={styles.equipTabIcon} />
+              {armorText}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          {armor && (
+            <button type="button" className={styles.equipTabEnhanceBtn}
+              onClick={e => { e.stopPropagation(); setShowArmorEnhance(true) }} title={t('weapon.enhanceTitle')}>
+              <img src={ENHANCE_ICON} alt="" />
+            </button>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
       {/* ── Other slots — display only ───────────────────────── */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -659,6 +691,8 @@ function EquipmentTab({ char, onUpdate }) {
       {showOffhand        && <WeaponModal char={char} onClose={() => setShowOffhand(false)} onSelect={saveOffhand} equippedWeapon={offhand} weaponsSource={SECONDARY_WEAPONS} title={t('weapon.offhandTitle')} />}
       {showOffhandEnhance && offhand && <WeaponEnhanceModal weapon={offhand} onClose={() => setShowOffhandEnhance(false)} onSave={saveOffhand} />}
       {showOffhandShell   && offhand && <WeaponShellModal   weapon={offhand} onClose={() => setShowOffhandShell(false)}   onSave={saveOffhand} />}
+      {showArmor        && <WeaponModal char={char} onClose={() => setShowArmor(false)} onSelect={saveArmor} equippedWeapon={armor} weaponsSource={ARMORS} title={t('weapon.armorTitle')} />}
+      {showArmorEnhance && armor && <WeaponEnhanceModal weapon={armor} onClose={() => setShowArmorEnhance(false)} onSave={saveArmor} />}
     </div>
   )
 }
