@@ -73,6 +73,7 @@ export default function HubPage() {
     { to: '/guild',   icon: '🛡️', key: 'featureGuild',   color: '#7c6ce0', ready: false },
     { to: '/ranking', icon: '🏆', key: 'featureRanking', color: '#60a5fa', ready: false },
     { to: '/events',  icon: '🌟', key: 'featureEvents',  color: '#c084fc', ready: false },
+    // Todo : Brian faire fonctionnalité famille
   ]
 
   return (
