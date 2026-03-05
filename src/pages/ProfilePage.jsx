@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -509,6 +509,88 @@ function WeaponRunicModal({ weapon, onClose, onSave }) {
   )
 }
 
+// ── HatModal ──────────────────────────────────────────────────────────────
+
+function HatModal({ char, equipped, onClose, onSave }) {
+  const { t } = useLang()
+  const [selected, setSelected] = useState(equipped ?? [])
+  const [query, setQuery] = useState('')
+
+  const available = HATS.filter(h => {
+    if (h.minHero !== null) return char.heroLevel >= h.minHero
+    return char.level >= h.minLevel
+  })
+
+  const filtered = available.filter(h =>
+    h.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const toggle = (hat) => {
+    const idx = selected.findIndex(s => s.name === hat.name)
+    if (idx >= 0) setSelected(prev => prev.filter((_, i) => i !== idx))
+    else setSelected(prev => [...prev, { name: hat.name, icon: hat.icon }])
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('weapon.hatTitle')}</h2>
+
+        <div className={styles.weaponSearch}>
+          <input
+            className={styles.modalInput}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('weapon.searchPlaceholder')}
+            autoFocus
+          />
+        </div>
+
+        {selected.length > 0 && (
+          <div className={styles.hatSelectedRow}>
+            {selected.map(h => (
+              <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatSelectedIcon} />
+            ))}
+          </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <div className={styles.weaponEmpty}>{t('weapon.noResults')}</div>
+        ) : (
+          <div className={styles.hatGrid}>
+            {filtered.map(h => {
+              const isSelected = selected.some(s => s.name === h.name)
+              return (
+                <button
+                  key={h.name}
+                  type="button"
+                  className={`${styles.hatItem} ${isSelected ? styles.hatItemSelected : ''}`}
+                  onClick={() => toggle(h)}
+                  title={`${h.name} — ${h.minHero !== null ? `${t('weapon.heroReq')} ${h.minHero}` : `${t('weapon.lvReq')} ${h.minLevel}`}`}
+                >
+                  <img src={h.icon} alt={h.name} />
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          {selected.length > 0 && (
+            <Button variant="ghost" size="md" onClick={() => setSelected([])}>
+              {t('weapon.remove')}
+            </Button>
+          )}
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={() => { onSave(selected); onClose() }}>{t('weapon.saveEnhance')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
 // Helper to build the display text for a weapon-like slot
@@ -560,14 +642,17 @@ function EquipmentTab({ char, onUpdate }) {
   const [showOffhandShell,   setShowOffhandShell]   = useState(false)
   const [showArmor,          setShowArmor]          = useState(false)
   const [showArmorEnhance,   setShowArmorEnhance]   = useState(false)
+  const [showHat,            setShowHat]            = useState(false)
 
   const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
   const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
   const saveArmor   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, armor:   w } })
+  const saveHat     = (h) => onUpdate(char.id, { equipment: { ...char.equipment, hat:     h } })
 
   const weapon  = char.equipment.weapon  ?? null
   const offhand = char.equipment.offhand ?? null
   const armor   = char.equipment.armor   ?? null
+  const hats    = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
 
   const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
   const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
@@ -673,8 +758,30 @@ function EquipmentTab({ char, onUpdate }) {
         </div>
       </div>
 
+      {/* ── Hat slot (multi-select) ─────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowHat(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowHat(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.hat')}</span>
+        <div className={styles.equipTabRight}>
+          {hats.length > 0 ? (
+            <div className={styles.hatIconRow}>
+              {hats.map(h => (
+                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+              ))}
+            </div>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
       {/* ── Other slots — display only ───────────────────────── */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -693,6 +800,7 @@ function EquipmentTab({ char, onUpdate }) {
       {showOffhandShell   && offhand && <WeaponShellModal   weapon={offhand} onClose={() => setShowOffhandShell(false)}   onSave={saveOffhand} />}
       {showArmor        && <WeaponModal char={char} onClose={() => setShowArmor(false)} onSelect={saveArmor} equippedWeapon={armor} weaponsSource={ARMORS} title={t('weapon.armorTitle')} />}
       {showArmorEnhance && armor && <WeaponEnhanceModal weapon={armor} onClose={() => setShowArmorEnhance(false)} onSave={saveArmor} />}
+      {showHat          && <HatModal char={char} equipped={hats} onClose={() => setShowHat(false)} onSave={saveHat} />}
     </div>
   )
 }

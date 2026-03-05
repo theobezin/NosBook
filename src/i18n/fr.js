@@ -158,6 +158,7 @@ export default {
     selectTitle:      'Choisir une arme',
     offhandTitle:     'Choisir une arme secondaire',
     armorTitle:       'Choisir une armure',
+    hatTitle:         'Choisir des chapeaux',
     searchPlaceholder:'Rechercher une arme…',
     lvReq:            'Niv.',
     heroReq:          'Héros',

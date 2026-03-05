@@ -83,7 +83,25 @@ function EquipmentTab({ char }) {
       <WeaponSlotRO label={t('equipKeys.weapon')}  w={char.equipment.weapon}  t={t} />
       <WeaponSlotRO label={t('equipKeys.offhand')} w={char.equipment.offhand} t={t} />
       <WeaponSlotRO label={t('equipKeys.armor')}   w={char.equipment.armor}   t={t} />
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor').map(key => (
+      {/* Hat row — icon grid display */}
+      {(() => {
+        const hats = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
+        return (
+          <div className={styles.equipTabRow}>
+            <span className={styles.equipTabLabel}>{t('equipKeys.hat')}</span>
+            {hats.length > 0 ? (
+              <div className={styles.hatIconRow}>
+                {hats.map(h => (
+                  <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                ))}
+              </div>
+            ) : (
+              <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+            )}
+          </div>
+        )
+      })()}
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
