@@ -347,7 +347,7 @@ export const WEAPONS = {
 
 // ── Secondary weapons (armes secondaires) by class ────────────────────────
 export const SECONDARY_WEAPONS = {
-  Archer: [
+  Swordsman: [
     W("Catapulte en bois",                                     8,    1),
     W("Catapulte en bois puissante",                           9,    6),
     W("Catapulte en bois d'apprenti",                          10,   12),
@@ -389,7 +389,7 @@ export const SECONDARY_WEAPONS = {
     WH("Arbalète d'Achille",                                   7511, 92),
     WH("Arbalète styxienne du fils de Thétis",                 7512, 98),
   ],
-  Swordsman: [
+  Archer: [
     W("Dague d'apprenti",                                      78,   15),
     W("Dague",                                                 79,   20),
     W("Dague de montagnard",                                   158,  21),
