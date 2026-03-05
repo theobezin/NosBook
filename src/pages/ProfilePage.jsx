@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -131,7 +131,7 @@ function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, 
   const { t } = useLang()
   const [query, setQuery] = useState('')
 
-  const allWeapons = weaponsSource[char.class] ?? []
+  const allWeapons = Array.isArray(weaponsSource) ? weaponsSource : (weaponsSource[char.class] ?? [])
 
   const available = allWeapons.filter(w => {
     if (w.minHero !== null) return char.heroLevel >= w.minHero
@@ -643,20 +643,30 @@ function EquipmentTab({ char, onUpdate }) {
   const [showArmor,          setShowArmor]          = useState(false)
   const [showArmorEnhance,   setShowArmorEnhance]   = useState(false)
   const [showHat,            setShowHat]            = useState(false)
+  const [showGloves,         setShowGloves]         = useState(false)
+  const [showGlovesEnhance,  setShowGlovesEnhance]  = useState(false)
+  const [showShoes,          setShowShoes]          = useState(false)
+  const [showShoesEnhance,   setShowShoesEnhance]   = useState(false)
 
   const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
   const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
   const saveArmor   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, armor:   w } })
   const saveHat     = (h) => onUpdate(char.id, { equipment: { ...char.equipment, hat:     h } })
+  const saveGloves  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, gloves:  w } })
+  const saveShoes   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, shoes:   w } })
 
   const weapon  = char.equipment.weapon  ?? null
   const offhand = char.equipment.offhand ?? null
   const armor   = char.equipment.armor   ?? null
   const hats    = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
+  const gloves  = char.equipment.gloves  ?? null
+  const shoes   = char.equipment.shoes   ?? null
 
   const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
   const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
   const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES)
+  const { text: glovesText,  rarity: glovesRarity  } = weaponDisplayInfo(gloves,  WEAPON_RARITIES)
+  const { text: shoesText,   rarity: shoesRarity   } = weaponDisplayInfo(shoes,   WEAPON_RARITIES)
 
   return (
     <div className={styles.equipTabList}>
@@ -780,8 +790,50 @@ function EquipmentTab({ char, onUpdate }) {
         </div>
       </div>
 
+      {/* ── Gloves slot ─────────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowGloves(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowGloves(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.gloves')}</span>
+        <div className={styles.equipTabRight}>
+          {gloves ? (
+            <span className={styles.equipTabFilled} style={glovesRarity ? { color: glovesRarity.color } : {}}>
+              <img src={gloves.icon} alt="" className={styles.equipTabIcon} />
+              {glovesText}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Shoes slot ──────────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowShoes(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowShoes(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.shoes')}</span>
+        <div className={styles.equipTabRight}>
+          {shoes ? (
+            <span className={styles.equipTabFilled} style={shoesRarity ? { color: shoesRarity.color } : {}}>
+              <img src={shoes.icon} alt="" className={styles.equipTabIcon} />
+              {shoesText}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
       {/* ── Other slots — display only ───────────────────────── */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -801,6 +853,10 @@ function EquipmentTab({ char, onUpdate }) {
       {showArmor        && <WeaponModal char={char} onClose={() => setShowArmor(false)} onSelect={saveArmor} equippedWeapon={armor} weaponsSource={ARMORS} title={t('weapon.armorTitle')} />}
       {showArmorEnhance && armor && <WeaponEnhanceModal weapon={armor} onClose={() => setShowArmorEnhance(false)} onSave={saveArmor} />}
       {showHat          && <HatModal char={char} equipped={hats} onClose={() => setShowHat(false)} onSave={saveHat} />}
+      {showGloves        && <WeaponModal char={char} onClose={() => setShowGloves(false)} onSelect={saveGloves} equippedWeapon={gloves} weaponsSource={GLOVES} title={t('weapon.glovesTitle')} />}
+      {showGlovesEnhance && gloves && <WeaponEnhanceModal weapon={gloves} onClose={() => setShowGlovesEnhance(false)} onSave={saveGloves} />}
+      {showShoes         && <WeaponModal char={char} onClose={() => setShowShoes(false)} onSelect={saveShoes} equippedWeapon={shoes} weaponsSource={SHOES} title={t('weapon.shoesTitle')} />}
+      {showShoesEnhance  && shoes  && <WeaponEnhanceModal weapon={shoes}  onClose={() => setShowShoesEnhance(false)}  onSave={saveShoes}  />}
     </div>
   )
 }

@@ -159,6 +159,8 @@ export default {
     offhandTitle:     'Sekundärwaffe auswählen',
     armorTitle:       'Rüstung auswählen',
     hatTitle:         'Helme auswählen',
+    glovesTitle:      'Handschuhe auswählen',
+    shoesTitle:       'Schuhe auswählen',
     searchPlaceholder:'Waffe suchen…',
     lvReq:            'Lv.',
     heroReq:          'Held',
