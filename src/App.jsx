@@ -8,6 +8,7 @@ import PlayersPage       from '@/pages/PlayersPage'
 import PlayerProfilePage from '@/pages/PlayerProfilePage'
 import AuthPage          from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
+import PlannerPage       from '@/pages/PlannerPage'
 
 function withLayout(Component) {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/players"         element={withLayout(PlayersPage)}       />
           <Route path="/players/:name"   element={withLayout(PlayerProfilePage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
+          <Route path="/planner"         element={<PageLayout fullWidth><PlannerPage /></PageLayout>} />
           <Route path="*"                element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>

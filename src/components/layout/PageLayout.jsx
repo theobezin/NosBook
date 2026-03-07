@@ -1,7 +1,7 @@
 import Navbar from './Navbar'
 import styles from './PageLayout.module.css'
 
-export default function PageLayout({ children }) {
+export default function PageLayout({ children, fullWidth = false }) {
   return (
     <div className={styles.root}>
 
@@ -14,7 +14,7 @@ export default function PageLayout({ children }) {
 
       <Navbar />
 
-      <main className={styles.main}>
+      <main className={fullWidth ? styles.mainFull : styles.main}>
         {children}
       </main>
 

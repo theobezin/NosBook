@@ -13,13 +13,17 @@ create extension if not exists "uuid-ossp";
 -- One row per auth user (created automatically on sign-up).
 -- ────────────────────────────────────────────────────────────
 create table if not exists public.profiles (
-  id         uuid references auth.users(id) on delete cascade primary key,
-  username   text unique not null,
-  bio        text,
-  avatar_url text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  id           uuid references auth.users(id) on delete cascade primary key,
+  username     text unique not null,
+  bio          text,
+  avatar_url   text,
+  planner_data jsonb default '{}'::jsonb,
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now()
 );
+
+-- Migration si la table existe déjà (projet existant) :
+-- alter table public.profiles add column if not exists planner_data jsonb default '{}'::jsonb;
 
 -- ────────────────────────────────────────────────────────────
 -- TABLE: characters

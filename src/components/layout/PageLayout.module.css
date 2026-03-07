@@ -61,3 +61,10 @@
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
 }
+
+/* Full-width variant — used by PlannerPage which manages its own layout */
+.mainFull {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+}

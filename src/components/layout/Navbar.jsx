@@ -29,7 +29,8 @@ export default function Navbar() {
 
         <div className={styles.links}>
           <NavLink to="/" end className={linkClass}>{t('nav.hub')}</NavLink>
-          <NavLink to="/players" className={linkClass}>{t('nav.profile')}</NavLink>
+          <NavLink to="/players" className={linkClass}>{t('nav.players')}</NavLink>
+          <NavLink to="/planner" className={linkClass}>{t('nav.planner')}</NavLink>
         </div>
 
         <div className={styles.right}>
