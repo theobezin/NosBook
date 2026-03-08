@@ -4,15 +4,10 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS } from '@/lib/raids'
 import Button from '@/components/ui/Button'
+import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import styles from './AdminRaidsPage.module.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 
 function formatDate(iso) {
   try {
@@ -24,11 +19,6 @@ function formatDate(iso) {
 
 const RAID_NAMES = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
 
-const SERVER_COLORS = {
-  undercity:  '#7c6ce0',
-  dragonveil: '#e06c5a',
-}
-
 const STATUS_COLORS = {
   pending:  { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)'  },
   approved: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)'   },
@@ -39,7 +29,7 @@ const FILTERS = ['pending', 'approved', 'rejected', 'all']
 
 // ── RecordRow ─────────────────────────────────────────────────────────────────
 
-function RecordRow({ record, lang, t, onApprove, onReject }) {
+function RecordRow({ record, lang, t, onApprove, onReject, submitterName }) {
   const [rejecting,  setRejecting]  = useState(false)
   const [rejectNote, setRejectNote] = useState('')
   const [busy,       setBusy]       = useState(false)
@@ -94,6 +84,9 @@ function RecordRow({ record, lang, t, onApprove, onReject }) {
           <span className={styles.rowTime}>⏱ {formatTime(record.time_seconds)}</span>
           <span className={styles.rowTeam}>👥 {record.team_members.join(', ')}</span>
           <span className={styles.rowDate}>📅 {formatDate(record.submitted_at)}</span>
+          {submitterName && (
+            <span className={styles.rowSubmitter}>🧑 {submitterName}</span>
+          )}
         </div>
 
         <div className={styles.rowActions}>
@@ -154,10 +147,11 @@ export default function AdminRaidsPage() {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const { t, lang } = useLang()
 
-  const [filter,       setFilter]       = useState('pending')
-  const [records,      setRecords]      = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [globalCounts, setGlobalCounts] = useState({ pending: 0, approved: 0, rejected: 0 })
+  const [filter,        setFilter]       = useState('pending')
+  const [records,       setRecords]      = useState([])
+  const [loading,       setLoading]      = useState(true)
+  const [globalCounts,  setGlobalCounts] = useState({ pending: 0, approved: 0, rejected: 0 })
+  const [submitterMap,  setSubmitterMap] = useState({}) // uuid → username
 
   // Compteurs globaux indépendants du filtre actif
   const fetchCounts = () => {
@@ -183,13 +177,28 @@ export default function AdminRaidsPage() {
     setLoading(true)
     let q = supabase
       .from('raid_records')
-      .select('id, raid_slug, server, team_members, time_seconds, proof_url, proof_type, submitted_at, status, admin_note')
+      .select('id, raid_slug, server, team_members, time_seconds, proof_url, proof_type, submitted_at, status, admin_note, submitted_by')
       .order('submitted_at', { ascending: false })
       .limit(200)
 
     if (filter !== 'all') q = q.eq('status', filter)
 
-    q.then(({ data }) => setRecords(data ?? [])).finally(() => setLoading(false))
+    q.then(async ({ data }) => {
+      const rows = data ?? []
+      setRecords(rows)
+
+      // Résolution des usernames depuis profiles (submitted_by → uuid → username)
+      const uuids = [...new Set(rows.map(r => r.submitted_by).filter(Boolean))]
+      if (uuids.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', uuids)
+        const map = {}
+        ;(profiles ?? []).forEach(p => { map[p.id] = p.username })
+        setSubmitterMap(map)
+      }
+    }).finally(() => setLoading(false))
   }, [isAdmin, filter])
 
   const approve = async (id) => {
@@ -312,6 +321,7 @@ export default function AdminRaidsPage() {
               t={t}
               onApprove={approve}
               onReject={reject}
+              submitterName={submitterMap[record.submitted_by] ?? null}
             />
           ))
         )}

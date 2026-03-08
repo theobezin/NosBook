@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   username   text unique not null,
   bio        text,
   avatar_url text,
+  is_admin   boolean not null default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -132,6 +133,37 @@ create policy "insert_own_records"
   for insert
   to authenticated
   with check (submitted_by = auth.uid() and status = 'pending');
+
+-- Lecture de ses propres soumissions (tous statuts) — pour MySubmissionsPage
+create policy "select_own_records"
+  on public.raid_records
+  for select
+  to authenticated
+  using (submitted_by = auth.uid());
+
+-- Admin : lecture de tous les records (pending, approved, rejected)
+create policy "admin_select_all_records"
+  on public.raid_records
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and is_admin = true
+    )
+  );
+
+-- Admin : mise à jour (approbation / rejet)
+create policy "admin_update_records"
+  on public.raid_records
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and is_admin = true
+    )
+  );
 
 -- ── MIGRATION — only needed if you ran the old schema before.
 -- Uncomment and run these lines to clean up old tables:

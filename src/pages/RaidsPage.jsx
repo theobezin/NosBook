@@ -5,26 +5,16 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
 import Button from '@/components/ui/Button'
+import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import styles from './RaidsPage.module.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 
 function parseTime(str) {
   const match = str.trim().match(/^(\d{1,3}):([0-5]\d)$/)
   if (!match) return null
   const total = parseInt(match[1], 10) * 60 + parseInt(match[2], 10)
   return total > 0 ? total : null
-}
-
-const SERVER_COLORS = {
-  undercity: '#7c6ce0',
-  dragonveil: '#e06c5a',
 }
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉']

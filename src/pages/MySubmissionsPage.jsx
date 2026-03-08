@@ -5,13 +5,8 @@ import { useLang } from "@/i18n"
 import { supabase, hasSupabase } from "@/lib/supabase"
 import { RAIDS } from "@/lib/raids"
 import Button from "@/components/ui/Button"
+import { formatTime, SERVER_COLORS } from "@/lib/utils"
 import styles from "./MySubmissionsPage.module.css"
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, "0")}`
-}
 
 function formatDate(iso) {
   try {
@@ -20,8 +15,6 @@ function formatDate(iso) {
 }
 
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
-
-const SERVER_COLORS = { undercity: "#7c6ce0", dragonveil: "#e06c5a" }
 
 const STATUS_COLORS = {
   pending:  { color: "#f59e0b", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.25)" },

@@ -5,6 +5,7 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import { RAIDS } from '@/lib/raids'
+import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -12,13 +13,6 @@ import pageStyles from './PlayerProfilePage.module.css'
 // ── Raid helpers ────────────────────────────────────────────────────────────
 
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
-const SERVER_COLORS = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 
 // ── DB mapping ─────────────────────────────────────────────────────────────
 
@@ -427,7 +421,7 @@ export default function PlayerProfilePage() {
                     className={pageStyles.recordServer}
                     style={{ color: SERVER_COLORS[rec.server], borderColor: SERVER_COLORS[rec.server] + '55' }}
                   >
-                    {rec.server}
+                    {t(`raids.server.${rec.server}`)}
                   </span>
                   <span className={pageStyles.recordTeam}>{rec.team_members.join(', ')}</span>
                   <a
