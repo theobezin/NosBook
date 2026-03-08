@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useAdmin } from '@/hooks/useAdmin'
 import { useLang } from '@/i18n'
 import Button from '@/components/ui/Button'
 import styles from './Navbar.module.css'
@@ -8,6 +9,7 @@ const LANGS = ['en', 'fr', 'de']
 
 export default function Navbar() {
   const { isAuthenticated, user, signOut } = useAuth()
+  const { isAdmin } = useAdmin()
   const { lang, setLang, t } = useLang()
   const navigate = useNavigate()
 
@@ -30,6 +32,12 @@ export default function Navbar() {
         <div className={styles.links}>
           <NavLink to="/" end className={linkClass}>{t('nav.hub')}</NavLink>
           <NavLink to="/players" className={linkClass}>{t('nav.profile')}</NavLink>
+          <NavLink to="/raids" className={linkClass}>{t('nav.raids')}</NavLink>
+          {isAdmin && (
+            <NavLink to="/admin/raids" className={linkClass + ' ' + styles.adminLink}>
+              🛡️ Admin
+            </NavLink>
+          )}
         </div>
 
         <div className={styles.right}>

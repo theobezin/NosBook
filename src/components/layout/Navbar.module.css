@@ -59,6 +59,18 @@
   background: var(--gold-faint);
 }
 
+.adminLink {
+  color: #f59e0b;
+}
+.adminLink:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.08);
+}
+.adminLink.active {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+}
+
 /* ── Right group (lang + auth) ────────────── */
 .right {
   display: flex;
