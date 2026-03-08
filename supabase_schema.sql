@@ -96,7 +96,44 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- ────────────────────────────────────────────────────────────
--- MIGRATION — only needed if you ran the old schema before.
+-- TABLE: raid_records
+-- Classement PVE speedrun — un enregistrement par run soumis.
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.raid_records (
+  id            uuid        primary key default gen_random_uuid(),
+  raid_slug     text        not null,
+  server        text        not null check (server in ('undercity', 'dragonveil')),
+  team_members  text[]      not null,
+  time_seconds  integer     not null check (time_seconds > 0),
+  proof_url     text        not null,
+  proof_type    text        not null check (proof_type in ('video', 'screenshot')),
+  submitted_by  uuid        references auth.users(id) on delete set null,
+  submitted_at  timestamptz not null default now(),
+  status        text        not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  admin_note    text
+);
+
+create index if not exists raid_records_slug_time_idx on public.raid_records (raid_slug, time_seconds asc);
+create index if not exists raid_records_server_idx    on public.raid_records (server);
+create index if not exists raid_records_status_idx    on public.raid_records (status);
+
+-- ── RLS — raid_records ───────────────────────────────────────
+alter table public.raid_records enable row level security;
+
+-- Lecture publique : seulement les records approuvés
+create policy "read_approved_records"
+  on public.raid_records
+  for select
+  using (status = 'approved');
+
+-- Insert : utilisateurs connectés uniquement, status forcé à 'pending'
+create policy "insert_own_records"
+  on public.raid_records
+  for insert
+  to authenticated
+  with check (submitted_by = auth.uid() and status = 'pending');
+
+-- ── MIGRATION — only needed if you ran the old schema before.
 -- Uncomment and run these lines to clean up old tables:
 -- ────────────────────────────────────────────────────────────
 -- drop table if exists public.activity_log;
