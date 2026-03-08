@@ -5,7 +5,7 @@ export default {
     signOut: 'Sign Out',
     signIn: 'Sign In',
     signUp: 'Sign Up',
-    raids: 'Raids',
+    raids: 'Ranking',
   },
   hub: {
     badge: '◆ Unofficial NosTale Companion ◆',
@@ -25,10 +25,10 @@ export default {
     newsLoading:    'Loading news…',
     newsEmpty:      'No news available.',
     featureProfile: { label: 'Profile',  desc: 'Your character, your stats, your equipment' },
-    featureRaids:   { label: 'Raids',    desc: 'PVE speedrun rankings per raid with proof' },
+    featureRaids:   { label: 'Raids',    desc: 'Plan and join raids with your family' },
     featureMarket:  { label: 'Market',   desc: 'Buy and sell equipment between players' },
     featureGuild:   { label: 'Family',    desc: 'Manage your family and members' },
-    featureRanking: { label: 'Ranking',  desc: 'Discover the top players and teams on the server' },
+    featureRanking: { label: 'Ranking',  desc: 'PVE speedrun rankings per raid with proof' },
     featureEvents:  { label: 'Events',   desc: 'Follow ongoing and upcoming events' },
   },
   auth: {
