@@ -118,11 +118,85 @@
   gap: 0.75rem;
 }
 
-.username {
+/* ── Admin badge ──────────────────────────────*/
+.adminBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 0.22rem;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ── User menu ────────────────────────────────*/
+.userMenuWrap {
+  position: relative;
+}
+
+.userMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.userMenuTrigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.usernameText {
   font-size: 0.85rem;
   color: var(--gold-dim);
-  max-width: 140px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.userMenuCaret {
+  font-size: 0.6rem;
+  color: var(--text-faint);
+}
+
+.userMenu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 190px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.userMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.userMenuItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
 }

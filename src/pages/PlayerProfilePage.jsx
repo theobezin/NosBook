@@ -4,9 +4,21 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { RAIDS } from '@/lib/raids'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
+
+// ── Raid helpers ────────────────────────────────────────────────────────────
+
+const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
+const SERVER_COLORS = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 // ── DB mapping ─────────────────────────────────────────────────────────────
 
@@ -168,15 +180,17 @@ function BooksTab() {
 export default function PlayerProfilePage() {
   const { name: usernameParam } = useParams()
   const { isAuthenticated } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   const [username,   setUsername]   = useState(null)
   const [characters, setCharacters] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [notFound,   setNotFound]   = useState(false)
 
-  const [selectedIdx, setSelectedIdx] = useState(0)
-  const [activeTab,   setActiveTab]   = useState('equipment')
+  const [selectedIdx,    setSelectedIdx]    = useState(0)
+  const [activeTab,      setActiveTab]      = useState('equipment')
+  const [pveRecords,     setPveRecords]     = useState([])
+  const [recordsLoading, setRecordsLoading] = useState(false)
 
   const decoded = decodeURIComponent(usernameParam)
 
@@ -205,6 +219,20 @@ export default function PlayerProfilePage() {
       })
       .finally(() => setLoading(false))
   }, [decoded])
+
+  // Fetch PVE records where player's username appears in team_members
+  useEffect(() => {
+    if (!username || !hasSupabase) { setPveRecords([]); setRecordsLoading(false); return }
+    setRecordsLoading(true)
+    supabase
+      .from('raid_records')
+      .select('id, raid_slug, server, team_members, time_seconds, proof_url, proof_type')
+      .eq('status', 'approved')
+      .contains('team_members', [username])
+      .order('time_seconds', { ascending: true })
+      .then(({ data }) => setPveRecords(data ?? []))
+      .finally(() => setRecordsLoading(false))
+  }, [username])
 
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
@@ -378,6 +406,46 @@ export default function PlayerProfilePage() {
           <p className={styles.emptyText}>{t('profile.noCharacter')}</p>
         </div>
       )}
+
+      {/* ── PVE Records ──────────────────────────────────────────── */}
+      <div className={pageStyles.recordsSection}>
+        <h3 className={pageStyles.recordsTitle}>⚔️ {t('playerProfile.records')}</h3>
+        {recordsLoading ? (
+          <div className={pageStyles.recordsSkeleton} />
+        ) : pveRecords.length === 0 ? (
+          <p className={pageStyles.recordsEmpty}>{t('playerProfile.noRecords')}</p>
+        ) : (
+          <div className={pageStyles.recordsList}>
+            {pveRecords.map(rec => {
+              const raid = RAID_MAP[rec.raid_slug]
+              const raidName = raid ? (raid[lang] ?? raid.en) : rec.raid_slug
+              return (
+                <div key={rec.id} className={pageStyles.recordRow}>
+                  <span className={pageStyles.recordTime}>{formatTime(rec.time_seconds)}</span>
+                  <span className={pageStyles.recordRaid}>{raidName}</span>
+                  <span
+                    className={pageStyles.recordServer}
+                    style={{ color: SERVER_COLORS[rec.server], borderColor: SERVER_COLORS[rec.server] + '55' }}
+                  >
+                    {rec.server}
+                  </span>
+                  <span className={pageStyles.recordTeam}>{rec.team_members.join(', ')}</span>
+                  <a
+                    href={rec.proof_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={pageStyles.recordProof}
+                    onClick={e => e.stopPropagation()}
+                    title={rec.proof_type}
+                  >
+                    {rec.proof_type === 'video' ? '🎬' : '📸'}
+                  </a>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
     </div>
   )

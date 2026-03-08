@@ -7,8 +7,9 @@ import ProfilePage       from '@/pages/ProfilePage'
 import PlayersPage       from '@/pages/PlayersPage'
 import PlayerProfilePage from '@/pages/PlayerProfilePage'
 import RaidsPage         from '@/pages/RaidsPage'
-import AdminRaidsPage    from '@/pages/AdminRaidsPage'
-import AuthPage          from '@/pages/AuthPage'
+import AdminRaidsPage        from '@/pages/AdminRaidsPage'
+import MySubmissionsPage    from '@/pages/MySubmissionsPage'
+import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
 
 function withLayout(Component) {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/players/:name"   element={withLayout(PlayerProfilePage)} />
           <Route path="/raids"           element={withLayout(RaidsPage)}         />
           <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
+          <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
           <Route path="*"                element={withLayout(NotFoundPage)}      />
         </Routes>

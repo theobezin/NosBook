@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useAdmin } from '@/hooks/useAdmin'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
@@ -154,9 +154,28 @@ export default function AdminRaidsPage() {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const { t, lang } = useLang()
 
-  const [filter,  setFilter]  = useState('pending')
-  const [records, setRecords] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [filter,       setFilter]       = useState('pending')
+  const [records,      setRecords]      = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [globalCounts, setGlobalCounts] = useState({ pending: 0, approved: 0, rejected: 0 })
+
+  // Compteurs globaux indépendants du filtre actif
+  const fetchCounts = () => {
+    if (!hasSupabase) return
+    supabase
+      .from('raid_records')
+      .select('status')
+      .then(({ data }) => {
+        const c = { pending: 0, approved: 0, rejected: 0 }
+        ;(data ?? []).forEach(r => { if (c[r.status] !== undefined) c[r.status]++ })
+        setGlobalCounts(c)
+      })
+  }
+
+  useEffect(() => {
+    if (!isAdmin) return
+    fetchCounts()
+  }, [isAdmin])
 
   useEffect(() => {
     if (!isAdmin || !hasSupabase) return
@@ -173,31 +192,39 @@ export default function AdminRaidsPage() {
     q.then(({ data }) => setRecords(data ?? [])).finally(() => setLoading(false))
   }, [isAdmin, filter])
 
-  const counts = useMemo(() => {
-    const c = { pending: 0, approved: 0, rejected: 0 }
-    records.forEach(r => { if (c[r.status] !== undefined) c[r.status]++ })
-    return c
-  }, [records])
-
   const approve = async (id) => {
+    const rec = records.find(r => r.id === id)
     const { error } = await supabase
       .from('raid_records')
       .update({ status: 'approved', admin_note: null })
       .eq('id', id)
     if (!error) {
       setRecords(prev => prev.map(r => r.id === id ? { ...r, status: 'approved', admin_note: null } : r))
+      setGlobalCounts(prev => {
+        const next = { ...prev }
+        if (rec?.status && next[rec.status] !== undefined) next[rec.status]--
+        next.approved = (next.approved ?? 0) + 1
+        return next
+      })
       return true
     }
     return false
   }
 
   const reject = async (id, note) => {
+    const rec = records.find(r => r.id === id)
     const { error } = await supabase
       .from('raid_records')
       .update({ status: 'rejected', admin_note: note })
       .eq('id', id)
     if (!error) {
       setRecords(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', admin_note: note } : r))
+      setGlobalCounts(prev => {
+        const next = { ...prev }
+        if (rec?.status && next[rec.status] !== undefined) next[rec.status]--
+        next.rejected = (next.rejected ?? 0) + 1
+        return next
+      })
       return true
     }
     return false
@@ -237,15 +264,15 @@ export default function AdminRaidsPage() {
         </div>
         <div className={styles.globalStats}>
           <div className={styles.globalStat} style={{ color: STATUS_COLORS.pending.color }}>
-            <span className={styles.globalStatVal}>{counts.pending}</span>
+            <span className={styles.globalStatVal}>{globalCounts.pending}</span>
             <span className={styles.globalStatKey}>{t('admin.status.pending')}</span>
           </div>
           <div className={styles.globalStat} style={{ color: STATUS_COLORS.approved.color }}>
-            <span className={styles.globalStatVal}>{counts.approved}</span>
+            <span className={styles.globalStatVal}>{globalCounts.approved}</span>
             <span className={styles.globalStatKey}>{t('admin.status.approved')}</span>
           </div>
           <div className={styles.globalStat} style={{ color: STATUS_COLORS.rejected.color }}>
-            <span className={styles.globalStatVal}>{counts.rejected}</span>
+            <span className={styles.globalStatVal}>{globalCounts.rejected}</span>
             <span className={styles.globalStatKey}>{t('admin.status.rejected')}</span>
           </div>
         </div>

@@ -5,7 +5,8 @@ export default {
     signOut: 'Sign Out',
     signIn: 'Sign In',
     signUp: 'Sign Up',
-    raids: 'Ranking',
+    raids:         'Ranking',
+    mySubmissions: 'My Submissions',
   },
   hub: {
     badge: '◆ Unofficial NosTale Companion ◆',
@@ -266,5 +267,16 @@ export default {
       rejected: 'Rejected',
       all:      'All',
     },
+  },
+  submissions: {
+    title:          'My Submissions',
+    sub:            'Track your speedrun submissions and their validation status.',
+    empty:          'No submissions yet.',
+    loginRequired:  'Sign in to see your submissions.',
+    rejectedNote:   'Reason:',
+  },
+  playerProfile: {
+    records:        'PVE Records',
+    noRecords:      'No validated records for this player.',
   },
 }

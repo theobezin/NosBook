@@ -5,7 +5,8 @@ export default {
     signOut: 'Déconnexion',
     signIn: 'Connexion',
     signUp: "S'inscrire",
-    raids: 'Classement',
+    raids:         'Classement',
+    mySubmissions: 'Mes soumissions',
   },
   hub: {
     badge: '◆ Compagnon Officieux de NosTale ◆',
@@ -266,5 +267,16 @@ export default {
       rejected: 'Rejetés',
       all:      'Tous',
     },
+  },
+  submissions: {
+    title:          'Mes soumissions',
+    sub:            'Suis tes soumissions de speedrun et leur statut de validation.',
+    empty:          'Aucune soumission pour l\'instant.',
+    loginRequired:  'Connecte-toi pour voir tes soumissions.',
+    rejectedNote:   'Motif :',
+  },
+  playerProfile: {
+    records:        'Records PVE',
+    noRecords:      'Aucun record validé pour ce joueur.',
   },
 }

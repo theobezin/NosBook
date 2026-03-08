@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { RAIDS } from '@/lib/raids'
+import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
 import Button from '@/components/ui/Button'
 import styles from './RaidsPage.module.css'
 
@@ -348,6 +348,19 @@ export default function RaidsPage() {
     return RAIDS.filter(r => (r[lang] ?? r.en).toLowerCase().includes(q))
   }, [search, lang])
 
+  // Groupement par catégorie, avec les raids ayant des records en premier dans chaque groupe
+  const raidsByCategory = useMemo(() => {
+    return RAID_CATEGORIES.map(cat => {
+      const raids = filteredRaids.filter(r => r.act === cat.key)
+      const sorted = [...raids].sort((a, b) => {
+        const aHas = (recordsByRaid[a.slug] ?? []).length > 0
+        const bHas = (recordsByRaid[b.slug] ?? []).length > 0
+        return (bHas ? 1 : 0) - (aHas ? 1 : 0)
+      })
+      return { cat, raids: sorted }
+    }).filter(({ raids }) => raids.length > 0)
+  }, [filteredRaids, recordsByRaid])
+
   const raidsCovered = Object.keys(recordsByRaid).length
 
   return (
@@ -413,28 +426,33 @@ export default function RaidsPage() {
         </div>
       </div>
 
-      {/* ── Liste des raids ── */}
+      {/* ── Liste des raids par catégorie ── */}
       <div className={styles.raidList}>
         {loading ? (
           Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className={`${styles.raidCard} ${styles.raidSkeleton}`} />
           ))
-        ) : filteredRaids.length === 0 ? (
+        ) : raidsByCategory.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🔎</span>
             <span>{t('raids.noResults')}</span>
           </div>
         ) : (
-          filteredRaids.map(raid => (
-            <RaidCard
-              key={raid.slug}
-              raid={raid}
-              records={recordsByRaid[raid.slug] ?? []}
-              expanded={expandedSlug === raid.slug}
-              onToggle={() => setExpandedSlug(p => p === raid.slug ? null : raid.slug)}
-              t={t}
-              lang={lang}
-            />
+          raidsByCategory.map(({ cat, raids }) => (
+            <div key={cat.key} className={styles.category}>
+              <h3 className={styles.categoryTitle}>{cat[lang] ?? cat.en}</h3>
+              {raids.map(raid => (
+                <RaidCard
+                  key={raid.slug}
+                  raid={raid}
+                  records={recordsByRaid[raid.slug] ?? []}
+                  expanded={expandedSlug === raid.slug}
+                  onToggle={() => setExpandedSlug(p => p === raid.slug ? null : raid.slug)}
+                  t={t}
+                  lang={lang}
+                />
+              ))}
+            </div>
           ))
         )}
       </div>

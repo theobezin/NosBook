@@ -5,7 +5,8 @@ export default {
     signOut: 'Abmelden',
     signIn: 'Anmelden',
     signUp: 'Registrieren',
-    raids: 'Rangliste',
+    raids:         'Rangliste',
+    mySubmissions: 'Meine Einsendungen',
   },
   hub: {
     badge: '◆ Inoffizieller NosTale-Begleiter ◆',
@@ -266,5 +267,16 @@ export default {
       rejected: 'Abgelehnt',
       all:      'Alle',
     },
+  },
+  submissions: {
+    title:          'Meine Einsendungen',
+    sub:            'Verfolge deine Speedrun-Einsendungen und ihren Validierungsstatus.',
+    empty:          'Noch keine Einsendungen.',
+    loginRequired:  'Melde dich an, um deine Einsendungen zu sehen.',
+    rejectedNote:   'Grund:',
+  },
+  playerProfile: {
+    records:        'PVE-Records',
+    noRecords:      'Keine validierten Records für diesen Spieler.',
   },
 }
