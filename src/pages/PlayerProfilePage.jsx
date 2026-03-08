@@ -83,8 +83,11 @@ function EquipmentTab({ char }) {
       <WeaponSlotRO label={t('equipKeys.weapon')}  w={char.equipment.weapon}  t={t} />
       <WeaponSlotRO label={t('equipKeys.offhand')} w={char.equipment.offhand} t={t} />
       <WeaponSlotRO label={t('equipKeys.armor')}   w={char.equipment.armor}   t={t} />
-      <WeaponSlotRO label={t('equipKeys.gloves')}  w={char.equipment.gloves}  t={t} />
-      <WeaponSlotRO label={t('equipKeys.shoes')}   w={char.equipment.shoes}   t={t} />
+      <WeaponSlotRO label={t('equipKeys.gloves')}    w={char.equipment.gloves}    t={t} />
+      <WeaponSlotRO label={t('equipKeys.shoes')}     w={char.equipment.shoes}     t={t} />
+      <WeaponSlotRO label={t('equipKeys.necklace')}  w={char.equipment.necklace}  t={t} />
+      <WeaponSlotRO label={t('equipKeys.ring')}      w={char.equipment.ring}      t={t} />
+      <WeaponSlotRO label={t('equipKeys.bracelet')}  w={char.equipment.bracelet}  t={t} />
       {/* Hat row — icon grid display */}
       {(() => {
         const hats = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
@@ -103,7 +106,7 @@ function EquipmentTab({ char }) {
           </div>
         )
       })()}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]

@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -647,20 +647,29 @@ function EquipmentTab({ char, onUpdate }) {
   const [showGlovesEnhance,  setShowGlovesEnhance]  = useState(false)
   const [showShoes,          setShowShoes]          = useState(false)
   const [showShoesEnhance,   setShowShoesEnhance]   = useState(false)
+  const [showNecklace,       setShowNecklace]       = useState(false)
+  const [showRing,           setShowRing]           = useState(false)
+  const [showBracelet,       setShowBracelet]       = useState(false)
 
   const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
   const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
   const saveArmor   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, armor:   w } })
   const saveHat     = (h) => onUpdate(char.id, { equipment: { ...char.equipment, hat:     h } })
-  const saveGloves  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, gloves:  w } })
-  const saveShoes   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, shoes:   w } })
+  const saveGloves   = (w) => onUpdate(char.id, { equipment: { ...char.equipment, gloves:   w } })
+  const saveShoes    = (w) => onUpdate(char.id, { equipment: { ...char.equipment, shoes:    w } })
+  const saveNecklace = (w) => onUpdate(char.id, { equipment: { ...char.equipment, necklace: w } })
+  const saveRing     = (w) => onUpdate(char.id, { equipment: { ...char.equipment, ring:     w } })
+  const saveBracelet = (w) => onUpdate(char.id, { equipment: { ...char.equipment, bracelet: w } })
 
   const weapon  = char.equipment.weapon  ?? null
   const offhand = char.equipment.offhand ?? null
   const armor   = char.equipment.armor   ?? null
   const hats    = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
-  const gloves  = char.equipment.gloves  ?? null
-  const shoes   = char.equipment.shoes   ?? null
+  const gloves    = char.equipment.gloves    ?? null
+  const shoes     = char.equipment.shoes     ?? null
+  const necklace  = char.equipment.necklace  ?? null
+  const ring      = char.equipment.ring      ?? null
+  const bracelet  = char.equipment.bracelet  ?? null
 
   const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
   const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
@@ -832,8 +841,71 @@ function EquipmentTab({ char, onUpdate }) {
         </div>
       </div>
 
+      {/* ── Necklace slot ───────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowNecklace(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowNecklace(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.necklace')}</span>
+        <div className={styles.equipTabRight}>
+          {necklace ? (
+            <span className={styles.equipTabFilled}>
+              <img src={necklace.icon} alt="" className={styles.equipTabIcon} />
+              {necklace.name}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Ring slot ───────────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowRing(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowRing(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.ring')}</span>
+        <div className={styles.equipTabRight}>
+          {ring ? (
+            <span className={styles.equipTabFilled}>
+              <img src={ring.icon} alt="" className={styles.equipTabIcon} />
+              {ring.name}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Bracelet slot ───────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowBracelet(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowBracelet(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.bracelet')}</span>
+        <div className={styles.equipTabRight}>
+          {bracelet ? (
+            <span className={styles.equipTabFilled}>
+              <img src={bracelet.icon} alt="" className={styles.equipTabIcon} />
+              {bracelet.name}
+            </span>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
       {/* ── Other slots — display only ───────────────────────── */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -857,6 +929,9 @@ function EquipmentTab({ char, onUpdate }) {
       {showGlovesEnhance && gloves && <WeaponEnhanceModal weapon={gloves} onClose={() => setShowGlovesEnhance(false)} onSave={saveGloves} />}
       {showShoes         && <WeaponModal char={char} onClose={() => setShowShoes(false)} onSelect={saveShoes} equippedWeapon={shoes} weaponsSource={SHOES} title={t('weapon.shoesTitle')} />}
       {showShoesEnhance  && shoes  && <WeaponEnhanceModal weapon={shoes}  onClose={() => setShowShoesEnhance(false)}  onSave={saveShoes}  />}
+      {showNecklace  && <WeaponModal char={char} onClose={() => setShowNecklace(false)}  onSelect={saveNecklace}  equippedWeapon={necklace}  weaponsSource={NECKLACES} title={t('weapon.necklaceTitle')} />}
+      {showRing      && <WeaponModal char={char} onClose={() => setShowRing(false)}      onSelect={saveRing}      equippedWeapon={ring}      weaponsSource={RINGS}     title={t('weapon.ringTitle')} />}
+      {showBracelet  && <WeaponModal char={char} onClose={() => setShowBracelet(false)}  onSelect={saveBracelet}  equippedWeapon={bracelet}  weaponsSource={BRACELETS} title={t('weapon.braceletTitle')} />}
     </div>
   )
 }
