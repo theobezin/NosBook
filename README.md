@@ -20,8 +20,8 @@ Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your [Supabase pro
 
 Then run the SQL migrations **in order** in the Supabase SQL editor:
 
-1. `supabase/raid_records.sql` — table des records PVE + RLS
-2. `supabase/admin_setup.sql` — colonne `is_admin` sur `profiles` + policies admin
+1. `supabase/raid_records.sql` — raid_records table + RLS policies
+2. `supabase/admin_setup.sql` — `is_admin` column on profiles + admin policies
 
 The app runs without Supabase — it falls back to mock data so you can work on the UI without any backend config.
 
@@ -29,31 +29,31 @@ The app runs without Supabase — it falls back to mock data so you can work on 
 
 | Path | Description |
 |---|---|
-| `/` | Hub — news, fonctionnalités, stats |
-| `/players` | Recherche de joueurs |
-| `/players/:username` | Profil public (lecture seule) |
-| `/profile` | Ton compte + personnages |
-| `/raids` | Classement PVE speedrun par raid |
-| `/admin/raids` | Validation des soumissions (admins uniquement) |
-| `/auth` | Connexion / Inscription |
+| `/` | Hub — news, features, stats |
+| `/players` | Player search |
+| `/players/:username` | Public profile (read-only) |
+| `/profile` | Your account + characters |
+| `/raids` | PVE speedrun ranking per raid |
+| `/admin/raids` | Record validation (admins only) |
+| `/auth` | Sign in / Register |
 
-## Gestion des admins
+## Admin management
 
-Pour promouvoir un utilisateur admin, exécuter dans le SQL Editor Supabase :
+To promote a user to admin, run in the Supabase SQL editor:
 
 ```sql
-update public.profiles set is_admin = true where username = 'TonPseudo';
+update public.profiles set is_admin = true where username = 'YourUsername';
 ```
 
-Le lien "🛡️ Admin" apparaît automatiquement dans la Navbar pour les admins connectés.
+The "🛡️ Admin" link appears automatically in the Navbar for logged-in admins.
 
 ## Features
 
-- **Profil joueur** — personnages, équipement, armes (shells + runiques), spécialistes, fées
-- **Recherche joueurs** — parcourir les profils publics
-- **Classement PVE speedrun** — 44 raids, filtre par serveur (Undercity / Dragonveil / Global), top 10 par raid, soumission avec preuve obligatoire
-- **Panel admin** — validation / rejet des soumissions avec note optionnelle
-- **i18n** — FR / EN / DE complets
+- **Player profile** — characters, equipment, weapons (shells + runic skills), specialists, fairies
+- **Player search** — browse public profiles
+- **PVE speedrun ranking** — 44 raids, server filter (Undercity / Dragonveil / Global), top 10 per raid, submission with mandatory proof
+- **Admin panel** — approve / reject submissions with optional note
+- **i18n** — full EN / FR / DE support
 
 ## Project layout
 
@@ -68,8 +68,9 @@ src/
                           RaidsPage, AdminRaidsPage, AuthPage, NotFoundPage
 
 supabase/
-├── raid_records.sql      Migration table raid_records + RLS
-└── admin_setup.sql       Migration is_admin + policies admin
+├── raid_records.sql      Migration — raid_records table + RLS
+├── admin_setup.sql       Migration — is_admin column + admin policies
+└── SCHEMA.md             Full database schema documentation
 ```
 
 ## Build
