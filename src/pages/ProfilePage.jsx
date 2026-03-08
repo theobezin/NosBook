@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -509,14 +509,14 @@ function WeaponRunicModal({ weapon, onClose, onSave }) {
   )
 }
 
-// ── HatModal ──────────────────────────────────────────────────────────────
+// ── MultiSelectModal ──────────────────────────────────────────────────────
 
-function HatModal({ char, equipped, onClose, onSave }) {
+function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
   const { t } = useLang()
   const [selected, setSelected] = useState(equipped ?? [])
   const [query, setQuery] = useState('')
 
-  const available = HATS.filter(h => {
+  const available = items.filter(h => {
     if (h.minHero !== null) return char.heroLevel >= h.minHero
     return char.level >= h.minLevel
   })
@@ -535,7 +535,7 @@ function HatModal({ char, equipped, onClose, onSave }) {
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
 
-        <h2 className={styles.modalTitle}>{t('weapon.hatTitle')}</h2>
+        <h2 className={styles.modalTitle}>{title}</h2>
 
         <div className={styles.weaponSearch}>
           <input
@@ -650,6 +650,10 @@ function EquipmentTab({ char, onUpdate }) {
   const [showNecklace,       setShowNecklace]       = useState(false)
   const [showRing,           setShowRing]           = useState(false)
   const [showBracelet,       setShowBracelet]       = useState(false)
+  const [showCostumeWings,   setShowCostumeWings]   = useState(false)
+  const [showCostumeTop,     setShowCostumeTop]     = useState(false)
+  const [showCostumeBottom,  setShowCostumeBottom]  = useState(false)
+  const [showCostumeWeapon,  setShowCostumeWeapon]  = useState(false)
 
   const saveWeapon  = (w) => onUpdate(char.id, { equipment: { ...char.equipment, weapon:  w } })
   const saveOffhand = (w) => onUpdate(char.id, { equipment: { ...char.equipment, offhand: w } })
@@ -659,7 +663,11 @@ function EquipmentTab({ char, onUpdate }) {
   const saveShoes    = (w) => onUpdate(char.id, { equipment: { ...char.equipment, shoes:    w } })
   const saveNecklace = (w) => onUpdate(char.id, { equipment: { ...char.equipment, necklace: w } })
   const saveRing     = (w) => onUpdate(char.id, { equipment: { ...char.equipment, ring:     w } })
-  const saveBracelet = (w) => onUpdate(char.id, { equipment: { ...char.equipment, bracelet: w } })
+  const saveBracelet     = (w) => onUpdate(char.id, { equipment: { ...char.equipment, bracelet:      w } })
+  const saveCostumeWings = (h) => onUpdate(char.id, { equipment: { ...char.equipment, costumeWings: h } })
+  const saveCostumeTop   = (h) => onUpdate(char.id, { equipment: { ...char.equipment, costumeTop:   h } })
+  const saveCostumeBottom = (h) => onUpdate(char.id, { equipment: { ...char.equipment, costumeBottom: h } })
+  const saveCostumeWeapon = (h) => onUpdate(char.id, { equipment: { ...char.equipment, costumeWeapon: h } })
 
   const weapon  = char.equipment.weapon  ?? null
   const offhand = char.equipment.offhand ?? null
@@ -669,7 +677,11 @@ function EquipmentTab({ char, onUpdate }) {
   const shoes     = char.equipment.shoes     ?? null
   const necklace  = char.equipment.necklace  ?? null
   const ring      = char.equipment.ring      ?? null
-  const bracelet  = char.equipment.bracelet  ?? null
+  const bracelet      = char.equipment.bracelet      ?? null
+  const costumeWings  = Array.isArray(char.equipment.costumeWings)  ? char.equipment.costumeWings  : []
+  const costumeTop    = Array.isArray(char.equipment.costumeTop)    ? char.equipment.costumeTop    : []
+  const costumeBottom  = Array.isArray(char.equipment.costumeBottom)  ? char.equipment.costumeBottom  : []
+  const costumeWeapon  = Array.isArray(char.equipment.costumeWeapon)  ? char.equipment.costumeWeapon  : []
 
   const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
   const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
@@ -904,8 +916,96 @@ function EquipmentTab({ char, onUpdate }) {
         </div>
       </div>
 
+      {/* ── Costume Wings slot ──────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowCostumeWings(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowCostumeWings(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.costumeWings')}</span>
+        <div className={styles.equipTabRight}>
+          {costumeWings.length > 0 ? (
+            <div className={styles.hatIconRow}>
+              {costumeWings.map(h => (
+                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+              ))}
+            </div>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Costume Top slot ──────────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowCostumeTop(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowCostumeTop(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.costumeTop')}</span>
+        <div className={styles.equipTabRight}>
+          {costumeTop.length > 0 ? (
+            <div className={styles.hatIconRow}>
+              {costumeTop.map(h => (
+                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+              ))}
+            </div>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Costume Bottom slot ───────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowCostumeBottom(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowCostumeBottom(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.costumeBottom')}</span>
+        <div className={styles.equipTabRight}>
+          {costumeBottom.length > 0 ? (
+            <div className={styles.hatIconRow}>
+              {costumeBottom.map(h => (
+                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+              ))}
+            </div>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
+      {/* ── Costume Weapon slot ──────────────────────────────────── */}
+      <div
+        className={`${styles.equipTabRow} ${styles.equipTabRowClickable}`}
+        onClick={() => setShowCostumeWeapon(true)}
+        role="button" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowCostumeWeapon(true) }}
+      >
+        <span className={styles.equipTabLabel}>{t('equipKeys.costumeWeapon')}</span>
+        <div className={styles.equipTabRight}>
+          {costumeWeapon.length > 0 ? (
+            <div className={styles.hatIconRow}>
+              {costumeWeapon.map(h => (
+                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+              ))}
+            </div>
+          ) : (
+            <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+          )}
+          <span className={styles.equipTabEdit}>✏️</span>
+        </div>
+      </div>
+
       {/* ── Other slots — display only ───────────────────────── */}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet').map(key => (
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet' && k !== 'costumeWings' && k !== 'costumeTop' && k !== 'costumeBottom' && k !== 'costumeWeapon').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -924,14 +1024,18 @@ function EquipmentTab({ char, onUpdate }) {
       {showOffhandShell   && offhand && <WeaponShellModal   weapon={offhand} onClose={() => setShowOffhandShell(false)}   onSave={saveOffhand} />}
       {showArmor        && <WeaponModal char={char} onClose={() => setShowArmor(false)} onSelect={saveArmor} equippedWeapon={armor} weaponsSource={ARMORS} title={t('weapon.armorTitle')} />}
       {showArmorEnhance && armor && <WeaponEnhanceModal weapon={armor} onClose={() => setShowArmorEnhance(false)} onSave={saveArmor} />}
-      {showHat          && <HatModal char={char} equipped={hats} onClose={() => setShowHat(false)} onSave={saveHat} />}
+      {showHat          && <MultiSelectModal title={t('weapon.hatTitle')} items={HATS} char={char} equipped={hats} onClose={() => setShowHat(false)} onSave={saveHat} />}
       {showGloves        && <WeaponModal char={char} onClose={() => setShowGloves(false)} onSelect={saveGloves} equippedWeapon={gloves} weaponsSource={GLOVES} title={t('weapon.glovesTitle')} />}
       {showGlovesEnhance && gloves && <WeaponEnhanceModal weapon={gloves} onClose={() => setShowGlovesEnhance(false)} onSave={saveGloves} />}
       {showShoes         && <WeaponModal char={char} onClose={() => setShowShoes(false)} onSelect={saveShoes} equippedWeapon={shoes} weaponsSource={SHOES} title={t('weapon.shoesTitle')} />}
       {showShoesEnhance  && shoes  && <WeaponEnhanceModal weapon={shoes}  onClose={() => setShowShoesEnhance(false)}  onSave={saveShoes}  />}
       {showNecklace  && <WeaponModal char={char} onClose={() => setShowNecklace(false)}  onSelect={saveNecklace}  equippedWeapon={necklace}  weaponsSource={NECKLACES} title={t('weapon.necklaceTitle')} />}
       {showRing      && <WeaponModal char={char} onClose={() => setShowRing(false)}      onSelect={saveRing}      equippedWeapon={ring}      weaponsSource={RINGS}     title={t('weapon.ringTitle')} />}
-      {showBracelet  && <WeaponModal char={char} onClose={() => setShowBracelet(false)}  onSelect={saveBracelet}  equippedWeapon={bracelet}  weaponsSource={BRACELETS} title={t('weapon.braceletTitle')} />}
+      {showBracelet      && <WeaponModal char={char} onClose={() => setShowBracelet(false)}      onSelect={saveBracelet}      equippedWeapon={bracelet}  weaponsSource={BRACELETS}      title={t('weapon.braceletTitle')} />}
+      {showCostumeWings  && <MultiSelectModal title={t('weapon.costumeWingsTitle')}  items={COSTUME_WINGS}  char={char} equipped={costumeWings}  onClose={() => setShowCostumeWings(false)}  onSave={saveCostumeWings} />}
+      {showCostumeTop    && <MultiSelectModal title={t('weapon.costumeTopTitle')}    items={COSTUME_TOPS}   char={char} equipped={costumeTop}    onClose={() => setShowCostumeTop(false)}    onSave={saveCostumeTop} />}
+      {showCostumeBottom  && <MultiSelectModal title={t('weapon.costumeBottomTitle')}  items={COSTUME_BOTTOMS}  char={char} equipped={costumeBottom}  onClose={() => setShowCostumeBottom(false)}  onSave={saveCostumeBottom} />}
+      {showCostumeWeapon  && <MultiSelectModal title={t('weapon.costumeWeaponTitle')}  items={COSTUME_WEAPONS[char.class] ?? []}  char={char} equipped={costumeWeapon}  onClose={() => setShowCostumeWeapon(false)}  onSave={saveCostumeWeapon} />}
     </div>
   )
 }

@@ -106,7 +106,30 @@ function EquipmentTab({ char }) {
           </div>
         )
       })()}
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet').map(key => (
+      {/* Costume icon rows */}
+      {[
+        ['costumeWings',  t('equipKeys.costumeWings')],
+        ['costumeTop',    t('equipKeys.costumeTop')],
+        ['costumeBottom', t('equipKeys.costumeBottom')],
+        ['costumeWeapon', t('equipKeys.costumeWeapon')],
+      ].map(([key, label]) => {
+        const items = Array.isArray(char.equipment[key]) ? char.equipment[key] : []
+        return (
+          <div key={key} className={styles.equipTabRow}>
+            <span className={styles.equipTabLabel}>{label}</span>
+            {items.length > 0 ? (
+              <div className={styles.hatIconRow}>
+                {items.map(h => (
+                  <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                ))}
+              </div>
+            ) : (
+              <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+            )}
+          </div>
+        )
+      })}
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet' && k !== 'costumeWings' && k !== 'costumeTop' && k !== 'costumeBottom' && k !== 'costumeWeapon').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
