@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -1330,21 +1330,22 @@ function FairyPickerModal({ onClose, onAdd, existing }) {
 
 // ── FairyEditModal ─────────────────────────────────────────────────────────
 
-const FAIRY_RUNE_TIER_COLORS = { 1: '#a78bfa', 2: '#60a5fa', 3: '#f97316' }
+const FAIRY_RUNE_RANKS = ['C', 'B', 'A', 'S']
 
 function FairyEditModal({ fairy, onClose, onSave }) {
   const { t } = useLang()
   const [improvement, setImprovement] = useState(fairy.improvement ?? 0)
   const [rune,        setRune]        = useState(fairy.rune ?? [])
   const [selEffect,   setSelEffect]   = useState(FAIRY_RUNE_EFFECTS[0].key)
+  const [selRank,     setSelRank]     = useState('C')
   const [selValue,    setSelValue]    = useState('')
 
-  const currentTier = improvement >= 7 ? 3 : improvement >= 4 ? 2 : improvement >= 1 ? 1 : 0
+  const currentTier  = improvement >= 7 ? 3 : improvement >= 4 ? 2 : improvement >= 1 ? 1 : 0
   const availEffects = FAIRY_RUNE_EFFECTS.filter(e => e.tier <= currentTier)
 
   const handleAdd = () => {
     if (selValue === '') return
-    setRune(prev => [...prev, { key: selEffect, value: Number(selValue) }])
+    setRune(prev => [...prev, { key: selEffect, rank: selRank, value: Number(selValue) }])
     setSelValue('')
   }
 
@@ -1385,13 +1386,12 @@ function FairyEditModal({ fairy, onClose, onSave }) {
             <div className={styles.shellEmpty}>{t('fairy.runeEmpty')}</div>
           ) : rune.map((eff, idx) => {
             const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
-            const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+            const color = FAIRY_RUNE_RANK_COLORS[eff.rank ?? 'C']
             return (
               <div key={idx} className={styles.shellEffectRow} style={{ color }}>
-                <span className={styles.fairyRuneTierBadge} style={{ borderColor: color, color }}>
-                  {t(`fairy.tier${def?.tier ?? 1}`)}
-                </span>
+                <span className={styles.shellEffectRank}>{eff.rank ?? 'C'}</span>
                 <span className={styles.shellEffectLabel}>{def?.label?.replace('X', eff.value) ?? eff.key}</span>
+                <span className={styles.shellEffectValue}>{eff.value}</span>
                 <button className={styles.shellDeleteBtn} onClick={() => handleDelete(idx)}>✕</button>
               </div>
             )
@@ -1405,7 +1405,26 @@ function FairyEditModal({ fairy, onClose, onSave }) {
               <label className={styles.modalLabel}>{t('fairy.runeEffect')}</label>
               <EffectSelect effects={availEffects} value={selEffect} onChange={setSelEffect} />
             </div>
+
             <div className={styles.shellAddRow}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>{t('weapon.shellRank')}</label>
+                <div className={styles.rankButtons}>
+                  {FAIRY_RUNE_RANKS.map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      className={styles.rankBtn}
+                      style={{
+                        color:           FAIRY_RUNE_RANK_COLORS[r],
+                        borderColor:     selRank === r ? FAIRY_RUNE_RANK_COLORS[r] : 'transparent',
+                        backgroundColor: selRank === r ? `${FAIRY_RUNE_RANK_COLORS[r]}22` : 'transparent',
+                      }}
+                      onClick={() => setSelRank(r)}
+                    >{r}</button>
+                  ))}
+                </div>
+              </div>
               <div className={styles.modalField}>
                 <label className={styles.modalLabel}>{t('weapon.shellValue')}</label>
                 <input
@@ -1480,18 +1499,13 @@ function FairiesTab({ char, onUpdate }) {
 
                 <div className={styles.spCardBadges}>
                   <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{f.improvement}</span>
-                  {f.rune.length > 0 && (
-                    <span className={`${styles.spBadge} ${styles.fairyRuneBadge}`}>
-                      {t('fairy.runeLabel')} {f.rune.length}
-                    </span>
-                  )}
                 </div>
 
                 {f.rune.length > 0 && (
                   <div className={styles.fairyRuneEffects}>
                     {f.rune.map((eff, i) => {
                       const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
-                      const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+                      const color = FAIRY_RUNE_RANK_COLORS[eff.rank ?? 'C']
                       return (
                         <div key={i} className={styles.fairyRuneEffectRow} style={{ color }}>
                           {def?.label?.replace('X', eff.value) ?? eff.key}

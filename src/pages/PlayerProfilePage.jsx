@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -186,7 +186,6 @@ function SpecialistsTab({ char }) {
   )
 }
 
-const FAIRY_RUNE_TIER_COLORS = { 1: '#a78bfa', 2: '#60a5fa', 3: '#f97316' }
 
 function FairiesTab({ char }) {
   const { t } = useLang()
@@ -207,17 +206,12 @@ function FairiesTab({ char }) {
             </div>
             <div className={styles.spCardBadges}>
               <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{f.improvement}</span>
-              {f.rune?.length > 0 && (
-                <span className={`${styles.spBadge} ${styles.fairyRuneBadge}`}>
-                  {t('fairy.runeLabel')} {f.rune.length}
-                </span>
-              )}
             </div>
             {f.rune?.length > 0 && (
               <div className={styles.fairyRuneEffects}>
                 {f.rune.map((eff, i) => {
                   const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
-                  const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+                  const color = FAIRY_RUNE_RANK_COLORS[eff.rank ?? 'C']
                   return (
                     <div key={i} className={styles.fairyRuneEffectRow} style={{ color }}>
                       {def?.label?.replace('X', eff.value) ?? eff.key}

@@ -151,9 +151,6 @@ export default {
     runeEmpty:   'Keine Runeneffekte.',
     runeLabel:   'Rune ×',
     editRune:    '✦ Rune & Verbesserung bearbeiten',
-    tier1:       'T1',
-    tier2:       'T2',
-    tier3:       'T3',
   },
   sp: {
     addBtn:           'Spezialist hinzufügen',

@@ -110,6 +110,13 @@ export const SHELL_RANK_COLORS = {
   S: '#c7f998',
 }
 
+export const FAIRY_RUNE_RANK_COLORS = {
+  C: '#ffcc12',
+  B: '#86db5a',
+  A: '#b7e58c',
+  S: '#9370b4',
+}
+
 export const SHELL_EFFECTS = [
   { key: 'atkBoost',    label: 'Attaque augmentée',                                              ranges: { C:[22,95],  B:[44,142],  A:[87,190] } },
   { key: 'dmgIncrease', label: 'Les dégâts augmentent',                                          ranges: { S:[5,19] } },
