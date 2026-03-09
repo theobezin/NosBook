@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
@@ -19,9 +19,129 @@ function parseTime(str) {
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
+// ── RaidSelect ────────────────────────────────────────────────────────────────
+
+function RaidSelect({ value, onChange, lang, t }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = RAIDS.find(r => r.slug === value) ?? null
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div className={styles.raidSelect} ref={ref}>
+      <button
+        type="button"
+        className={styles.raidSelectTrigger}
+        onClick={() => setOpen(o => !o)}
+      >
+        {selected ? (
+          <>
+            <img
+              src={`https://nosapki.com/images/icons/${selected.icon}.png`}
+              alt=""
+              className={styles.raidSelectIcon}
+            />
+            <span className={styles.raidSelectName}>{selected[lang] ?? selected.en}</span>
+          </>
+        ) : (
+          <span className={styles.raidSelectPlaceholder}>{t('raids.formRaidPlaceholder')}</span>
+        )}
+        <span className={styles.raidSelectArrow}>▾</span>
+      </button>
+
+      {open && (
+        <div className={styles.raidSelectDropdown}>
+          {RAID_CATEGORIES.map(cat => {
+            const raids = RAIDS.filter(r => r.act === cat.key)
+            if (!raids.length) return null
+            return (
+              <div key={cat.key}>
+                <div className={styles.raidSelectGroupLabel}>{cat[lang] ?? cat.en}</div>
+                {raids.map(r => (
+                  <button
+                    key={r.slug}
+                    type="button"
+                    className={`${styles.raidSelectOption} ${value === r.slug ? styles.raidSelectOptionActive : ''}`}
+                    onClick={() => { onChange(r.slug); setOpen(false) }}
+                  >
+                    <img
+                      src={`https://nosapki.com/images/icons/${r.icon}.png`}
+                      alt=""
+                      className={styles.raidSelectIcon}
+                    />
+                    <span>{r[lang] ?? r.en}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── MemberInput ───────────────────────────────────────────────────────────────
+
+function MemberInput({ value, onChange, placeholder, characters, server }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  const suggestions = useMemo(() => {
+    const q = value.trim().toLowerCase()
+    if (q.length < 2) return []
+    return characters
+      .filter(c => c.server === server && c.name.toLowerCase().includes(q))
+      .slice(0, 6)
+  }, [value, characters, server])
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div className={styles.memberAutocomplete} ref={ref}>
+      <input
+        className={styles.fieldInput}
+        value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        maxLength={30}
+        autoComplete="off"
+      />
+      {open && suggestions.length > 0 && (
+        <div className={styles.memberSuggestions}>
+          {suggestions.map(c => (
+            <button
+              key={c.name}
+              type="button"
+              className={styles.memberSuggestion}
+              onMouseDown={e => { e.preventDefault(); onChange(c.name); setOpen(false) }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── SubmitModal ───────────────────────────────────────────────────────────────
 
-function SubmitModal({ onClose, t, lang }) {
+function SubmitModal({ onClose, t, lang, characters }) {
   const { user } = useAuth()
 
   const [form, setForm] = useState({
@@ -114,16 +234,12 @@ function SubmitModal({ onClose, t, lang }) {
           {/* Raid */}
           <div className={styles.field}>
             <label className={styles.fieldLabel}>{t('raids.formRaid')}</label>
-            <select
-              className={styles.fieldSelect}
+            <RaidSelect
               value={form.raidSlug}
-              onChange={e => setField('raidSlug', e.target.value)}
-            >
-              <option value="">{t('raids.formRaidPlaceholder')}</option>
-              {RAIDS.map(r => (
-                <option key={r.slug} value={r.slug}>{r[lang] ?? r.en}</option>
-              ))}
-            </select>
+              onChange={v => setField('raidSlug', v)}
+              lang={lang}
+              t={t}
+            />
           </div>
 
           {/* Serveur */}
@@ -150,12 +266,12 @@ function SubmitModal({ onClose, t, lang }) {
             <div className={styles.teamList}>
               {form.teamMembers.map((m, idx) => (
                 <div key={idx} className={styles.teamRow}>
-                  <input
-                    className={styles.fieldInput}
+                  <MemberInput
                     value={m}
-                    onChange={e => setMember(idx, e.target.value)}
+                    onChange={v => setMember(idx, v)}
                     placeholder={`${t('raids.formMemberPlaceholder')} ${idx + 1}`}
-                    maxLength={30}
+                    characters={characters}
+                    server={form.server}
                   />
                   {form.teamMembers.length > 1 && (
                     <button className={styles.removeBtn} onClick={() => removeMember(idx)} aria-label="Retirer">✕</button>
@@ -227,7 +343,7 @@ function SubmitModal({ onClose, t, lang }) {
 
 // ── RaidCard ──────────────────────────────────────────────────────────────────
 
-function RaidCard({ raid, records, expanded, onToggle, t, lang }) {
+function RaidCard({ raid, records, expanded, onToggle, charMap, t, lang }) {
   const best = records[0] ?? null
 
   return (
@@ -238,7 +354,23 @@ function RaidCard({ raid, records, expanded, onToggle, t, lang }) {
           {best ? (
             <span className={styles.raidBest}>
               🥇 <strong>{formatTime(best.time_seconds)}</strong>
-              <span className={styles.raidBestTeam}> · {best.team_members.join(', ')}</span>
+              <span className={styles.raidBestTeam}> · {best.team_members.map((m, i) => {
+                const username = charMap?.[best.server]?.[m]
+                return (
+                  <span key={i}>
+                    {i > 0 && ', '}
+                    {username ? (
+                      <Link
+                        to={`/players/${username}`}
+                        className={styles.lbTeamLink}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {m}
+                      </Link>
+                    ) : m}
+                  </span>
+                )
+              })}</span>
             </span>
           ) : (
             <span className={styles.raidNone}>{t('raids.noRecord')}</span>
@@ -266,7 +398,25 @@ function RaidCard({ raid, records, expanded, onToggle, t, lang }) {
                   }
                 </div>
                 <div className={styles.lbTime}>{formatTime(rec.time_seconds)}</div>
-                <div className={styles.lbTeam}>{rec.team_members.join(', ')}</div>
+                <div className={styles.lbTeam}>
+                  {rec.team_members.map((m, i) => {
+                    const username = charMap?.[rec.server]?.[m]
+                    return (
+                      <span key={i}>
+                        {i > 0 && ', '}
+                        {username ? (
+                          <Link
+                            to={`/players/${username}`}
+                            className={styles.lbTeamLink}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {m}
+                          </Link>
+                        ) : m}
+                      </span>
+                    )
+                  })}
+                </div>
                 <div className={styles.lbRight}>
                   <span
                     className={styles.lbServerBadge}
@@ -306,6 +456,16 @@ export default function RaidsPage() {
   const [loading,      setLoading]      = useState(true)
   const [expandedSlug, setExpandedSlug] = useState(null)
   const [showSubmit,   setShowSubmit]   = useState(false)
+  const [characters,   setCharacters]   = useState([])
+
+  useEffect(() => {
+    if (!hasSupabase) return
+    supabase
+      .from('characters')
+      .select('name, server, profiles(username)')
+      .not('server', 'is', null)
+      .then(({ data }) => setCharacters(data ?? []))
+  }, [])
 
   useEffect(() => {
     if (!hasSupabase) { setLoading(false); return }
@@ -350,6 +510,20 @@ export default function RaidsPage() {
       return { cat, raids: sorted }
     }).filter(({ raids }) => raids.length > 0)
   }, [filteredRaids, recordsByRaid])
+
+  // charMap[server][charName] = profileUsername — pour les liens dans le leaderboard
+  const charMap = useMemo(() => {
+    const map = {}
+    for (const c of characters) {
+      const s = c.server
+      const u = c.profiles?.username
+      if (s && u) {
+        if (!map[s]) map[s] = {}
+        map[s][c.name] = u
+      }
+    }
+    return map
+  }, [characters])
 
   const raidsCovered = Object.keys(recordsByRaid).length
 
@@ -438,6 +612,7 @@ export default function RaidsPage() {
                   records={recordsByRaid[raid.slug] ?? []}
                   expanded={expandedSlug === raid.slug}
                   onToggle={() => setExpandedSlug(p => p === raid.slug ? null : raid.slug)}
+                  charMap={charMap}
                   t={t}
                   lang={lang}
                 />
@@ -449,7 +624,7 @@ export default function RaidsPage() {
 
       {/* ── Modale de soumission ── */}
       {showSubmit && (
-        <SubmitModal onClose={() => setShowSubmit(false)} t={t} lang={lang} />
+        <SubmitModal onClose={() => setShowSubmit(false)} t={t} lang={lang} characters={characters} />
       )}
 
     </div>

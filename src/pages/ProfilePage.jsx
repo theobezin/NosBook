@@ -3,6 +3,8 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
+import { supabase, hasSupabase } from '@/lib/supabase'
+import { SERVER_COLORS } from '@/lib/utils'
 import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
@@ -11,10 +13,11 @@ import styles from './ProfilePage.module.css'
 
 const MAX_CHARS = 4
 
-function makeCharacter(name, cls, level, heroLevel) {
+function makeCharacter(name, cls, level, heroLevel, server) {
   return {
     id:          `char-${Date.now()}`,
     name:        name.trim(),
+    server:      server ?? null,
     class:       cls,
     level:       Math.max(1, Math.min(99, parseInt(level) || 1)),
     heroLevel:   Math.max(0, parseInt(heroLevel) || 0),
@@ -31,23 +34,34 @@ function makeCharacter(name, cls, level, heroLevel) {
 
 // ── CreateModal ────────────────────────────────────────────────────────────
 
-function CreateModal({ onClose, onCreate }) {
+function CreateModal({ onClose, onCreate, server }) {
   const { t } = useLang()
-  const [name,      setName]      = useState('')
-  const [cls,       setCls]       = useState('Archer')
-  const [level,     setLevel]     = useState('99')
-  const [heroLevel, setHeroLevel] = useState('0')
-  const [error,     setError]     = useState('')
+  const [name,       setName]       = useState('')
+  const [cls,        setCls]        = useState('Archer')
+  const [level,      setLevel]      = useState('99')
+  const [heroLevel,  setHeroLevel]  = useState('0')
+  const [error,      setError]      = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const CLASS_KEYS = Object.keys(CLASSES)
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim())                    { setError(t('create.errName'));    return }
     if (name.trim().length < 3)          { setError(t('create.errNameLen')); return }
     const lvl = parseInt(level)
     if (!lvl || lvl < 1 || lvl > 99)    { setError(t('create.errLevel'));   return }
-    onCreate(makeCharacter(name, cls, lvl, heroLevel))
-    onClose()
+    setSubmitting(true)
+    const result = await onCreate(makeCharacter(name, cls, lvl, heroLevel, server))
+    setSubmitting(false)
+    if (result?.error) {
+      if (result.error.code === '23505') {
+        setError(t('create.errNameExists'))
+      } else {
+        setError(result.error.message ?? t('create.errName'))
+      }
+    } else {
+      onClose()
+    }
   }
 
   return (
@@ -116,8 +130,10 @@ function CreateModal({ onClose, onCreate }) {
         {error && <div className={styles.modalError}>⚠️ {error}</div>}
 
         <div className={styles.modalActions}>
-          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
-          <Button variant="solid" size="md" onClick={handleCreate}>{t('create.submit')}</Button>
+          <Button variant="ghost" size="md" onClick={onClose} disabled={submitting}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleCreate} disabled={submitting}>
+            {submitting ? '…' : t('create.submit')}
+          </Button>
         </div>
 
       </div>
@@ -928,13 +944,56 @@ function BooksTab() {
 // ── ProfilePage ────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { t } = useLang()
   const { characters, addCharacter, updateCharacter, loading } = useCharacters()
 
-  const [selectedIdx, setSelectedIdx] = useState(0)
-  const [showCreate,  setShowCreate]  = useState(false)
-  const [activeTab,   setActiveTab]   = useState('equipment')
+  const [selectedIdx,    setSelectedIdx]    = useState(0)
+  const [showCreate,     setShowCreate]     = useState(false)
+  const [activeTab,      setActiveTab]      = useState('equipment')
+  const [profileServer,  setProfileServer]  = useState(null)
+  const [serverEditing,  setServerEditing]  = useState(false)
+  const [serverSaving,   setServerSaving]   = useState(false)
+  const [serverDraft,    setServerDraft]    = useState(null)
+
+  // Load profile.server on mount
+  useEffect(() => {
+    if (!user || !hasSupabase) return
+    supabase
+      .from('profiles')
+      .select('server')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.server) {
+          setProfileServer(data.server)
+        } else {
+          setServerEditing(true) // Show selector immediately if not set
+        }
+      })
+  }, [user?.id])
+
+  const saveServer = async () => {
+    if (!serverDraft || !user || !hasSupabase) return
+    setServerSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ server: serverDraft })
+      .eq('id', user.id)
+    if (!error) {
+      // Backfill existing characters that have no server yet
+      await supabase
+        .from('characters')
+        .update({ server: serverDraft })
+        .eq('profile_id', user.id)
+        .is('server', null)
+    }
+    setServerSaving(false)
+    if (!error) {
+      setProfileServer(serverDraft)
+      setServerEditing(false)
+    }
+  }
 
   const data = characters[selectedIdx] ?? null
   const cls  = data ? (CLASSES[data.class] ?? CLASSES.Archer) : null
@@ -946,9 +1005,11 @@ export default function ProfilePage() {
     { key: 'books',       label: t('tabs.books')        },
   ]
 
-  const handleCreate = (char) => {
-    setSelectedIdx(characters.length)
-    addCharacter(char)
+  const handleCreate = async (char) => {
+    const newIdx = characters.length
+    const result = await addCharacter(char)
+    if (!result?.error) setSelectedIdx(newIdx)
+    return result
   }
 
   // ── Not authenticated ────────────────────────────────────────────────────
@@ -970,7 +1031,79 @@ export default function ProfilePage() {
 
       {/* ── Character Selector ─────────────────────────────────────── */}
       <div className={styles.selectorSection}>
-        <h2 className={styles.selectorTitle}>{t('profile.myCharacters')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+          <h2 className={styles.selectorTitle} style={{ margin: 0 }}>{t('profile.myCharacters')}</h2>
+
+          {/* Server selector */}
+          {!serverEditing && profileServer ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.04em',
+                color: SERVER_COLORS[profileServer],
+                border: `1px solid ${SERVER_COLORS[profileServer]}55`,
+                borderRadius: '999px', padding: '0.2rem 0.7rem',
+              }}>
+                ● {t(`raids.server.${profileServer}`)}
+              </span>
+              <button
+                style={{ fontSize: '0.72rem', color: 'var(--text-faint)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { setServerDraft(profileServer); setServerEditing(true) }}
+              >
+                {t('profile.serverChange')}
+              </button>
+            </div>
+          ) : serverEditing && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                {t('profile.serverLabel')} :
+              </span>
+              {['undercity', 'dragonveil'].map(s => (
+                <label
+                  key={s}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                    padding: '0.35rem 0.8rem',
+                    border: `1px solid ${serverDraft === s ? SERVER_COLORS[s] : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.83rem', cursor: 'pointer',
+                    color: serverDraft === s ? 'var(--text)' : 'var(--text-dim)',
+                    background: serverDraft === s ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    transition: 'border-color 0.15s',
+                    userSelect: 'none',
+                  }}
+                >
+                  <input type="radio" name="profileServer" value={s} checked={serverDraft === s} onChange={() => setServerDraft(s)} hidden />
+                  <span style={{ color: SERVER_COLORS[s], fontSize: '0.6rem' }}>●</span>
+                  {t(`raids.server.${s}`)}
+                </label>
+              ))}
+              <button
+                style={{
+                  fontSize: '0.8rem', fontWeight: 600,
+                  padding: '0.35rem 0.85rem',
+                  background: serverDraft ? 'var(--gold-faint)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${serverDraft ? 'var(--gold-dim)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-sm)',
+                  color: serverDraft ? 'var(--gold-light)' : 'var(--text-faint)',
+                  cursor: serverDraft ? 'pointer' : 'default',
+                  transition: 'all 0.15s',
+                  fontFamily: "'Exo 2', sans-serif",
+                }}
+                disabled={!serverDraft || serverSaving}
+                onClick={saveServer}
+              >
+                {serverSaving ? '…' : t('profile.serverSave')}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Warning if server not set */}
+        {!profileServer && !serverEditing && (
+          <div style={{ fontSize: '0.82rem', color: 'var(--gold-dim)', marginBottom: '0.75rem', opacity: 0.85 }}>
+            ⚠️ {t('profile.serverRequired')}
+          </div>
+        )}
         <div className={styles.selectorGrid}>
           {loading ? (
             Array.from({ length: MAX_CHARS }).map((_, i) => (
@@ -986,7 +1119,9 @@ export default function ProfilePage() {
                 <button
                   key={i}
                   className={`${styles.slot} ${styles.slotEmpty}`}
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => profileServer ? setShowCreate(true) : setServerEditing(true)}
+                  title={!profileServer ? t('profile.serverRequired') : undefined}
+                  style={!profileServer ? { opacity: 0.5 } : undefined}
                 >
                   <div className={styles.slotAddIcon}>＋</div>
                   <span className={styles.slotAddLabel}>{t('profile.addCharacter')}</span>
@@ -1092,10 +1227,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {showCreate && (
+      {showCreate && profileServer && (
         <CreateModal
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
+          server={profileServer}
         />
       )}
 

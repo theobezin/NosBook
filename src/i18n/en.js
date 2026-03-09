@@ -7,6 +7,7 @@ export default {
     signUp: 'Sign Up',
     raids:         'Ranking',
     mySubmissions: 'My Submissions',
+    myProfile:     'My Profile',
   },
   hub: {
     badge: '◆ Unofficial NosTale Companion ◆',
@@ -61,6 +62,10 @@ export default {
   profile: {
     myCharacters:   'My Characters',
     addCharacter:   'Add a character',
+    serverLabel:     'Your game server',
+    serverRequired:  'Choose your server before creating a character.',
+    serverSave:      'Confirm',
+    serverChange:    'Edit',
     lv:             'Lv.',
     heroShort:      'H.',
     heroLevel:      'Hero',
@@ -104,6 +109,7 @@ export default {
     errName:       'Name is required.',
     errNameLen:    'Name must be at least 3 characters.',
     errLevel:      'Level must be between 1 and 99.',
+    errNameExists: 'This character name is already taken on this server.',
   },
   tabs: {
     equipment:   'Equipment',

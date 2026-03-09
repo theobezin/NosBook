@@ -671,6 +671,166 @@
   line-height: 1.6;
 }
 
+/* ── RaidSelect (custom dropdown avec icônes) ──────────────────── */
+.raidSelect {
+  position: relative;
+  width: 100%;
+}
+
+.raidSelectTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+
+.raidSelectTrigger:hover,
+.raidSelectTrigger:focus {
+  border-color: var(--gold-dim);
+  outline: none;
+}
+
+.raidSelectIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.raidSelectName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raidSelectPlaceholder {
+  flex: 1;
+  color: var(--text-faint);
+}
+
+.raidSelectArrow {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.raidSelectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
+  z-index: 200;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.raidSelectGroupLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold-dim);
+  padding: 0.55rem 0.85rem 0.3rem;
+  border-top: 1px solid var(--border);
+}
+
+.raidSelectGroupLabel:first-child {
+  border-top: none;
+}
+
+.raidSelectOption {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.raidSelectOption:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.raidSelectOptionActive {
+  color: var(--gold-light);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Member autocomplete ────────────────────────────────────────── */
+.memberAutocomplete {
+  position: relative;
+  flex: 1;
+}
+
+.memberSuggestions {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.memberSuggestion {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.memberSuggestion:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+/* ── Lien membre dans leaderboard ──────────────────────────────── */
+.lbTeamLink {
+  color: var(--gold-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.lbTeamLink:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
 /* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .controls {

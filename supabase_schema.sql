@@ -18,6 +18,9 @@ create table if not exists public.profiles (
   bio        text,
   avatar_url text,
   is_admin   boolean not null default false,
+  -- Game server: 'undercity' | 'dragonveil'. One NosBook account = one server.
+  -- Nullable so existing users can set it through the profile page.
+  server     text check (server in ('undercity', 'dragonveil')),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -33,6 +36,9 @@ create table if not exists public.characters (
   profile_id  uuid references public.profiles(id) on delete cascade not null,
   sort_order  int  not null default 0,         -- slot index 0-3
   name        text not null,
+  -- Denormalized from profiles.server at creation time. Immutable after insert.
+  -- Nullable only for backward compat with rows inserted before this migration.
+  server      text check (server in ('undercity', 'dragonveil')),
   class       text not null check (class in ('Archer', 'Swordsman', 'Mage', 'Martial')),
   level       int  not null default 1 check (level between 1 and 99),
   hero_level  int  not null default 0,
@@ -50,6 +56,13 @@ create table if not exists public.characters (
 );
 
 create index if not exists characters_profile_id_idx on public.characters (profile_id);
+
+-- Global uniqueness: a character name is unique per server (mirrors the game).
+-- Uses lower() for case-insensitive comparison. Partial index: only rows where
+-- server IS NOT NULL (old rows without server are excluded from the constraint).
+create unique index if not exists characters_name_server_unique
+  on public.characters (lower(name), server)
+  where server is not null;
 
 -- ────────────────────────────────────────────────────────────
 -- RLS — profiles
@@ -166,8 +179,9 @@ create policy "admin_update_records"
   );
 
 -- ── MIGRATION — only needed if you ran the old schema before.
--- Uncomment and run these lines to clean up old tables:
 -- ────────────────────────────────────────────────────────────
+
+-- [v1 → v2] Clean up old tables (only if you ran the very first schema):
 -- drop table if exists public.activity_log;
 -- drop table if exists public.achievements;
 -- drop table if exists public.equipment;
@@ -184,3 +198,18 @@ create policy "admin_update_records"
 --   drop column if exists family_level,
 --   drop column if exists prestige,
 --   drop column if exists banner_url;
+
+-- [v3] Add server columns + unique constraint (run if tables already exist):
+-- ─────────────────────────────────────────────────────────────────────────
+-- Step 1 — add server to profiles (nullable; users set it via the profile page):
+-- alter table public.profiles
+--   add column if not exists server text check (server in ('undercity', 'dragonveil'));
+--
+-- Step 2 — add server to characters (nullable; set from profiles.server on creation):
+-- alter table public.characters
+--   add column if not exists server text check (server in ('undercity', 'dragonveil'));
+--
+-- Step 3 — create the unique index (partial: only rows with server NOT NULL):
+-- create unique index if not exists characters_name_server_unique
+--   on public.characters (lower(name), server)
+--   where server is not null;
