@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -25,6 +25,7 @@ function makeCharacter(name, cls, level, heroLevel) {
       ...Object.fromEntries([...EQUIP_KEYS, ...SPECIAL_KEYS].map(k => [k, null])),
       specialists: [],
       fairies:     [],
+      tattoos:     [],
     },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
   }
@@ -1547,6 +1548,131 @@ function FairiesTab({ char, onUpdate }) {
   )
 }
 
+// ── TattoosTab ─────────────────────────────────────────────────────────────
+
+const MAX_TATTOOS = 2
+
+function TattooPickerModal({ onClose, onAdd, existing }) {
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const filtered = TATTOOS.filter(t =>
+    t.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('tattoo.pickTitle')}</h2>
+        <div className={styles.weaponSearch}>
+          <input
+            className={styles.modalInput}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('weapon.searchPlaceholder')}
+            autoFocus
+          />
+        </div>
+        {filtered.length === 0 ? (
+          <div className={styles.weaponEmpty}>{t('weapon.noResults')}</div>
+        ) : (
+          <div className={styles.tattooGrid}>
+            {filtered.map(tattoo => {
+              const isEquipped = existing.some(e => e.name === tattoo.name)
+              return (
+                <button
+                  key={tattoo.name}
+                  type="button"
+                  className={`${styles.tattooItem} ${isEquipped ? styles.tattooItemEquipped : ''}`}
+                  disabled={isEquipped}
+                  onClick={() => { onAdd({ name: tattoo.name, icon: tattoo.icon, improvement: 0 }); onClose() }}
+                  title={tattoo.name}
+                >
+                  <img src={tattoo.icon} alt={tattoo.name} />
+                  <span className={styles.tattooItemName}>{tattoo.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TattoosTab({ char, onUpdate }) {
+  const { t } = useLang()
+  const [showPicker, setShowPicker] = useState(false)
+
+  const tattoos = Array.isArray(char.equipment.tattoos) ? char.equipment.tattoos : []
+
+  const handleAdd = (tattoo) => {
+    onUpdate(char.id, { equipment: { ...char.equipment, tattoos: [...tattoos, tattoo] } })
+  }
+
+  const handleDelete = (idx) => {
+    onUpdate(char.id, { equipment: { ...char.equipment, tattoos: tattoos.filter((_, i) => i !== idx) } })
+  }
+
+  const handleImprovement = (idx, value) => {
+    const next = tattoos.map((t, i) => i === idx ? { ...t, improvement: value } : t)
+    onUpdate(char.id, { equipment: { ...char.equipment, tattoos: next } })
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.spHeader}>
+        <Button
+          variant="primary" size="sm"
+          onClick={() => setShowPicker(true)}
+          disabled={tattoos.length >= MAX_TATTOOS}
+        >
+          {t('tattoo.addBtn')}
+        </Button>
+      </div>
+
+      {tattoos.length === 0 ? (
+        <div className={styles.spEmpty}>{t('tattoo.empty')}</div>
+      ) : (
+        <div className={styles.tattooCards}>
+          {tattoos.map((tattoo, idx) => (
+            <div key={idx} className={styles.tattooCard}>
+              <div className={styles.tattooCardLeft}>
+                <img src={tattoo.icon} alt={tattoo.name} className={styles.tattooCardIcon} />
+                <span className={styles.tattooCardName}>{tattoo.name}</span>
+              </div>
+              <div className={styles.tattooCardRight}>
+                <div className={styles.tattooImprovRow}>
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`${styles.fairyImprovBtn} ${tattoo.improvement === i ? styles.fairyImprovBtnActive : ''}`}
+                      onClick={() => handleImprovement(idx, i)}
+                    >+{i}</button>
+                  ))}
+                </div>
+                <button className={styles.spCardDelete} onClick={() => handleDelete(idx)}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showPicker && (
+        <TattooPickerModal
+          existing={tattoos}
+          onClose={() => setShowPicker(false)}
+          onAdd={handleAdd}
+        />
+      )}
+    </div>
+  )
+}
+
 // ── BooksTab ───────────────────────────────────────────────────────────────
 
 function BooksTab() {
@@ -1652,8 +1778,9 @@ export default function ProfilePage() {
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
     { key: 'specialists', label: t('tabs.specialists')  },
-    { key: 'fairies',     label: t('tabs.fairies')      },
-    { key: 'books',       label: t('tabs.books')        },
+    { key: 'fairies',   label: t('tabs.fairies')   },
+    { key: 'tattoos',   label: t('tabs.tattoos')   },
+    { key: 'books',     label: t('tabs.books')     },
   ]
 
   const handleCreate = (char) => {
@@ -1787,8 +1914,9 @@ export default function ProfilePage() {
           <div className={styles.tabPanel}>
             {activeTab === 'equipment'   && <EquipmentTab   char={data} onUpdate={updateCharacter} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'fairies'     && <FairiesTab     char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'books'       && <BooksTab />}
+            {activeTab === 'fairies'  && <FairiesTab  char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'tattoos'  && <TattoosTab  char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'books'    && <BooksTab />}
           </div>
 
         </div>

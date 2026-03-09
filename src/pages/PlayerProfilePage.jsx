@@ -227,6 +227,31 @@ function FairiesTab({ char }) {
   )
 }
 
+function TattoosTab({ char }) {
+  const { t } = useLang()
+  const tattoos = Array.isArray(char.equipment.tattoos) ? char.equipment.tattoos : []
+
+  if (tattoos.length === 0) {
+    return <div className={styles.spEmpty}>{t('tattoo.empty')}</div>
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.tattooCards}>
+        {tattoos.map((tattoo, idx) => (
+          <div key={idx} className={styles.tattooCard}>
+            <div className={styles.tattooCardLeft}>
+              <img src={tattoo.icon} alt={tattoo.name} className={styles.tattooCardIcon} />
+              <span className={styles.tattooCardName}>{tattoo.name}</span>
+            </div>
+            <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{tattoo.improvement}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function BooksTab() {
   const { t } = useLang()
   return (
@@ -283,8 +308,9 @@ export default function PlayerProfilePage() {
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
     { key: 'specialists', label: t('tabs.specialists')  },
-    { key: 'fairies',     label: t('tabs.fairies')      },
-    { key: 'books',       label: t('tabs.books')        },
+    { key: 'fairies',  label: t('tabs.fairies')  },
+    { key: 'tattoos',  label: t('tabs.tattoos')  },
+    { key: 'books',    label: t('tabs.books')    },
   ]
 
   // ── Loading ──────────────────────────────────────────────────────────────
@@ -441,8 +467,9 @@ export default function PlayerProfilePage() {
           <div className={styles.tabPanel}>
             {activeTab === 'equipment'   && <EquipmentTab   char={data} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} />}
-            {activeTab === 'fairies'     && <FairiesTab     char={data} />}
-            {activeTab === 'books'       && <BooksTab />}
+            {activeTab === 'fairies'  && <FairiesTab  char={data} />}
+            {activeTab === 'tattoos'  && <TattoosTab  char={data} />}
+            {activeTab === 'books'    && <BooksTab />}
           </div>
 
         </div>

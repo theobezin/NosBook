@@ -109,6 +109,7 @@ export default {
     equipment:   'Ausrüstung',
     specialists: 'Spezialisten',
     fairies:     'Feen',
+    tattoos:     'Tätowierungen',
     books:       'Bücher',
     booksSoon:   'Bücher demnächst verfügbar.',
   },
@@ -141,6 +142,11 @@ export default {
     costumeWeapon:  '⚔️ Waffenkostüm',
     fairy:         '🦋 Fee',
     empty:         'Leer',
+  },
+  tattoo: {
+    addBtn:    '+ Tätowierung hinzufügen',
+    empty:     'Noch keine Tätowierungen hinzugefügt.',
+    pickTitle: 'Tätowierung auswählen',
   },
   fairy: {
     addBtn:      '+ Fee hinzufügen',
