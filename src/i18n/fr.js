@@ -252,7 +252,7 @@ export default {
       todayBtn:    'Auj.',
       todayBadge:  "AUJOURD'HUI",
       addActivity: '+ ACTIVITÉ',
-      addShort:    '+ ADD',
+      addShort:    '+ Ajouter',
       emptyDay:    'Aucune activité ce jour — cliquez sur + ACTIVITÉ pour en ajouter.',
     },
     farm: {

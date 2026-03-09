@@ -55,8 +55,8 @@ export function usePlannerData(defaultCharName) {
         theme:      d.theme      ?? DEFAULT_DATA.theme,
         chars:      Array.isArray(d.chars) && d.chars.length > 0
                       ? d.chars
-                      : [defaultCharName],
-        activeChar: d.activeChar ?? defaultCharName,
+                      : [],
+        activeChar: d.activeChar ?? null,
         blocks:     Array.isArray(d.blocks) ? d.blocks : [],
         checks:     d.checks     && typeof d.checks === 'object'  ? d.checks : {},
         raids:      d.raids      && typeof d.raids  === 'object'  ? d.raids  : {},
@@ -69,7 +69,7 @@ export function usePlannerData(defaultCharName) {
   }
 
   function defaultState() {
-    return { ...DEFAULT_DATA, chars: [defaultCharName], activeChar: defaultCharName }
+    return { ...DEFAULT_DATA }
   }
 
   // ── Chargement ────────────────────────────────────────────────────────────
@@ -185,8 +185,8 @@ export function usePlannerData(defaultCharName) {
     syncErr,
     // Data fields (avec fallback pour éviter undefined pendant le chargement)
     theme:      data?.theme      ?? DEFAULT_DATA.theme,
-    chars:      data?.chars      ?? [defaultCharName],
-    activeChar: data?.activeChar ?? defaultCharName,
+    chars:      data?.chars      ?? [],
+    activeChar: data?.activeChar ?? null,
     blocks:     data?.blocks     ?? [],
     checks:     data?.checks     ?? {},
     raids:      data?.raids      ?? {},
