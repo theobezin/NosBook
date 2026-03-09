@@ -8,6 +8,7 @@ import { useAuth }        from '@/hooks/useAuth'
 import { usePlannerData } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
+import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
 
 // ── Theme NosBook (fixe, cohérent avec le reste de l'app) ─────────────────
 const NOSBOOK_THEME = {
@@ -19,81 +20,6 @@ const NOSBOOK_THEME = {
   modalBg:'#13151c', scrollbar:'rgba(201,168,76,.3)', dayBg:'rgba(255,255,255,.02)', dayActive:'rgba(201,168,76,.08)',
 }
 
-// ── Raids ─────────────────────────────────────────────────────────────────
-const RAID_LIST = [
-  { id:0,   name:'Mère Cuby',                  icon:'1127', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:1,   name:'Ginseng',                    icon:'1128', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:2,   name:'Castra obscur',              icon:'1129', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:3,   name:'Araignée noire géante',      icon:'1130', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:4,   name:'Slade géant',                icon:'1131', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:5,   name:'Roi poulet',                 icon:'1195', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:6,   name:'Namaju',                     icon:'1226', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:7,   name:'Herbin géant',               icon:'1234', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:12,  name:"Capitaine Pete O'Peng",      icon:'1440', type:'Acte 1',    color:'#2ecc71', cooldown:24 },
-  { id:100, name:'Mère Cuby HC',               icon:'1127', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:101, name:'Ginseng HC',                 icon:'1128', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:102, name:'Castra obscur HC',           icon:'1129', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:103, name:'Araignée noire géante HC',   icon:'1130', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:104, name:'Slade géant HC',             icon:'1131', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:105, name:'Roi poulet HC',              icon:'1195', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:106, name:'Namaju HC',                  icon:'1226', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:107, name:'Herbin géant HC',            icon:'1234', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:112, name:"Capitaine Pete O'Peng HC",   icon:'1440', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:9,   name:'Ibrahim',                    icon:'1892', type:'Acte 5',    color:'#e74c3c', cooldown:24 },
-  { id:13,  name:'Kertos',                     icon:'2460', type:'Acte 5',    color:'#e74c3c', cooldown:24 },
-  { id:14,  name:'Valakus',                    icon:'2461', type:'Acte 5',    color:'#e74c3c', cooldown:24 },
-  { id:15,  name:'Grenigas',                   icon:'2462', type:'Acte 5',    color:'#e74c3c', cooldown:24 },
-  { id:16,  name:'Sire Draco',                 icon:'2547', type:'Acte 5',    color:'#e74c3c', cooldown:24, dailyLimit:5 },
-  { id:17,  name:'Glacerus le Rude',           icon:'2583', type:'Acte 5',    color:'#e74c3c', cooldown:24, dailyLimit:5 },
-  { id:27,  name:'Yertirand corrompu',         icon:'2942', type:'Acte 5',    color:'#e74c3c', cooldown:24 },
-  { id:109, name:'Ibrahim HC',                 icon:'1892', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:113, name:'Kertos HC',                  icon:'2460', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:114, name:'Valakus HC',                 icon:'2461', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:115, name:'Grenigas HC',                icon:'2462', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:116, name:'Sire Draco HC',              icon:'2547', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:117, name:'Glacerus le Rude HC',        icon:'2583', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:127, name:'Yertirand corrompu HC',      icon:'2942', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:23,  name:'Zénas',                      icon:'2750', type:'Acte 6',    color:'#9b59b6', cooldown:24 },
-  { id:24,  name:'Erenia',                     icon:'2751', type:'Acte 6',    color:'#9b59b6', cooldown:24 },
-  { id:25,  name:'Fernon incomplète',          icon:'2868', type:'Acte 6',    color:'#9b59b6', cooldown:24 },
-  { id:26,  name:'Terrible Fafnir',            icon:'2905', type:'Acte 6',    color:'#9b59b6', cooldown:48 },
-  { id:123, name:'Zénas HC',                   icon:'2750', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:124, name:'Erenia HC',                  icon:'2751', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:125, name:'Fernon incomplète HC',       icon:'2868', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:126, name:'Terrible Fafnir HC',         icon:'2905', type:'Hardcore',  color:'#ff4757', cooldown:48, dailyLimit:5, hc:true },
-  { id:30,  name:'Kirollas roi des esprits',   icon:'4271', type:'Acte 7',    color:'#c9a96e', cooldown:24 },
-  { id:31,  name:'Carno roi des bêtes',        icon:'4272', type:'Acte 7',    color:'#c9a96e', cooldown:24 },
-  { id:32,  name:'Dieu-démon Bélial',          icon:'4273', type:'Acte 7',    color:'#c9a96e', cooldown:24 },
-  { id:33,  name:'Paimon seigneur maléfique',  icon:'4304', type:'Acte 7',    color:'#c9a96e', cooldown:24 },
-  { id:34,  name:'Paimon ressuscité',          icon:'4500', type:'Acte 7',    color:'#c9a96e', cooldown:24, dailyLimit:5 },
-  { id:130, name:'Kirollas roi des esprits HC',icon:'4271', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:131, name:'Carno roi des bêtes HC',     icon:'4272', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:132, name:'Dieu-démon Bélial HC',       icon:'4273', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:133, name:'Paimon seigneur maléfique HC',icon:'4304',type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:134, name:'Paimon ressuscité HC',       icon:'4500', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:35,  name:'Dragon zombie Valehir',      icon:'4612', type:'Acte 8',    color:'#1abc9c', cooldown:24 },
-  { id:36,  name:'Alzanor dragon givré',       icon:'4615', type:'Acte 8',    color:'#1abc9c', cooldown:24 },
-  { id:38,  name:'Asgobas faible',             icon:'4868', type:'Acte 8',    color:'#1abc9c', cooldown:24, dailyLimit:5 },
-  { id:135, name:'Dragon zombie Valehir HC',   icon:'4612', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:136, name:'Alzanor dragon givré HC',    icon:'4615', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:138, name:'Asgobas faible HC',          icon:'4868', type:'Hardcore',  color:'#ff4757', cooldown:24, dailyLimit:5, hc:true },
-  { id:39,  name:'Géant moussu Pollutus',      icon:'7094', type:'Acte 9',    color:'#3498db', cooldown:24 },
-  { id:40,  name:'Arma géant',                 icon:'7095', type:'Acte 9',    color:'#3498db', cooldown:24 },
-  { id:41,  name:'Arma géant absolu',          icon:'7135', type:'Acte 9',    color:'#3498db', cooldown:24, dailyLimit:5 },
-  { id:43,  name:'Nézarun',                    icon:'7590', type:'Acte 10',   color:'#e67e22', cooldown:24, dailyLimit:20 },
-  { id:44,  name:'Nézarun dévastateur',        icon:'7591', type:'Acte 10',   color:'#e67e22', cooldown:24, dailyLimit:20 },
-  { id:8,   name:"Tête bonhomme de neige",     icon:'1371', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:10,  name:"Jack O'Lantern",             icon:'1915', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:11,  name:'Reine poule',                icon:'4087', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:18,  name:'Foxy',                       icon:'2662', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:19,  name:'Maru',                       icon:'2674', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:20,  name:'Sorcière Laurena',           icon:'2698', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:21,  name:'Diablotin Cheongbi',         icon:'2690', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:22,  name:'Lola Longoreil',             icon:'2716', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:28,  name:'Dr Miaou fou',               icon:'2964', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:29,  name:'Lapin de Pâques fou',        icon:'4121', type:'Évènement', color:'#8e44ad', cooldown:24 },
-  { id:42,  name:'Sire Melonoth',              icon:'7393', type:'Évènement', color:'#8e44ad', cooldown:24 },
-]
 
 // ── Activity types (icons static, labels from i18n) ───────────────────────
 const ACTIVITY_COLORS = { xp:'#f39c12', farm:'#27ae60', raid:'#e74c3c', event:'#2980b9', quete_j:'#e91e8c', quete_p:'#ff6b35', custom:'#8e44ad' }
@@ -271,13 +197,14 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
 }
 
 function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
-  const INTERNAL = ['Tous','Acte 1','Acte 5','Acte 6','Acte 7','Acte 8','Acte 9','Acte 10','Hardcore','Évènement']
+  const { lang } = useLang()
+  const ACT_KEYS = ['all', ...RAID_CATEGORIES.map(c => c.key)]
   const [filter,setFilter]=useState(i18n.raidTypes[0])
   const filterIdx=i18n.raidTypes.indexOf(filter)
-  const filterInternal=INTERNAL[filterIdx>=0?filterIdx:0]
+  const filterKey=ACT_KEYS[filterIdx>=0?filterIdx:0]
   const now=Date.now()
   const getStatus=raid=>{const done=raids[raid.id];if(!done)return null;const rem=raid.cooldown-(now-done)/3600000;if(rem<=0)return{ready:true};return{ready:false,label:`${pad(Math.floor(rem))}h${pad(Math.floor((rem%1)*60))}`}}
-  const filtered=filterInternal==='Tous'?RAID_LIST:RAID_LIST.filter(r=>r.type===filterInternal)
+  const filtered=filterKey==='all'?RAIDS:RAIDS.filter(r=>r.act===filterKey)
   return(
     <div>
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
@@ -289,8 +216,8 @@ function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
           return(
             <div key={raid.id} style={{background:ready?th.surface:'rgba(0,0,0,.08)',border:`1px solid ${ready?raid.color+'55':th.borderSoft}`,borderRadius:10,padding:'12px 10px',opacity:!ready?.52:1,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:6,textAlign:'center'}}>
               <RaidIcon iconId={raid.icon} size={36}/>
-              <div style={{fontSize:11,color:ready?raid.color:th.textSub,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid.name}</div>
-              <div style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:raid.color+'18',color:raid.color+'bb',border:`1px solid ${raid.color}30`,fontFamily:'Cinzel'}}>{raid.type}</div>
+              <div style={{fontSize:11,color:ready?raid.color:th.textSub,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid[lang]??raid.fr}</div>
+              <div style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:raid.color+'18',color:raid.color+'bb',border:`1px solid ${raid.color}30`,fontFamily:'Cinzel'}}>{RAID_CATEGORIES.find(c=>c.key===raid.act)?.[lang]??raid.act}</div>
               {!ready&&<div style={{fontSize:12,color:th.textSub}}>⏳ {status.label}</div>}
               {ready
                 ?<button onClick={()=>setRaids(p=>({...p,[raid.id]:Date.now()}))} style={{fontSize:10,padding:'4px 12px',borderRadius:20,background:raid.color+'20',border:`1px solid ${raid.color}`,color:raid.color,cursor:'pointer',fontFamily:'Cinzel'}}>{i18n.doneBtn}</button>
@@ -305,6 +232,7 @@ function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
 }
 
 function ActivityModal({ onAdd, onEdit, onDelete, onClose, char, targetDay, existing, th, i18n, days }) {
+  const { lang } = useLang()
   const isEdit=!!existing
   function decimalToTime(dec){if(dec==null){const n=new Date();return`${pad(n.getHours())}:${pad(n.getMinutes())}`}return`${pad(Math.floor(dec))}:${pad(Math.round((dec%1)*60))}`}
   function timeToDecimal(str){const[h,m]=(str||'00:00').split(':').map(Number);return(isNaN(h)?0:h)+(isNaN(m)?0:m)/60}
@@ -323,7 +251,7 @@ function ActivityModal({ onAdd, onEdit, onDelete, onClose, char, targetDay, exis
     if(type==='raid'&&raidId==null) return
     if(type!=='raid'&&!label.trim()) return
     const startHour=timeToDecimal(startTime)
-    const block={...(existing||{}),id:existing?.id||Math.random().toString(36).slice(2),char,type,label:label.trim(),icon:type==='raid'&&raidId!=null?RAID_LIST.find(r=>r.id===raidId)?.icon:ACTIVITY_ICONS[type],raidId:type==='raid'?raidId:null,startHour,endHour:Math.min(startHour+Math.max(duration,0.083),24),repeat,repeatUntil,repeatDays,reminder,day:existing?.day||isoDay(targetDay)}
+    const block={...(existing||{}),id:existing?.id||Math.random().toString(36).slice(2),char,type,label:label.trim(),icon:type==='raid'&&raidId!=null?RAIDS.find(r=>r.id===raidId)?.icon:ACTIVITY_ICONS[type],raidId:type==='raid'?raidId:null,startHour,endHour:Math.min(startHour+Math.max(duration,0.083),24),repeat,repeatUntil,repeatDays,reminder,day:existing?.day||isoDay(targetDay)}
     if(isEdit) onEdit(block); else onAdd(block)
     onClose()
   }
@@ -358,20 +286,20 @@ function ActivityModal({ onAdd, onEdit, onDelete, onClose, char, targetDay, exis
         {type==='raid'&&(
           <div style={{marginBottom:14}}>
             <div style={{fontSize:11,color:th.textSub,fontFamily:'Cinzel',letterSpacing:1,marginBottom:6}}>{i18n.raidLabel}</div>
-            <select value={raidId??''} onChange={e=>{const id=e.target.value===''?null:parseInt(e.target.value);setRaidId(id);if(id!=null){const raid=RAID_LIST.find(r=>r.id===id);if(raid)setLabel(raid.name)}}} style={{...inp,padding:'9px 12px',cursor:'pointer',appearance:'auto'}}>
+            <select value={raidId??''} onChange={e=>{const id=e.target.value===''?null:parseInt(e.target.value);setRaidId(id);if(id!=null){const raid=RAIDS.find(r=>r.id===id);if(raid)setLabel(raid[lang]??raid.fr)}}} style={{...inp,padding:'9px 12px',cursor:'pointer',appearance:'auto'}}>
               <option value="">{i18n.chooseRaid}</option>
-              {['Acte 1','Acte 5','Acte 6','Acte 7','Acte 8','Acte 9','Acte 10','Hardcore','Évènement'].map(grp=>(
-                <optgroup key={grp} label={grp==='Hardcore'?'⚔️ Hardcore':grp}>
-                  {RAID_LIST.filter(r=>r.type===grp).map(r=><option key={r.id} value={r.id}>{r.name}{r.dailyLimit?` (${r.dailyLimit}/j max)`:''}</option>)}
+              {RAID_CATEGORIES.map(cat=>(
+                <optgroup key={cat.key} label={cat.key==='hardcore'?`⚔️ ${cat[lang]??cat.fr}`:cat[lang]??cat.fr}>
+                  {RAIDS.filter(r=>r.act===cat.key).map(r=><option key={r.id} value={r.id}>{r[lang]??r.fr}{r.dailyLimit?` (${r.dailyLimit}/j max)`:''}</option>)}
                 </optgroup>
               ))}
             </select>
-            {raidId!=null&&(()=>{const raid=RAID_LIST.find(r=>r.id===raidId);if(!raid)return null;return(
+            {raidId!=null&&(()=>{const raid=RAIDS.find(r=>r.id===raidId);if(!raid)return null;return(
               <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:th.surface,borderRadius:8,border:`1px solid ${raid.color}55`,marginTop:6}}>
                 <RaidIcon iconId={raid.icon} size={30}/>
                 <div style={{flex:1}}>
                   <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                    <span style={{fontFamily:'Cinzel',fontSize:12,color:raid.color,letterSpacing:.5}}>{raid.name}</span>
+                    <span style={{fontFamily:'Cinzel',fontSize:12,color:raid.color,letterSpacing:.5}}>{raid[lang]??raid.fr}</span>
                     {raid.hc&&<span style={{fontSize:9,fontFamily:'Cinzel',background:'#ff475720',border:'1px solid #ff4757',color:'#ff4757',borderRadius:99,padding:'1px 7px',letterSpacing:.5}}>HC</span>}
                   </div>
                   <div style={{fontSize:11,color:th.textSub,fontFamily:'Crimson Pro',marginTop:2,display:'flex',gap:10}}>
@@ -464,7 +392,7 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
   )
 }
 
-function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, onStartTimer, days, months }) {
+function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, days, months }) {
   const[weekOf,setWeekOf]=useState(()=>weekStart(new Date()))
   const[selectedDay,setSelectedDay]=useState(()=>new Date())
   const[viewMode,setViewMode]=useState('week')
@@ -591,14 +519,14 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, onStartTimer, days,
         <button style={vtBtn(viewMode==='day')}  onClick={()=>setViewMode('day')}>{i18n.dayView}</button>
       </div>
       {viewMode==='week'?<WeekView/>:<DayView/>}
-      {addDay&&<ActivityModal onAdd={b=>{handleAdd(b);setAddDay(null)}} onEdit={()=>{}} onDelete={()=>{}} onClose={()=>setAddDay(null)} char={char} targetDay={addDay} th={th} i18n={i18n} days={days}/>}
-      {editBlock&&<ActivityModal onAdd={()=>{}} onEdit={b=>{handleEdit(b);setEditBlock(null)}} onDelete={id=>{handleDelete(id);setEditBlock(null)}} onClose={()=>setEditBlock(null)} char={char} targetDay={editBlock.day?new Date(editBlock.day+'T12:00:00'):new Date()} existing={editBlock} th={th} i18n={i18n} days={days}/>}
+      {addDay&&<ActivityModal onAdd={b=>{handleAdd(b);setAddDay(null)}} onEdit={()=>{}} onDelete={()=>{}} onClose={()=>setAddDay(null)} char={char} targetDay={addDay} th={th} i18n={i18nModal} days={days}/>}
+      {editBlock&&<ActivityModal onAdd={()=>{}} onEdit={b=>{handleEdit(b);setEditBlock(null)}} onDelete={id=>{handleDelete(id);setEditBlock(null)}} onClose={()=>setEditBlock(null)} char={char} targetDay={editBlock.day?new Date(editBlock.day+'T12:00:00'):new Date()} existing={editBlock} th={th} i18n={i18nModal} days={days}/>}
     </div>
   )
 }
 
 // ── Notes ─────────────────────────────────────────────────────────────────
-const NOTE_COLORS=[{bg:'#FFF3B0',border:'#C47A00',text:'#3D2800'},{bg:'#FADADD',border:'#B71C50',text:'#3B0018'},{bg:'#C8EDD0',border:'#1B6B2F',text:'#0D2E14'},{bg:'#C5DFF8',border:'#0D4FA8',text:'#08234A'},{bg:'#E4D0F5',border:'#6A0DAD',text:'#2D0057'},{bg:'#FFE0B0',border:'#C45000',text:'#3D1800'}]
+const NOTE_COLORS=[{bg:'#2C2300',border:'#C9A84C',text:'#E0BC5A'},{bg:'#2C000E',border:'#D44470',text:'#EE7AAA'},{bg:'#00220E',border:'#27AE60',text:'#50C278'},{bg:'#001B38',border:'#2980B9',text:'#60A8D8'},{bg:'#18002C',border:'#8E44AD',text:'#A868C8'},{bg:'#2C1300',border:'#D46820',text:'#E08840'}]
 const NOTE_REPEAT_KEYS=['none','daily','weekdays','weekly']
 const NOTE_COND_KEYS=['none','until_date','x_days']
 
@@ -643,7 +571,7 @@ function NoteFormBar({initial,onSave,onCancel,th,i18n}){
     if(mode==='checklist'&&items.every(i=>!i.text.trim())) return
     onSave({id:initial?.id??Date.now().toString(),mode,text:mode==='text'?text.trim():'',items:mode==='checklist'?items.filter(i=>i.text.trim()):[],repeat,condition:repeat==='none'?'none':condition,untilDate:condition==='until_date'?untilDate:'',xDays:condition==='x_days'?xDays:'',colorIndex:colorIdx,priority,pinned:initial?.pinned??false,archived:false,createdDate:initial?.createdDate??todayStr})
   }
-  const npill=(active,color)=>({fontSize:10,fontFamily:'Cinzel',padding:'3px 9px',borderRadius:99,cursor:'pointer',border:`1.5px solid ${active?color:th.border}`,background:active?color:'transparent',color:active?'#fff':th.textSub,fontWeight:active?700:500,letterSpacing:.5,transition:'all .15s'})
+  const npill=(active,color)=>({fontSize:10,fontFamily:'Cinzel',padding:'3px 9px',borderRadius:99,cursor:'pointer',border:`1.5px solid ${active?color:nc.border+'88'}`,background:active?color:'transparent',color:active?'#fff':nc.text,fontWeight:active?700:500,letterSpacing:.5,transition:'all .15s'})
   const rl={none:i18n.noRepeat,daily:i18n.daily,weekdays:i18n.weekdays,weekly:i18n.weekly}
   const cl={none:i18n.noLimit,until_date:i18n.untilDate,x_days:i18n.xDays}
   return(
@@ -823,7 +751,7 @@ export default function PlannerPage() {
   const todayKey=isoDay(new Date()),todayDow=new Date().getDay()
   const todayBlocks=blocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
   const doneDailies=todayBlocks.filter(b=>checks[`${todayKey}__${activeChar}__${b.id}`]).length
-  const readyRaids=RAID_LIST.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
+  const readyRaids=RAIDS.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
 
   const chipBtn=active=>({padding:'8px 18px',borderRadius:20,background:active?th.gold+'1a':'transparent',border:`1px solid ${active?th.gold+'66':th.border}`,color:active?th.gold:th.textSub,fontFamily:'Cinzel',fontSize:11,letterSpacing:1,cursor:'pointer',transition:'all .2s'})
   const TABS=[{id:'planning',label:p.tabs.planning},{id:'dailies',label:p.tabs.dailies},{id:'raids',label:p.tabs.raids},{id:'farm',label:p.tabs.farm}]
@@ -859,7 +787,7 @@ export default function PlannerPage() {
             <div style={{display:'flex',gap:20,fontFamily:'Cinzel',fontSize:11,letterSpacing:1}}>
               <div style={{textAlign:'center'}}><div style={{color:'#2980b9',fontSize:24,fontWeight:800,lineHeight:1}}>{doneDailies}/{todayBlocks.length||'–'}</div><div style={{color:th.textSub,marginTop:3}}>{p.header.today}</div></div>
               <div style={{width:1,background:th.border}}/>
-              <div style={{textAlign:'center'}}><div style={{color:'#27ae60',fontSize:24,fontWeight:800,lineHeight:1}}>{readyRaids}/{RAID_LIST.length}</div><div style={{color:th.textSub,marginTop:3}}>{p.header.raidsDispo}</div></div>
+              <div style={{textAlign:'center'}}><div style={{color:'#27ae60',fontSize:24,fontWeight:800,lineHeight:1}}>{readyRaids}/{RAIDS.length}</div><div style={{color:th.textSub,marginTop:3}}>{p.header.raidsDispo}</div></div>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {(syncing||syncErr)&&<div style={{fontSize:10,fontFamily:'Cinzel',color:syncErr?'#e74c3c':th.textSub,letterSpacing:1}}>{syncErr?p.syncError:p.syncSaving}</div>}
@@ -873,8 +801,7 @@ export default function PlannerPage() {
           <div style={{display:'flex',gap:8,marginBottom:22,flexWrap:'wrap',alignItems:'center'}}>
             {/* Personnages du profil NosBook */}
             {profileChars.map(c=>(
-              <button key={`profile-${c.id}`} onClick={()=>setActiveChar(c.name)} style={{...chipBtn(activeChar===c.name),display:'flex',alignItems:'center',gap:6}}>
-                <span style={{fontSize:9,fontFamily:'Cinzel',background:th.gold+'22',color:th.gold,border:`1px solid ${th.gold}44`,borderRadius:99,padding:'1px 5px',letterSpacing:.3}}>NB</span>
+              <button key={`profile-${c.id}`} onClick={()=>setActiveChar(c.name)} style={chipBtn(activeChar===c.name)}>
                 {c.name}
               </button>
             ))}
@@ -897,16 +824,16 @@ export default function PlannerPage() {
             {TABS.map(tab=><button key={tab.id} onClick={()=>setTab(tab.id)} style={{padding:'11px 22px',background:'transparent',border:'none',borderBottom:`2px solid ${activeTab===tab.id?th.gold:'transparent'}`,color:activeTab===tab.id?th.gold:th.tabInact,fontFamily:'Cinzel',fontSize:12,letterSpacing:1,cursor:'pointer',transition:'all .2s'}}>{tab.label}</button>)}
           </div>
 
-          {activeTab==='planning'&&<WeeklyPlanning blocks={blocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} onStartTimer={setTimer} days={p.days} months={p.months}/>}
+          {activeTab==='planning'&&<WeeklyPlanning blocks={blocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} i18nModal={{...p.modal,activityTypes:p.activityTypes,reminder:p.reminder}} onStartTimer={setTimer} days={p.days} months={p.months}/>}
           {activeTab==='dailies'&&(
             <div>
-              <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.dailies.title} {activeChar.toUpperCase()}</div>
+              <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.dailies.title} {activeChar?.toUpperCase()}</div>
               <DailyChecklist blocks={blocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
             </div>
           )}
           {activeTab==='raids'&&(
             <div>
-              <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.raids.title} {readyRaids}/{RAID_LIST.length} {p.raids.available}</div>
+              <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.raids.title} {readyRaids}/{RAIDS.length} {p.raids.available}</div>
               <RaidCooldownTracker raids={raids} setRaids={setRaids} th={th} i18n={{...p.raids,raidTypes:p.raidTypes}}/>
             </div>
           )}
