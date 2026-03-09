@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -186,15 +186,48 @@ function SpecialistsTab({ char }) {
   )
 }
 
+const FAIRY_RUNE_TIER_COLORS = { 1: '#a78bfa', 2: '#60a5fa', 3: '#f97316' }
+
 function FairiesTab({ char }) {
   const { t } = useLang()
+  const fairies = Array.isArray(char.equipment.fairies) ? char.equipment.fairies : []
+
+  if (fairies.length === 0) {
+    return <div className={styles.spEmpty}>{t('fairy.empty')}</div>
+  }
+
   return (
-    <div className={styles.fairyTab}>
-      <div className={styles.fairyCard}>
-        <div className={styles.fairyCardLabel}>{t('equipKeys.fairy')}</div>
-        <div className={`${styles.fairyCardName} ${!char.equipment.fairy ? styles.equipTabEmpty : ''}`}>
-          {char.equipment.fairy || t('equipKeys.empty')}
-        </div>
+    <div className={styles.spTab}>
+      <div className={styles.spGrid}>
+        {fairies.map((f, idx) => (
+          <div key={idx} className={styles.spCard}>
+            <div className={styles.spCardTop}>
+              <img src={f.icon} alt={f.name} className={styles.spCardIcon} />
+              <span className={styles.spCardName}>{f.name}</span>
+            </div>
+            <div className={styles.spCardBadges}>
+              <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{f.improvement}</span>
+              {f.rune?.length > 0 && (
+                <span className={`${styles.spBadge} ${styles.fairyRuneBadge}`}>
+                  {t('fairy.runeLabel')} {f.rune.length}
+                </span>
+              )}
+            </div>
+            {f.rune?.length > 0 && (
+              <div className={styles.fairyRuneEffects}>
+                {f.rune.map((eff, i) => {
+                  const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
+                  const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+                  return (
+                    <div key={i} className={styles.fairyRuneEffectRow} style={{ color }}>
+                      {def?.label?.replace('X', eff.value) ?? eff.key}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

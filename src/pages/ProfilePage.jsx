@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -24,6 +24,7 @@ function makeCharacter(name, cls, level, heroLevel) {
     equipment:   {
       ...Object.fromEntries([...EQUIP_KEYS, ...SPECIAL_KEYS].map(k => [k, null])),
       specialists: [],
+      fairies:     [],
     },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
   }
@@ -1274,18 +1275,260 @@ function SpecialistsTab({ char, onUpdate }) {
   )
 }
 
-// ── FairiesTab ─────────────────────────────────────────────────────────────
+// ── FairyPickerModal ───────────────────────────────────────────────────────
 
-function FairiesTab({ char }) {
+function FairyPickerModal({ onClose, onAdd, existing }) {
   const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const filtered = FAIRIES.filter(f =>
+    f.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const handlePick = (f) => {
+    onAdd({ name: f.name, icon: f.icon, improvement: 0, rune: [] })
+    onClose()
+  }
+
   return (
-    <div className={styles.fairyTab}>
-      <div className={styles.fairyCard}>
-        <div className={styles.fairyCardLabel}>{t('equipKeys.fairy')}</div>
-        <div className={`${styles.fairyCardName} ${!char.equipment.fairy ? styles.equipTabEmpty : ''}`}>
-          {char.equipment.fairy || t('equipKeys.empty')}
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('fairy.pickTitle')}</h2>
+        <div className={styles.weaponSearch}>
+          <input
+            className={styles.modalInput}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('weapon.searchPlaceholder')}
+            autoFocus
+          />
+        </div>
+        {filtered.length === 0 ? (
+          <div className={styles.weaponEmpty}>{t('weapon.noResults')}</div>
+        ) : (
+          <div className={styles.hatGrid}>
+            {filtered.map(f => (
+              <button
+                key={f.name}
+                type="button"
+                className={styles.hatItem}
+                onClick={() => handlePick(f)}
+                title={f.name}
+              >
+                <img src={f.icon} alt={f.name} />
+              </button>
+            ))}
+          </div>
+        )}
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── FairyEditModal ─────────────────────────────────────────────────────────
+
+const FAIRY_RUNE_TIER_COLORS = { 1: '#a78bfa', 2: '#60a5fa', 3: '#f97316' }
+
+function FairyEditModal({ fairy, onClose, onSave }) {
+  const { t } = useLang()
+  const [improvement, setImprovement] = useState(fairy.improvement ?? 0)
+  const [rune,        setRune]        = useState(fairy.rune ?? [])
+  const [selEffect,   setSelEffect]   = useState(FAIRY_RUNE_EFFECTS[0].key)
+  const [selValue,    setSelValue]    = useState('')
+
+  const currentTier = improvement >= 7 ? 3 : improvement >= 4 ? 2 : improvement >= 1 ? 1 : 0
+  const availEffects = FAIRY_RUNE_EFFECTS.filter(e => e.tier <= currentTier)
+
+  const handleAdd = () => {
+    if (selValue === '') return
+    setRune(prev => [...prev, { key: selEffect, value: Number(selValue) }])
+    setSelValue('')
+  }
+
+  const handleDelete = (idx) => setRune(prev => prev.filter((_, i) => i !== idx))
+
+  const handleSave = () => {
+    onSave({ ...fairy, improvement, rune })
+    onClose()
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <div className={styles.fairyModalHeader}>
+          <img src={fairy.icon} alt={fairy.name} className={styles.fairyModalIcon} />
+          <h2 className={styles.modalTitle}>{fairy.name}</h2>
+        </div>
+
+        {/* Improvement */}
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('fairy.improvement')}</label>
+          <div className={styles.fairyImprovRow}>
+            {Array.from({ length: 10 }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${styles.fairyImprovBtn} ${improvement === i ? styles.fairyImprovBtnActive : ''}`}
+                onClick={() => setImprovement(i)}
+              >+{i}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Rune effects list */}
+        <div className={styles.fairyRuneList}>
+          {rune.length === 0 ? (
+            <div className={styles.shellEmpty}>{t('fairy.runeEmpty')}</div>
+          ) : rune.map((eff, idx) => {
+            const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
+            const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+            return (
+              <div key={idx} className={styles.shellEffectRow} style={{ color }}>
+                <span className={styles.fairyRuneTierBadge} style={{ borderColor: color, color }}>
+                  {t(`fairy.tier${def?.tier ?? 1}`)}
+                </span>
+                <span className={styles.shellEffectLabel}>{def?.label?.replace('X', eff.value) ?? eff.key}</span>
+                <button className={styles.shellDeleteBtn} onClick={() => handleDelete(idx)}>✕</button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Add rune effect */}
+        {currentTier > 0 && (
+          <div className={styles.shellAddSection}>
+            <div className={styles.modalField}>
+              <label className={styles.modalLabel}>{t('fairy.runeEffect')}</label>
+              <EffectSelect effects={availEffects} value={selEffect} onChange={setSelEffect} />
+            </div>
+            <div className={styles.shellAddRow}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>{t('weapon.shellValue')}</label>
+                <input
+                  className={styles.modalInput}
+                  type="number"
+                  value={selValue}
+                  min={0}
+                  onChange={e => setSelValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
+                />
+              </div>
+            </div>
+            <Button variant="primary" size="sm" onClick={handleAdd} disabled={selValue === ''}>
+              {t('weapon.shellAdd')}
+            </Button>
+          </div>
+        )}
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave}>{t('weapon.saveEnhance')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ── FairiesTab ─────────────────────────────────────────────────────────────
+
+function FairiesTab({ char, onUpdate }) {
+  const { t } = useLang()
+  const [showPicker,  setShowPicker]  = useState(false)
+  const [editingIdx,  setEditingIdx]  = useState(null)
+
+  const fairies = Array.isArray(char.equipment.fairies) ? char.equipment.fairies : []
+
+  const handleAdd = (fairy) => {
+    onUpdate(char.id, { equipment: { ...char.equipment, fairies: [...fairies, fairy] } })
+  }
+
+  const handleDelete = (idx) => {
+    onUpdate(char.id, { equipment: { ...char.equipment, fairies: fairies.filter((_, i) => i !== idx) } })
+  }
+
+  const handleSave = (updated, idx) => {
+    const next = fairies.map((f, i) => i === idx ? updated : f)
+    onUpdate(char.id, { equipment: { ...char.equipment, fairies: next } })
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.spHeader}>
+        <Button variant="primary" size="sm" onClick={() => setShowPicker(true)}>
+          {t('fairy.addBtn')}
+        </Button>
+      </div>
+
+      {fairies.length === 0 ? (
+        <div className={styles.spEmpty}>{t('fairy.empty')}</div>
+      ) : (
+        <div className={styles.spGrid}>
+          {fairies.map((f, idx) => {
+            const tier = f.improvement >= 7 ? 3 : f.improvement >= 4 ? 2 : f.improvement >= 1 ? 1 : 0
+            return (
+              <div key={idx} className={styles.spCard}>
+                <div className={styles.spCardTop}>
+                  <img src={f.icon} alt={f.name} className={styles.spCardIcon} />
+                  <span className={styles.spCardName}>{f.name}</span>
+                  <button className={styles.spCardDelete} onClick={() => handleDelete(idx)}>✕</button>
+                </div>
+
+                <div className={styles.spCardBadges}>
+                  <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{f.improvement}</span>
+                  {f.rune.length > 0 && (
+                    <span className={`${styles.spBadge} ${styles.fairyRuneBadge}`}>
+                      {t('fairy.runeLabel')} {f.rune.length}
+                    </span>
+                  )}
+                </div>
+
+                {f.rune.length > 0 && (
+                  <div className={styles.fairyRuneEffects}>
+                    {f.rune.map((eff, i) => {
+                      const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
+                      const color = FAIRY_RUNE_TIER_COLORS[def?.tier ?? 1]
+                      return (
+                        <div key={i} className={styles.fairyRuneEffectRow} style={{ color }}>
+                          {def?.label?.replace('X', eff.value) ?? eff.key}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className={styles.fairyEditRuneBtn}
+                  onClick={() => setEditingIdx(idx)}
+                >
+                  {t('fairy.editRune')}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {showPicker && (
+        <FairyPickerModal
+          existing={fairies}
+          onClose={() => setShowPicker(false)}
+          onAdd={handleAdd}
+        />
+      )}
+
+      {editingIdx !== null && fairies[editingIdx] && (
+        <FairyEditModal
+          fairy={fairies[editingIdx]}
+          onClose={() => setEditingIdx(null)}
+          onSave={(updated) => { handleSave(updated, editingIdx); setEditingIdx(null) }}
+        />
+      )}
     </div>
   )
 }
@@ -1530,7 +1773,7 @@ export default function ProfilePage() {
           <div className={styles.tabPanel}>
             {activeTab === 'equipment'   && <EquipmentTab   char={data} onUpdate={updateCharacter} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'fairies'     && <FairiesTab     char={data} />}
+            {activeTab === 'fairies'     && <FairiesTab     char={data} onUpdate={updateCharacter} />}
             {activeTab === 'books'       && <BooksTab />}
           </div>
 

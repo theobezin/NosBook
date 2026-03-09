@@ -15,8 +15,8 @@ export const RARITY_COLORS = {
 // ── Shared character constants ─────────────────────────────────────────────
 
 export const STAT_KEYS    = ['atk', 'def', 'matk', 'mdef', 'hp', 'mp', 'speed', 'critRate', 'critDmg', 'hit', 'avoid']
-export const EQUIP_KEYS   = ['weapon', 'offhand', 'armor', 'hat', 'gloves', 'shoes', 'necklace', 'ring', 'bracelet', 'costumeWings', 'costumeTop', 'costumeBottom']
-export const SPECIAL_KEYS = ['fairy']
+export const EQUIP_KEYS   = ['weapon', 'offhand', 'armor', 'hat', 'gloves', 'shoes', 'necklace', 'ring', 'bracelet', 'costumeWings', 'costumeTop', 'costumeBottom', 'costumeWeapon']
+export const SPECIAL_KEYS = []
 export const ELEMENTS     = ['Neutral', 'Fire', 'Water', 'Light', 'Shadow']
 
 // ── Specialist cards (SP) by class ────────────────────────────────────────
@@ -826,6 +826,75 @@ export const BRACELETS = [
   WH("Ruban élémentaire",                              4970, 86),
   WH("Bracelet de l'aventurier dimensionnel",          7539, 90),
   WH("Bracelet à dimensiomant",                        7541, 94),
+]
+
+// ── Fairies ───────────────────────────────────────────────────────────────
+export const FAIRIES = [
+  W("Poussinet danseur",                          255, 1),
+  W("Poussinet caracolant",                        254, 1),
+  W("Poussinet furibond",                          256, 1),
+  W("Fernon (Feu)",                               4807, 1),
+  W("Grande Sellaim",                              274, 1),
+  W("Fée magique rouge",                           920, 1),
+  W("Elkaim",                                      987, 1),
+  W("Fée du Feu",                                  800, 1),
+  W("Zénas (Feu)",                                4803, 1),
+  W("Sellaim",                                     274, 1),
+  W("Drone à vapeur de l'élément Feu",            4980, 1),
+  W("Érénia (Feu)",                               4801, 1),
+  W("Zénas (Eau)",                                4802, 1),
+  W("Fernon (Eau)",                               4806, 1),
+  W("Woondine",                                    275, 1),
+  W("Ladine",                                      988, 1),
+  W("Érénia (Eau)",                               4798, 1),
+  W("Grande Woondine",                             275, 1),
+  W("Fée de l'Eau",                                801, 1),
+  W("Drone à vapeur de l'élément Eau",            4981, 1),
+  W("Grande Épérial",                              276, 1),
+  W("Épérial",                                     276, 1),
+  W("Azuris",                                      425, 1),
+  W("Rumial",                                      989, 1),
+  W("Solaris",                                     804, 1),
+  W("Fernon (Lumière)",                           4808, 1),
+  W("Drone à vapeur de l'élément Lumière",        4983, 1),
+  W("Zénas (Lumière)",                            4804, 1),
+  W("Érénia (Lumière)",                           4799, 1),
+  W("Fée de la Lumière",                           802, 1),
+  W("Grande Turik",                                277, 1),
+  W("Ténébris",                                   7157, 1),
+  W("Drone à vapeur de l'élément Obscurité",      4984, 1),
+  W("Turik",                                       277, 1),
+  W("Varik",                                       993, 1),
+  W("Érénia (Obscurité)",                         4800, 1),
+  W("Fée de l'Obscurité",                          803, 1),
+  W("Zénas (Obscurité)",                          4805, 1),
+  W("Fernon (Obscurité)",                         4809, 1),
+]
+
+// ── Fairy Rune Effects ────────────────────────────────────────────────────
+// tier 1 = +1–+3 / tier 2 = +4–+6 / tier 3 = +7–+9
+export const FAIRY_RUNE_EFFECTS = [
+  { key: 'hpBoost',          label: 'Tes HP augmentent de X.',                                          tier: 1 },
+  { key: 'mpBoostFlat',      label: 'Tes MP augmentent de X.',                                          tier: 1 },
+  { key: 'mpBoostPct',       label: 'Tes MP augmentent de X%.',                                         tier: 1 },
+  { key: 'critDmgReduce',    label: 'Les dégâts critiques subis diminuent de X%.',                      tier: 1 },
+  { key: 'critChanceReduce', label: 'La probabilité de recevoir un coup critique diminue de X%.',       tier: 1 },
+  { key: 'allDefFlat',       label: 'Toutes les défenses augmentent de X.',                             tier: 1 },
+  { key: 'critDmgBoost',     label: 'Les dégâts critiques augmentent de X%.',                           tier: 2 },
+  { key: 'expBoost',         label: "Le gain en EXP augmente de X%.",                                   tier: 2 },
+  { key: 'noNegEffect',      label: "Probabilité X% : aucun effet négatif jusqu'au niv. 4.",            tier: 2 },
+  { key: 'pvpDmgReduce',     label: 'Les dégâts subis en PvP diminuent de X%.',                        tier: 2 },
+  { key: 'allDefPct',        label: 'Toutes les défenses augmentent de X%.',                            tier: 2 },
+  { key: 'allElemFlat',      label: 'Toutes les résistances élémentaires augmentent de X.',             tier: 2 },
+  { key: 'heroExpBoost',     label: "L'expérience héroïque obtenue augmente de X%.",                    tier: 2 },
+  { key: 'fairyElemBoost',   label: "L'élément de la fée équipée augmente de X.",                       tier: 3 },
+  { key: 'allAtkPct',        label: 'Toutes les attaques augmentent de X%.',                            tier: 3 },
+  { key: 'critChanceBoost',  label: 'La probabilité de coup critique augmente de X%.',                  tier: 3 },
+  { key: 'allAtkFlat',       label: 'Toutes les attaques augmentent de X.',                             tier: 3 },
+  { key: 'goldBoost',        label: 'Les gains en or augmentent de X%.',                                tier: 3 },
+  { key: 'pvpResist',        label: 'Les résistances en PvP augmentent de X%.',                        tier: 3 },
+  { key: 'pvpAtkBoost',      label: "La force d'attaque en PvP augmente de X%.",                       tier: 3 },
+  { key: 'hpRegenBoost',     label: 'La régénération des HP augmente de X%.',                           tier: 3 },
 ]
 
 // ── Costume Weapons by class ───────────────────────────────────────────────
