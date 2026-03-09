@@ -74,6 +74,8 @@ export default {
     loginRequired:    'Sign in to access your profile',
     loginRequiredSub: 'Create an account and start building your adventurer.',
     noCharacter:      'Select a slot above to create your first character.',
+    editCharTitle:    'Edit Character',
+    editCharSave:     'Save',
   },
   notFound: {
     title:     'Page Not Found',

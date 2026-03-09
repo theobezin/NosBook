@@ -74,6 +74,8 @@ export default {
     loginRequired:    'Connecte-toi pour accéder à ton profil',
     loginRequiredSub: 'Crée un compte et commence à construire ton aventurier.',
     noCharacter:      'Clique sur un emplacement ci-dessus pour créer ton premier personnage.',
+    editCharTitle:    'Modifier le personnage',
+    editCharSave:     'Sauvegarder',
   },
   notFound: {
     title:     'Page introuvable',

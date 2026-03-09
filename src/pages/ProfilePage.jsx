@@ -1302,6 +1302,81 @@ function BooksTab() {
   )
 }
 
+// ── EditCharModal ───────────────────────────────────────────────────────────
+
+function EditCharModal({ char, onClose, onSave }) {
+  const { t } = useLang()
+  const [name,      setName]      = useState(char.name)
+  const [level,     setLevel]     = useState(String(char.level))
+  const [heroLevel, setHeroLevel] = useState(String(char.heroLevel))
+  const [error,     setError]     = useState('')
+
+  const handleSave = () => {
+    if (!name.trim())                    { setError(t('create.errName'));    return }
+    if (name.trim().length < 3)          { setError(t('create.errNameLen')); return }
+    const lvl = parseInt(level)
+    if (!lvl || lvl < 1 || lvl > 99)    { setError(t('create.errLevel'));   return }
+    onSave({
+      name:      name.trim(),
+      level:     lvl,
+      heroLevel: Math.max(0, parseInt(heroLevel) || 0),
+    })
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('profile.editCharTitle')}</h2>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('create.nameLabel')}</label>
+          <input
+            className={styles.modalInput}
+            value={name}
+            onChange={e => { setName(e.target.value); setError('') }}
+            placeholder={t('create.namePlaceholder')}
+            autoFocus
+            maxLength={20}
+            onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+          />
+        </div>
+
+        <div className={styles.modalRow}>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('create.levelLabel')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={level}
+              min={1} max={99}
+              onChange={e => { setLevel(e.target.value); setError('') }}
+            />
+          </div>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('create.heroLevelLabel')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={heroLevel}
+              min={0}
+              onChange={e => setHeroLevel(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {error && <div className={styles.modalError}>⚠️ {error}</div>}
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave}>{t('profile.editCharSave')}</Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── ProfilePage ────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -1309,9 +1384,10 @@ export default function ProfilePage() {
   const { t } = useLang()
   const { characters, addCharacter, updateCharacter, loading } = useCharacters()
 
-  const [selectedIdx, setSelectedIdx] = useState(0)
-  const [showCreate,  setShowCreate]  = useState(false)
-  const [activeTab,   setActiveTab]   = useState('equipment')
+  const [selectedIdx,  setSelectedIdx]  = useState(0)
+  const [showCreate,   setShowCreate]   = useState(false)
+  const [showEditChar, setShowEditChar] = useState(false)
+  const [activeTab,    setActiveTab]    = useState('equipment')
 
   const data = characters[selectedIdx] ?? null
   const cls  = data ? (CLASSES[data.class] ?? CLASSES.Archer) : null
@@ -1435,7 +1511,7 @@ export default function ProfilePage() {
             </div>
 
             <div className={styles.actions}>
-              <Button variant="primary" size="md">{t('profile.edit')}</Button>
+              <Button variant="primary" size="md" onClick={() => setShowEditChar(true)}>{t('profile.edit')}</Button>
             </div>
           </div>
 
@@ -1473,6 +1549,14 @@ export default function ProfilePage() {
         <CreateModal
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
+        />
+      )}
+
+      {showEditChar && data && (
+        <EditCharModal
+          char={data}
+          onClose={() => setShowEditChar(false)}
+          onSave={(fields) => { updateCharacter(data.id, fields); setShowEditChar(false) }}
         />
       )}
 

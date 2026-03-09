@@ -74,6 +74,8 @@ export default {
     loginRequired:    'Melde dich an, um auf dein Profil zuzugreifen',
     loginRequiredSub: 'Erstelle ein Konto und beginne deinen Abenteurer aufzubauen.',
     noCharacter:      'Klicke oben auf einen Slot, um deinen ersten Charakter zu erstellen.',
+    editCharTitle:    'Charakter bearbeiten',
+    editCharSave:     'Speichern',
   },
   notFound: {
     title:     'Seite nicht gefunden',
