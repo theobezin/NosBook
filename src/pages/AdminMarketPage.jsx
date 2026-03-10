@@ -4,14 +4,125 @@
 // Accessible only to users with is_admin = true.
 // ============================================================
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { fetchReports, validateReport, rejectReport } from '@/hooks/useMarket'
-import { REPORT_STATUS } from '@/lib/market'
-import { formatGold } from '@/lib/market'
+import { fetchReports, validateReport, rejectReport, setModeration, isBanned, isMuted } from '@/hooks/useMarket'
+import { REPORT_STATUS, formatGold } from '@/lib/market'
 import Spinner from '@/components/ui/Spinner'
 import styles from './AdminMarketPage.module.css'
+
+// ── Moderation panel ───────────────────────────────────────
+function ModerationPanel({ reportedProfile, onRefresh, t }) {
+  const [loading, setLoading] = useState(false)
+  const [msg,     setMsg]     = useState(null) // { type: 'ok'|'err', text }
+
+  if (!reportedProfile) return null
+
+  const banned = isBanned(reportedProfile)
+  const muted  = isMuted(reportedProfile)
+
+  async function apply(action, days = null) {
+    setLoading(true)
+    setMsg(null)
+    const { error } = await setModeration(reportedProfile.id, action, days)
+    setLoading(false)
+    if (error) {
+      setMsg({ type: 'err', text: t('market.adminSanctionError') })
+    } else {
+      setMsg({ type: 'ok', text: t('market.adminSanctionSuccess') })
+      // Refresh after a short delay so the UI shows the updated status
+      setTimeout(() => onRefresh(), 800)
+    }
+  }
+
+  // Human-readable muted_until date
+  const mutedUntilStr = reportedProfile.muted_until
+    ? new Date(reportedProfile.muted_until).toLocaleDateString()
+    : null
+
+  return (
+    <div className={styles.moderationPanel}>
+      <p className={styles.moderationTitle}>{t('market.adminModerationTitle')}</p>
+
+      {/* Current status */}
+      <div className={styles.moderationStatus}>
+        {banned
+          ? <span className={styles.statusBanned}>{t('market.adminStatusBanned')}</span>
+          : muted
+            ? <span className={styles.statusMuted}>{t('market.adminStatusMuted')} {mutedUntilStr}</span>
+            : <span className={styles.statusClean}>{t('market.adminStatusClean')}</span>
+        }
+      </div>
+
+      {msg && (
+        <p className={msg.type === 'ok' ? styles.sanctionOk : styles.sanctionErr}>{msg.text}</p>
+      )}
+
+      <div className={styles.moderationActions}>
+        {/* Mute buttons */}
+        {!banned && (
+          <>
+            <button
+              className={styles.btnMute}
+              onClick={() => apply('mute', 3)}
+              disabled={loading}
+            >
+              {t('market.adminMuteUser')} {t('market.adminMute3d')}
+            </button>
+            <button
+              className={styles.btnMute}
+              onClick={() => apply('mute', 7)}
+              disabled={loading}
+            >
+              {t('market.adminMuteUser')} {t('market.adminMute7d')}
+            </button>
+            <button
+              className={styles.btnMute}
+              onClick={() => apply('mute', 30)}
+              disabled={loading}
+            >
+              {t('market.adminMuteUser')} {t('market.adminMute30d')}
+            </button>
+          </>
+        )}
+
+        {/* Unmute */}
+        {muted && !banned && (
+          <button
+            className={styles.btnUnmute}
+            onClick={() => apply('unmute')}
+            disabled={loading}
+          >
+            {t('market.adminUnmuteUser')}
+          </button>
+        )}
+
+        {/* Ban / Unban */}
+        {!banned
+          ? (
+            <button
+              className={styles.btnBan}
+              onClick={() => apply('ban')}
+              disabled={loading}
+            >
+              {t('market.adminBanUser')}
+            </button>
+          ) : (
+            <button
+              className={styles.btnUnmute}
+              onClick={() => apply('unban')}
+              disabled={loading}
+            >
+              {t('market.adminUnbanUser')}
+            </button>
+          )
+        }
+      </div>
+    </div>
+  )
+}
 
 // ── Report row ─────────────────────────────────────────────
 function ReportRow({ report, onRefresh, t }) {
@@ -55,13 +166,25 @@ function ReportRow({ report, onRefresh, t }) {
       </div>
 
       <div className={styles.reportBody}>
+
+        {/* Listing info + link */}
         <div className={styles.field}>
           <span className={styles.fieldLabel}>Listing</span>
           <span className={styles.fieldValue}>
-            {report.market_listings?.title ?? '—'}
+            <strong>{report.market_listings?.title ?? '—'}</strong>
             {report.market_listings?.server && (
               <span className={styles.serverTag}> [{report.market_listings.server}]</span>
             )}
+            {/* Link to market page — deep-link via search query */}
+            <Link
+              to={`/market`}
+              className={styles.listingLink}
+              title={`ID : ${report.listing_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('market.adminViewListing')}
+            </Link>
           </span>
         </div>
 
@@ -71,9 +194,9 @@ function ReportRow({ report, onRefresh, t }) {
         </div>
 
         <div className={styles.field}>
-          <span className={styles.fieldLabel}>Acheteur signalé</span>
+          <span className={styles.fieldLabel}>Utilisateur signalé</span>
           <span className={`${styles.fieldValue} ${styles.reported}`}>
-            {report.reported_profile?.username ?? '—'}
+            <strong>{report.reported_profile?.username ?? '—'}</strong>
             <span className={styles.reportCount}>
               ⚠️ {report.reported_profile?.trades_reported ?? 0} signalement(s)
             </span>
@@ -99,7 +222,14 @@ function ReportRow({ report, onRefresh, t }) {
           <span className={styles.fieldValue}>{report.reason}</span>
         </div>
 
-        {/* Admin note + actions */}
+        {/* Moderation panel — always visible (independent of report status) */}
+        <ModerationPanel
+          reportedProfile={report.reported_profile}
+          onRefresh={onRefresh}
+          t={t}
+        />
+
+        {/* Admin note + validate/reject — only while pending */}
         {isPending && (
           <>
             <label className={styles.noteLabel}>
@@ -196,6 +326,8 @@ export default function AdminMarketPage() {
     )
   }
 
+  const pendingCount = reports.filter(r => r.status === 'pending').length
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>{t('market.adminReports')}</h1>
@@ -213,10 +345,8 @@ export default function AdminMarketPage() {
             onClick={() => setTab(key)}
           >
             {label}
-            {key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && tab !== 'pending' && (
-              <span className={styles.badge}>
-                {reports.filter(r => r.status === 'pending').length}
-              </span>
+            {key === 'pending' && pendingCount > 0 && tab !== 'pending' && (
+              <span className={styles.badge}>{pendingCount}</span>
             )}
           </button>
         ))}

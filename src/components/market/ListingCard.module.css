@@ -245,6 +245,30 @@
 .btnAcceptOffer:hover { background: #22c55e44; }
 .btnAcceptOffer:disabled { opacity: 0.5; cursor: default; }
 
+.offerRowActions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.btnReportOffer {
+  background: transparent;
+  border: 1px solid #ef444422;
+  color: #ef444499;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btnReportOffer:hover {
+  color: #ef4444;
+  background: rgba(239,68,68,0.1);
+  border-color: #ef444466;
+}
+
 /* ── Footer ─────────────────────────────────────── */
 .footer {
   display: flex;
@@ -336,6 +360,12 @@
 .blockedMsg {
   font-size: 0.72rem;
   color: #ef4444;
+  font-style: italic;
+}
+
+.restrictedMsg {
+  font-size: 0.72rem;
+  color: #e6b430;
   font-style: italic;
 }
 

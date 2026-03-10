@@ -293,6 +293,28 @@ export default {
     adminValidate:    'Valider (bloquer l\'acheteur)',
     adminReject:      'Rejeter',
     adminNoReports:   'Aucun signalement.',
+    adminViewListing:     'Voir sur le marché →',
+    adminModerationTitle: 'Modération du compte',
+    adminMuteUser:        'Muter',
+    adminBanUser:         'Bannir définitivement',
+    adminUnmuteUser:      'Lever le mute',
+    adminUnbanUser:       'Lever le ban',
+    adminMute3d:          '3 jours',
+    adminMute7d:          '7 jours',
+    adminMute30d:         '30 jours',
+    adminSanctionSuccess: 'Sanction appliquée.',
+    adminSanctionError:   'Erreur lors de l\'application de la sanction.',
+    adminStatusMuted:     'Muté jusqu\'au',
+    adminStatusBanned:    'Compte banni',
+    adminStatusClean:     'Aucune restriction active',
+    // Spam offer report
+    reportOfferTitle:     'Signaler une offre',
+    reportOfferBtn:       '⚠️',
+    // Mute/ban enforcement (côté acheteur/vendeur)
+    mutedCannotOffer:     'Ton compte est temporairement muté. Tu ne peux pas faire d\'offre.',
+    mutedCannotList:      'Ton compte est temporairement muté. Tu ne peux pas créer d\'annonce.',
+    bannedCannotOffer:    'Ton compte est banni du marché.',
+    bannedCannotList:     'Ton compte est banni du marché.',
     // Tags
     tags: {
       swordsman:          'Escrimeur',

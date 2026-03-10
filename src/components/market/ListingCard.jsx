@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
+import { isBanned, isMuted } from '@/hooks/useMarket'
 import {
   archiveListing,
   triggerConfirmation,
@@ -49,23 +50,37 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   const { t } = useLang()
   const { user } = useAuth()
 
-  const [showOfferModal,  setShowOfferModal]  = useState(false)
-  const [showReportModal, setShowReportModal] = useState(false)
-  const [actionLoading,   setActionLoading]   = useState(false)
+  const [showOfferModal,       setShowOfferModal]       = useState(false)
+  const [showReportModal,      setShowReportModal]      = useState(false)
+  // Spam report state: { offerId, reportedProfileId } | null
+  const [spamReportTarget,     setSpamReportTarget]     = useState(null)
+  const [actionLoading,        setActionLoading]        = useState(false)
 
-  const isSell = listing.type === 'sell'
-  const isOwner = user?.id === listing.profileId
+  const isSell    = listing.type === 'sell'
+  const isOwner   = user?.id === listing.profileId
   const isBlocked = listing.blockedProfiles.includes(user?.id)
   const isPending = listing.confirmationPending
-  const isSold = listing.status === LISTING_STATUS.SOLD
+  const isSold    = listing.status === LISTING_STATUS.SOLD
 
-  // Offers visible to listing owner + current user's own offers
-  const visibleOffers = (listing.offers ?? []).filter(o =>
-    isOwner || o.profileId === user?.id
+  // Offers — raw rows from Supabase keep snake_case; handle both.
+  const offers = listing.offers ?? []
+
+  // profile_id can be snake_case (raw row) or camelCase (fromDBOffer mapped)
+  const getOfferProfileId = (o) => o.profileId ?? o.profile_id
+  const getOfferStatus    = (o) => o.status
+
+  const activeOffers = offers.filter(o => getOfferStatus(o) === OFFER_STATUS.ACTIVE)
+  const top          = bestOffer(offers)
+
+  // The current user's own active offer on this listing
+  const myOffer = offers.find(
+    o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.ACTIVE
   )
-  const activeOffers = (listing.offers ?? []).filter(o => o.status === OFFER_STATUS.ACTIVE)
-  const top = bestOffer(listing.offers ?? [])
-  const myOffer = (listing.offers ?? []).find(o => o.profileId === user?.id && o.status === OFFER_STATUS.ACTIVE)
+
+  // Mute / ban check on the current user (viewer)
+  const viewerBanned = isBanned(userProfile)
+  const viewerMuted  = isMuted(userProfile)
+  const viewerRestricted = viewerBanned || viewerMuted
 
   // Can the current user make an offer?
   const canOffer = (
@@ -74,8 +89,16 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     !isBlocked &&
     !isPending &&
     !isSold &&
+    !viewerRestricted &&
     userCharServers.includes(listing.server)
   )
+
+  // Restriction message for the viewer (shown instead of offer button)
+  const restrictionMsg = viewerBanned
+    ? t('market.bannedCannotOffer')
+    : viewerMuted
+      ? t('market.mutedCannotOffer')
+      : null
 
   // ── Actions ──────────────────────────────────────────────
 
@@ -106,6 +129,12 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     await triggerConfirmation(listing.id, offerId)
     setActionLoading(false)
     onRefresh?.()
+  }
+
+  function handleSpamReport(offer) {
+    const reportedProfileId = getOfferProfileId(offer)
+    if (!reportedProfileId) return
+    setSpamReportTarget({ offerId: offer.id, reportedProfileId })
   }
 
   // ── Render ────────────────────────────────────────────────
@@ -209,29 +238,47 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         </div>
       )}
 
-      {/* Offer list (owner view) */}
-      {isOwner && isSell && !isPending && !isSold && activeOffers.length > 0 && (
+      {/* Offer list (owner view) — visible both when pending and when active */}
+      {isOwner && isSell && activeOffers.length > 0 && (
         <div className={styles.offerList}>
           {activeOffers
-            .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-            .map(offer => (
-              <div key={offer.id} className={styles.offerRow}>
-                <span className={styles.offerProfile}>
-                  {offer.profile?.username ?? '—'}
-                </span>
-                <span className={styles.offerPrice}>
-                  {formatGold(offer.price)} {t('market.gold')}
-                </span>
-                {offer.comment && <span className={styles.offerComment}>{offer.comment}</span>}
-                <button
-                  className={styles.btnAcceptOffer}
-                  onClick={() => handleSelectOffer(offer.id)}
-                  disabled={actionLoading}
-                >
-                  ✓
-                </button>
-              </div>
-            ))}
+            .sort((a, b) => ((b.price ?? b.price) ?? 0) - ((a.price ?? a.price) ?? 0))
+            .map(offer => {
+              const offerProfileId = getOfferProfileId(offer)
+              const username = offer.profile?.username ?? offer.profiles?.username ?? '—'
+              return (
+                <div key={offer.id} className={styles.offerRow}>
+                  <span className={styles.offerProfile}>{username}</span>
+                  <span className={styles.offerPrice}>
+                    {formatGold(offer.price)} {t('market.gold')}
+                  </span>
+                  {offer.comment && <span className={styles.offerComment}>{offer.comment}</span>}
+                  <div className={styles.offerRowActions}>
+                    {/* Accept offer (only when not in pending confirmation) */}
+                    {!isPending && (
+                      <button
+                        className={styles.btnAcceptOffer}
+                        onClick={() => handleSelectOffer(offer.id)}
+                        disabled={actionLoading}
+                        title="Accepter cette offre"
+                      >
+                        ✓
+                      </button>
+                    )}
+                    {/* Report spam — available at any time to the owner */}
+                    {offerProfileId && offerProfileId !== user?.id && (
+                      <button
+                        className={styles.btnReportOffer}
+                        onClick={() => handleSpamReport(offer)}
+                        title={t('market.reportOfferTitle')}
+                      >
+                        {t('market.reportOfferBtn')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
         </div>
       )}
 
@@ -264,9 +311,14 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             </button>
           )}
 
-          {/* Report blocked */}
+          {/* Blocked */}
           {isBlocked && (
             <span className={styles.blockedMsg}>{t('market.blockedFromListing')}</span>
+          )}
+
+          {/* Muted / banned restriction message */}
+          {!isOwner && !isBlocked && !isSold && viewerRestricted && (
+            <span className={styles.restrictedMsg}>{restrictionMsg}</span>
           )}
 
           {/* Buyer: make offer */}
@@ -293,12 +345,12 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               onClick={() => onToggleFollow(listing.id)}
               title={isFollowed ? t('market.unfollow') : t('market.follow')}
             >
-              {isFollowed ? '🔖' : '🔖'}
+              🔖
               <span>{isFollowed ? t('market.unfollow') : t('market.follow')}</span>
             </button>
           )}
 
-          {/* Seller: report button (only when confirmation_pending) */}
+          {/* Seller: report non-payer (only when confirmation_pending) */}
           {isOwner && isPending && (
             <button
               className={styles.btnReport}
@@ -319,12 +371,25 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         />
       )}
 
+      {/* Non-payer report (triggered from pending banner) */}
       {showReportModal && listing.acceptedOfferId && (
         <ReportModal
           listing={listing}
           offerId={listing.acceptedOfferId}
           onClose={() => setShowReportModal(false)}
           onSuccess={() => { setShowReportModal(false); onRefresh?.() }}
+        />
+      )}
+
+      {/* Spam offer report (triggered from offer row ⚠️) */}
+      {spamReportTarget && (
+        <ReportModal
+          listing={listing}
+          offerId={spamReportTarget.offerId}
+          reportedProfileId={spamReportTarget.reportedProfileId}
+          mode="spam"
+          onClose={() => setSpamReportTarget(null)}
+          onSuccess={() => { setSpamReportTarget(null); onRefresh?.() }}
         />
       )}
     </div>

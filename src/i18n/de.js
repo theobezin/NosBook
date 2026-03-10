@@ -293,6 +293,28 @@ export default {
     adminValidate:    'Validieren (Käufer sperren)',
     adminReject:      'Ablehnen',
     adminNoReports:   'Keine Meldungen.',
+    adminViewListing:     'Im Markt anzeigen →',
+    adminModerationTitle: 'Konto-Moderation',
+    adminMuteUser:        'Stumm schalten',
+    adminBanUser:         'Dauerhaft sperren',
+    adminUnmuteUser:      'Stummschaltung aufheben',
+    adminUnbanUser:       'Sperre aufheben',
+    adminMute3d:          '3 Tage',
+    adminMute7d:          '7 Tage',
+    adminMute30d:         '30 Tage',
+    adminSanctionSuccess: 'Sanktion angewendet.',
+    adminSanctionError:   'Fehler beim Anwenden der Sanktion.',
+    adminStatusMuted:     'Stumm bis',
+    adminStatusBanned:    'Konto gesperrt',
+    adminStatusClean:     'Keine aktive Einschränkung',
+    // Spam offer report
+    reportOfferTitle:     'Angebot melden',
+    reportOfferBtn:       '⚠️',
+    // Mute/ban enforcement
+    mutedCannotOffer:     'Dein Konto ist vorübergehend stummgeschaltet. Du kannst keine Angebote machen.',
+    mutedCannotList:      'Dein Konto ist vorübergehend stummgeschaltet. Du kannst keine Anzeigen erstellen.',
+    bannedCannotOffer:    'Dein Konto ist vom Markt gesperrt.',
+    bannedCannotList:     'Dein Konto ist vom Markt gesperrt.',
     // Tags
     tags: {
       swordsman:          'Fechter',

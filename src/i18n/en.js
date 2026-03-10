@@ -293,6 +293,28 @@ export default {
     adminValidate:    'Validate (block buyer)',
     adminReject:      'Reject',
     adminNoReports:   'No reports.',
+    adminViewListing:     'View on market →',
+    adminModerationTitle: 'Account Moderation',
+    adminMuteUser:        'Mute',
+    adminBanUser:         'Permanent ban',
+    adminUnmuteUser:      'Remove mute',
+    adminUnbanUser:       'Remove ban',
+    adminMute3d:          '3 days',
+    adminMute7d:          '7 days',
+    adminMute30d:         '30 days',
+    adminSanctionSuccess: 'Sanction applied.',
+    adminSanctionError:   'Error applying the sanction.',
+    adminStatusMuted:     'Muted until',
+    adminStatusBanned:    'Account banned',
+    adminStatusClean:     'No active restriction',
+    // Spam offer report
+    reportOfferTitle:     'Report an offer',
+    reportOfferBtn:       '⚠️',
+    // Mute/ban enforcement
+    mutedCannotOffer:     'Your account is temporarily muted. You cannot make offers.',
+    mutedCannotList:      'Your account is temporarily muted. You cannot create listings.',
+    bannedCannotOffer:    'Your account is banned from the market.',
+    bannedCannotList:     'Your account is banned from the market.',
     // Tags
     tags: {
       swordsman:          'Swordsman',

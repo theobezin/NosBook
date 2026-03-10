@@ -7,6 +7,23 @@ import { supabase, hasSupabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { LISTING_STATUS, OFFER_STATUS, isExpired } from '@/lib/market'
 
+// ── Moderation helpers (usable in any component) ───────────
+
+/**
+ * Returns true if the profile is permanently banned from the market.
+ */
+export function isBanned(profile) {
+  return profile?.is_banned === true
+}
+
+/**
+ * Returns true if the profile is currently muted (temporary restriction).
+ */
+export function isMuted(profile) {
+  if (!profile?.muted_until) return false
+  return new Date(profile.muted_until) > new Date()
+}
+
 // ── Helpers ────────────────────────────────────────────────
 
 function fromDBListing(row) {
@@ -368,7 +385,7 @@ export async function fetchReports(status = null) {
     .select(`
       *,
       reported_by_profile:profiles!market_reports_reported_by_fkey ( id, username ),
-      reported_profile:profiles!market_reports_reported_profile_id_fkey ( id, username, trades_reported ),
+      reported_profile:profiles!market_reports_reported_profile_id_fkey ( id, username, trades_reported, muted_until, is_banned ),
       market_listings ( id, title, server ),
       market_offers ( id, price, comment )
     `)
@@ -388,6 +405,21 @@ export async function validateReport(reportId, adminNote = '') {
   const { error } = await supabase.rpc('validate_market_report', {
     p_report_id:  reportId,
     p_admin_note: adminNote || null,
+  })
+  return { error }
+}
+
+/**
+ * Admin: apply a moderation action to a profile (calls DB function).
+ * action: 'mute' | 'ban' | 'unmute' | 'unban'
+ * durationDays: required for 'mute', ignored otherwise.
+ */
+export async function setModeration(profileId, action, durationDays = null) {
+  if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+  const { error } = await supabase.rpc('admin_set_moderation', {
+    p_profile_id:    profileId,
+    p_action:        action,
+    p_duration_days: durationDays ?? null,
   })
   return { error }
 }

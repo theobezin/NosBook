@@ -1,5 +1,7 @@
 // ============================================================
-// ReportModal — seller reports a buyer who didn't honour the trade
+// ReportModal — generic report modal, two modes:
+//   'nonpayer' (default) — seller reports a buyer who didn't honour the trade
+//   'spam'               — listing owner reports a spam/abusive offer
 // ============================================================
 import { useState } from 'react'
 import { useLang } from '@/i18n'
@@ -7,7 +9,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { createReport } from '@/hooks/useMarket'
 import styles from './ReportModal.module.css'
 
-export default function ReportModal({ listing, offerId, onClose, onSuccess }) {
+export default function ReportModal({
+  listing,
+  offerId,
+  // Directly pass the profile ID when known (spam mode) to avoid relying on listing.offers content
+  reportedProfileId: reportedProfileIdProp,
+  mode = 'nonpayer',
+  onClose,
+  onSuccess,
+}) {
   const { t } = useLang()
   const { user } = useAuth()
 
@@ -16,29 +26,29 @@ export default function ReportModal({ listing, offerId, onClose, onSuccess }) {
   const [error,   setError]   = useState(null)
   const [success, setSuccess] = useState(false)
 
-  // Determine the reported profile from the accepted offer
-  // The listing object may not carry full offer details; we use acceptedOfferId.
-  // The reported profile id is fetched server-side from the offer — here we pass
-  // offerId and let the DB/hook handle the lookup via the offer row.
-  // Since we don't have the buyer's profile_id directly in the card,
-  // we need to find it from listing.offers if available.
-  const acceptedOffer = (listing.offers ?? []).find(o => o.id === offerId)
-  const reportedProfileId = acceptedOffer?.profileId ?? acceptedOffer?.profile_id
+  // Resolve the reported profile ID:
+  // Priority: explicit prop → search listing.offers by offerId
+  const resolvedReportedProfileId = reportedProfileIdProp ?? (() => {
+    const offer = (listing.offers ?? []).find(o => o.id === offerId)
+    return offer?.profileId ?? offer?.profile_id
+  })()
+
+  const titleKey = mode === 'spam' ? 'market.reportOfferTitle' : 'market.reportTitle'
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!reason.trim()) return
-    if (!reportedProfileId) { setError('Cannot identify buyer.'); return }
+    if (!resolvedReportedProfileId) { setError('Cannot identify the reported user.'); return }
 
     setLoading(true)
     setError(null)
 
     const { error: err } = await createReport({
-      listingId:          listing.id,
+      listingId:         listing.id,
       offerId,
-      reportedBy:         user.id,
-      reportedProfileId,
-      reason:             reason.trim(),
+      reportedBy:        user.id,
+      reportedProfileId: resolvedReportedProfileId,
+      reason:            reason.trim(),
     })
 
     setLoading(false)
@@ -59,7 +69,7 @@ export default function ReportModal({ listing, offerId, onClose, onSuccess }) {
           </div>
         ) : (
           <>
-            <h2 className={styles.title}>{t('market.reportTitle')}</h2>
+            <h2 className={styles.title}>{t(titleKey)}</h2>
             <p className={styles.listingTitle}>{listing.title}</p>
 
             <form className={styles.form} onSubmit={handleSubmit}>

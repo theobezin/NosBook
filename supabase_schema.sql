@@ -27,6 +27,9 @@ create table if not exists public.profiles (
   discord_handle  text,                          -- optional discord pseudo shown on listings
   trades_completed int not null default 0,       -- confirmed successful trades
   trades_reported  int not null default 0,       -- validated reports against this user
+  -- Moderation fields (managed exclusively by admins via admin_set_moderation)
+  muted_until     timestamptz,                   -- null = not muted; if > now() = muted
+  is_banned       boolean not null default false,-- permanent market ban
   created_at      timestamptz default now(),
   updated_at      timestamptz default now()
 );
@@ -486,6 +489,58 @@ end;
 $$ language plpgsql security definer;
 
 -- ────────────────────────────────────────────────────────────
+-- FUNCTION: admin_set_moderation
+-- Admin-only: mute or ban a profile from the market.
+-- Actions:
+--   'mute'   + p_duration_days → sets muted_until = now() + interval
+--   'ban'    → sets is_banned = true, clears muted_until
+--   'unmute' → clears muted_until
+--   'unban'  → sets is_banned = false
+-- ────────────────────────────────────────────────────────────
+create or replace function public.admin_set_moderation(
+  p_profile_id    uuid,
+  p_action        text,   -- 'mute' | 'ban' | 'unmute' | 'unban'
+  p_duration_days int default null
+)
+returns void as $$
+begin
+  -- Caller must be admin
+  if not exists (
+    select 1 from public.profiles where id = auth.uid() and is_admin = true
+  ) then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  if p_action = 'mute' then
+    if p_duration_days is null or p_duration_days <= 0 then
+      raise exception 'Duration required for mute action';
+    end if;
+    update public.profiles
+       set muted_until = now() + (p_duration_days || ' days')::interval
+     where id = p_profile_id;
+
+  elsif p_action = 'ban' then
+    update public.profiles
+       set is_banned = true, muted_until = null
+     where id = p_profile_id;
+
+  elsif p_action = 'unmute' then
+    update public.profiles
+       set muted_until = null
+     where id = p_profile_id;
+
+  elsif p_action = 'unban' then
+    update public.profiles
+       set is_banned = false
+     where id = p_profile_id;
+
+  else
+    raise exception 'Unknown moderation action: %', p_action;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+-- ────────────────────────────────────────────────────────────
 -- ADMIN MANAGEMENT
 -- Grant:  UPDATE public.profiles SET is_admin = true  WHERE username = 'NAME';
 -- Revoke: UPDATE public.profiles SET is_admin = false WHERE username = 'NAME';
@@ -674,3 +729,17 @@ $$ language plpgsql security definer;
 --   • validate_market_report  (admin validates a report)
 --   • confirm_market_sale     (seller confirms a sale)
 -- These use CREATE OR REPLACE so they are safe to re-run at any time.
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION C — add moderation columns to profiles
+-- Run if you already have the market schema (Migration B done)
+-- but not yet the mute/ban columns.
+-- ────────────────────────────────────────────────────────────
+
+-- STEP 1 — Add moderation columns to profiles
+-- alter table public.profiles
+--   add column if not exists muted_until timestamptz,
+--   add column if not exists is_banned   boolean not null default false;
+
+-- STEP 2 — Create admin_set_moderation function
+-- (copy-paste from the FUNCTION block above — safe to re-run with CREATE OR REPLACE)
