@@ -16,6 +16,7 @@ import {
   confirmSale,
   rejectConfirmation,
   cancelOffer,
+  rejectOffer,
 } from '@/hooks/useMarket'
 import OfferModal  from './OfferModal'
 import ReportModal from './ReportModal'
@@ -82,6 +83,11 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.ACTIVE
   )
 
+  // The current user's rejected offer (blocks re-bidding)
+  const myRejectedOffer = offers.find(
+    o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.REJECTED
+  )
+
   // Mute / ban check on the current user (viewer)
   const viewerBanned = isBanned(userProfile)
   const viewerMuted  = isMuted(userProfile)
@@ -95,6 +101,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     !isPending &&
     !isSold &&
     !viewerRestricted &&
+    !myRejectedOffer &&
     userCharServers.includes(listing.server)
   )
 
@@ -147,6 +154,14 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   async function handleSelectOffer(offerId) {
     setActionLoading(true)
     await triggerConfirmation(listing.id, offerId)
+    setActionLoading(false)
+    onRefresh?.()
+  }
+
+  async function handleRejectOffer(offerId) {
+    if (!window.confirm(t('market.rejectOfferConfirm'))) return
+    setActionLoading(true)
+    await rejectOffer(offerId)
     setActionLoading(false)
     onRefresh?.()
   }
@@ -295,12 +310,23 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
                         className={styles.btnAcceptOffer}
                         onClick={() => handleSelectOffer(offer.id)}
                         disabled={actionLoading}
-                        title="Accepter cette offre"
+                        title={t('market.confirmSale')}
                       >
                         ✓
                       </button>
                     )}
-                    {/* Report spam — available at any time to the owner */}
+                    {/* Reject offer */}
+                    {!isPending && (
+                      <button
+                        className={styles.btnRejectOfferMini}
+                        onClick={() => handleRejectOffer(offer.id)}
+                        disabled={actionLoading}
+                        title={t('market.rejectOffer')}
+                      >
+                        ✕
+                      </button>
+                    )}
+                    {/* Report spam */}
                     {offerProfileId && offerProfileId !== user?.id && (
                       <button
                         className={styles.btnReportOffer}
@@ -366,6 +392,11 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
           {/* Muted / banned restriction message */}
           {!isOwner && !isBlocked && !isSold && viewerRestricted && (
             <span className={styles.restrictedMsg}>{restrictionMsg}</span>
+          )}
+
+          {/* Offer rejected — cannot re-bid */}
+          {!isOwner && !isBlocked && !isSold && !viewerRestricted && myRejectedOffer && (
+            <span className={styles.restrictedMsg}>{t('market.offerWasRejected')}</span>
           )}
 
           {/* Buyer: make offer */}

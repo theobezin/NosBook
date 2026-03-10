@@ -350,6 +350,7 @@ export default {
     respond:          'Antworten',
     confirmSale:      'Verkauf bestätigen',
     rejectOffer:      'Ablehnen',
+    rejectOfferConfirm: 'Dieses Angebot ablehnen?',
     reportBuyer:      'Käufer melden',
     archiveListing:   'Anzeige archivieren',
     cancelOffer:      'Mein Angebot stornieren',
@@ -360,7 +361,8 @@ export default {
     tradesCompleted:  'Abgeschlossene Trades',
     tradesReported:   'Erhaltene Meldungen',
     confirmPending:   'Verkauf wartet auf Bestätigung. Keine neuen Angebote möglich.',
-    blockedFromListing: 'Du bist von dieser Anzeige gesperrt.',
+    blockedFromListing:  'Du bist von dieser Anzeige gesperrt.',
+    offerWasRejected:    'Dein Angebot wurde vom Verkäufer abgelehnt.',
     // Create listing form
     createSell:       'Neues Angebot',
     createBuy:        'Neues Gesuch',

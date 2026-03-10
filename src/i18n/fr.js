@@ -350,6 +350,7 @@ export default {
     respond:          'Répondre',
     confirmSale:      'Confirmer la vente',
     rejectOffer:      'Refuser',
+    rejectOfferConfirm: 'Refuser cette offre ?',
     reportBuyer:      'Signaler l\'acheteur',
     archiveListing:   'Archiver l\'annonce',
     cancelOffer:      'Annuler mon offre',
@@ -360,7 +361,8 @@ export default {
     tradesCompleted:  'Échanges réalisés',
     tradesReported:   'Signalements reçus',
     confirmPending:   'Vente en attente de confirmation. Aucune nouvelle offre acceptée.',
-    blockedFromListing: 'Tu es bloqué sur cette annonce.',
+    blockedFromListing:  'Tu es bloqué sur cette annonce.',
+    offerWasRejected:    'Ton offre a été refusée par le vendeur.',
     // Create listing form
     createSell:       'Nouvelle vente',
     createBuy:        'Nouvelle recherche',

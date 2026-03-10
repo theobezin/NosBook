@@ -350,6 +350,7 @@ export default {
     respond:          'Respond',
     confirmSale:      'Confirm sale',
     rejectOffer:      'Decline',
+    rejectOfferConfirm: 'Decline this offer?',
     reportBuyer:      'Report buyer',
     archiveListing:   'Archive listing',
     cancelOffer:      'Cancel my offer',
@@ -360,7 +361,8 @@ export default {
     tradesCompleted:  'Trades completed',
     tradesReported:   'Reports received',
     confirmPending:   'Sale pending confirmation. No new offers accepted.',
-    blockedFromListing: 'You are blocked from this listing.',
+    blockedFromListing:  'You are blocked from this listing.',
+    offerWasRejected:    'Your offer was declined by the seller.',
     // Create listing form
     createSell:       'New Listing',
     createBuy:        'New Wanted',

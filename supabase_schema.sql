@@ -172,6 +172,12 @@ create table if not exists public.market_offers (
 
 create index if not exists market_offers_listing_id_idx on public.market_offers (listing_id);
 
+-- Prevent a user from having multiple non-cancelled offers on the same listing.
+-- This also blocks re-bidding after a rejection (rejected ≠ cancelled).
+create unique index if not exists market_offers_one_per_user_idx
+  on public.market_offers (listing_id, profile_id)
+  where status not in ('cancelled', 'blocked');
+
 -- Add FK from market_listings to market_offers (after both tables exist)
 alter table public.market_listings
   add constraint market_listings_accepted_offer_id_fkey
@@ -585,6 +591,38 @@ end;
 $$ language plpgsql security definer;
 
 -- ────────────────────────────────────────────────────────────
+-- FUNCTION: reject_offer
+-- Called by the listing owner to reject a single active offer.
+-- Sets offer status → 'rejected'.
+-- ────────────────────────────────────────────────────────────
+create or replace function public.reject_offer(
+  p_offer_id uuid
+)
+returns void as $$
+declare
+  v_listing_owner uuid;
+begin
+  select ml.profile_id into v_listing_owner
+    from public.market_offers mo
+    join public.market_listings ml on ml.id = mo.listing_id
+   where mo.id = p_offer_id
+     and mo.status = 'active';
+
+  if not found then
+    raise exception 'Offer not found or not active';
+  end if;
+
+  if v_listing_owner <> auth.uid() then
+    raise exception 'Not authorized';
+  end if;
+
+  update public.market_offers
+     set status = 'rejected'
+   where id = p_offer_id;
+end;
+$$ language plpgsql security definer;
+
+-- ────────────────────────────────────────────────────────────
 -- FUNCTION: admin_set_moderation
 -- Admin-only: mute or ban a profile from the market.
 -- Actions:
@@ -879,3 +917,12 @@ alter table public.market_offers
 
 -- STEP 3 — Re-deploy confirm_market_sale function (now rejects other active offers)
 -- (copy-paste the full confirm_market_sale function from the FUNCTION block above)
+
+-- STEP 4 — Deploy reject_offer function (listing owner rejects a single offer)
+-- (copy-paste the full reject_offer function from the FUNCTION block above)
+
+-- STEP 5 — Partial unique index: one non-cancelled offer per user per listing
+-- (blocks re-bidding after rejection at DB level)
+create unique index if not exists market_offers_one_per_user_idx
+  on public.market_offers (listing_id, profile_id)
+  where status not in ('cancelled', 'blocked');

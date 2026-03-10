@@ -308,8 +308,9 @@
   transition: border-color 0.2s;
 }
 
-.offerAccepted  { border-color: #22c55e55; background: rgba(34,197,94,0.04); }
-.offerBlockedRow { opacity: 0.5; }
+.offerAccepted    { border-color: #22c55e55; background: rgba(34,197,94,0.04); }
+.offerRejectedRow { opacity: 0.6; border-color: rgba(251,146,60,0.25); }
+.offerBlockedRow  { opacity: 0.5; }
 
 .offerHeader {
   display: flex;

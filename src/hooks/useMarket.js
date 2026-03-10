@@ -329,6 +329,16 @@ export async function cancelOffer(offerId) {
 }
 
 /**
+ * Reject an offer (by the listing owner).
+ * Calls the reject_offer DB function which verifies ownership.
+ */
+export async function rejectOffer(offerId) {
+  if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+  const { error } = await supabase.rpc('reject_offer', { p_offer_id: offerId })
+  return { error }
+}
+
+/**
  * Seller triggers confirmation for a specific offer
  * (or when buyout price is reached automatically).
  * Sets confirmation_pending = true and accepted_offer_id.

@@ -10,7 +10,7 @@ import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { useCharacters } from '@/hooks/useCharacters'
-import { useMarketListing, cancelOffer, triggerConfirmation, confirmSale, rejectConfirmation, archiveListing, isBanned, isMuted } from '@/hooks/useMarket'
+import { useMarketListing, cancelOffer, rejectOffer, triggerConfirmation, confirmSale, rejectConfirmation, archiveListing, isBanned, isMuted } from '@/hooks/useMarket'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
 import OfferModal        from '@/components/market/OfferModal'
 import ReportModal      from '@/components/market/ReportModal'
@@ -82,8 +82,18 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
     onRefresh()
   }
 
+  async function handleReject() {
+    if (!window.confirm(t('market.rejectOfferConfirm'))) return
+    setLoading(true)
+    await rejectOffer(offerId)
+    setLoading(false)
+    onRefresh()
+  }
+
+  const isRejected = offer.status === OFFER_STATUS.REJECTED
+
   return (
-    <div className={`${styles.offerRow} ${isAccepted ? styles.offerAccepted : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
+    <div className={`${styles.offerRow} ${isAccepted ? styles.offerAccepted : ''} ${isRejected ? styles.offerRejectedRow : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
 
       {/* Offer header: username + status */}
       <div className={styles.offerHeader}>
@@ -129,6 +139,13 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
         {isOwner && isActive && !isPending && (
           <button className={styles.btnAccept} onClick={handleAccept} disabled={loading}>
             ✓ {t('market.confirmSale')}
+          </button>
+        )}
+
+        {/* Owner: reject offer */}
+        {isOwner && isActive && !isPending && (
+          <button className={styles.btnRejectOffer} onClick={handleReject} disabled={loading}>
+            ✕ {t('market.rejectOffer')}
           </button>
         )}
 
@@ -220,7 +237,11 @@ export default function ListingDetailPage() {
   const viewerRestricted = viewerBanned || viewerMuted
 
   const myActiveOffer = allOffers.find(
-    o => o.profile_id === user?.id && o.status === OFFER_STATUS.ACTIVE
+    o => o.profileId === user?.id && o.status === OFFER_STATUS.ACTIVE
+  )
+
+  const myRejectedOffer = allOffers.find(
+    o => o.profileId === user?.id && o.status === OFFER_STATUS.REJECTED
   )
 
   const canOffer = (
@@ -231,6 +252,7 @@ export default function ListingDetailPage() {
     !isSold &&
     !isArchived &&
     !viewerRestricted &&
+    !myRejectedOffer &&
     userCharServers.includes(listing.server)
   )
 
@@ -413,6 +435,11 @@ export default function ListingDetailPage() {
               <p className={styles.restrictedMsg}>
                 {viewerBanned ? t('market.bannedCannotOffer') : t('market.mutedCannotOffer')}
               </p>
+            )}
+
+            {/* Buyer: offer was rejected — cannot re-bid */}
+            {!isOwner && !isBlocked && !viewerRestricted && myRejectedOffer && (
+              <p className={styles.restrictedMsg}>{t('market.offerWasRejected')}</p>
             )}
 
             {/* Buyer: make offer */}
