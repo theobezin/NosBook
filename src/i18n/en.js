@@ -287,8 +287,10 @@ export default {
     rejectedNote:   'Reason:',
   },
   playerProfile: {
-    records:        'PVE Records',
-    noRecords:      'No validated records for this player.',
+    records:          'PVE Records',
+    noRecords:        'No validated records for this player.',
+    marketListings:   'Active listings',
+    noMarketListings: 'No active listings.',
   },
   market: {
     title:            'Market',
@@ -350,6 +352,9 @@ export default {
     reportBuyer:      'Report buyer',
     archiveListing:   'Archive listing',
     cancelOffer:      'Cancel my offer',
+    bumpListing:      'Bump listing',
+    bumpTitle:        'Move listing to the top (once per 24h)',
+    bumpCooldown:     'Available in {h}h',
     discordContact:   'Discord',
     tradesCompleted:  'Trades completed',
     tradesReported:   'Reports received',

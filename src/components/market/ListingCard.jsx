@@ -11,6 +11,7 @@ import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from
 import { isBanned, isMuted } from '@/hooks/useMarket'
 import {
   archiveListing,
+  bumpListing,
   triggerConfirmation,
   confirmSale,
   rejectConfirmation,
@@ -104,7 +105,22 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
       ? t('market.mutedCannotOffer')
       : null
 
+  // Bump cooldown — 24h since last activity
+  const BUMP_COOLDOWN_MS = 24 * 60 * 60 * 1000
+  const msSinceActivity  = listing.lastActivityAt
+    ? Date.now() - new Date(listing.lastActivityAt).getTime()
+    : BUMP_COOLDOWN_MS
+  const canBump           = isOwner && !isSold && listing.status === LISTING_STATUS.ACTIVE && !isPending && msSinceActivity >= BUMP_COOLDOWN_MS
+  const bumpCooldownHours = Math.ceil((BUMP_COOLDOWN_MS - msSinceActivity) / (60 * 60 * 1000))
+
   // ── Actions ──────────────────────────────────────────────
+
+  async function handleBump() {
+    setActionLoading(true)
+    await bumpListing(listing.id)
+    setActionLoading(false)
+    onRefresh?.()
+  }
 
   async function handleArchive() {
     if (!window.confirm(t('market.archiveListing') + ' ?')) return
@@ -323,6 +339,25 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             >
               {t('market.archiveListing')}
             </button>
+          )}
+
+          {/* Owner: bump */}
+          {isOwner && !isSold && listing.status === LISTING_STATUS.ACTIVE && !isPending && (
+            canBump
+              ? (
+                <button
+                  className={styles.btnBump}
+                  onClick={handleBump}
+                  disabled={actionLoading}
+                  title={t('market.bumpTitle')}
+                >
+                  ↑ {t('market.bumpListing')}
+                </button>
+              ) : (
+                <span className={styles.bumpCooldown}>
+                  ↑ {t('market.bumpCooldown', { h: bumpCooldownHours })}
+                </span>
+              )
           )}
 
           {/* Blocked */}

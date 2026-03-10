@@ -388,6 +388,26 @@
   border: 1px solid rgba(74,222,128,0.2);
 }
 
+.btnBump {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(201,168,76,0.4);
+  background: transparent;
+  color: #c9a84c;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btnBump:hover { background: rgba(201,168,76,0.1); border-color: #c9a84c; }
+.btnBump:disabled { opacity: 0.5; cursor: default; }
+
+.bumpCooldown {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
 .btnCancelOffer {
   font-size: 0.72rem;
   color: #ef4444;

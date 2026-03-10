@@ -156,3 +156,53 @@
   opacity: 1;
   transform: scale(1.15);
 }
+
+/* ── Market listings section ─────────────────── */
+.marketList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.marketRow {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.marketRow:hover {
+  border-color: var(--border-hover);
+}
+
+.marketType {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.marketTitle {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marketServer {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid;
+  text-transform: capitalize;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

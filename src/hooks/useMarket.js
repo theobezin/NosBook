@@ -254,6 +254,19 @@ export async function updateListing(listingId, updates) {
 }
 
 /**
+ * Bump a listing — resets last_activity_at to now, pushing it to top.
+ * Cooldown (24h) is enforced client-side only via listing.lastActivityAt.
+ */
+export async function bumpListing(listingId) {
+  if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+  const { error } = await supabase
+    .from('market_listings')
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq('id', listingId)
+  return { error }
+}
+
+/**
  * Archive a listing (by owner or admin).
  */
 export async function archiveListing(listingId) {
