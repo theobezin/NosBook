@@ -163,7 +163,10 @@ function SpecialistsTab({ char }) {
               <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
               <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
               {sp.wings && (
-                <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>🪶 {sp.wings}</span>
+                <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>
+                  <img src={sp.wings.icon} alt="" className={styles.spWingsIcon} />
+                  {sp.wings.name}
+                </span>
               )}
             </div>
             <div className={styles.spStats}>

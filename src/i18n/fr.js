@@ -165,7 +165,7 @@ export default {
     improvement:      'Amélioration (+0 → +20)',
     perfection:       'Perfectionnement (0 → 100%)',
     wings:            'Ailes de Spécialiste',
-    wingsPlaceholder: 'À venir…',
+    wingsNone:        'Aucune aile',
     statsLabel:       'Stats de Perfectionnement',
     statAtk:          'ATK',
     statDef:          'DEF',

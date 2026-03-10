@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -1082,6 +1082,55 @@ function SPSelect({ spList, value, onChange }) {
   )
 }
 
+// ── WingsSelect ────────────────────────────────────────────────────────────
+
+function WingsSelect({ value, onChange }) {
+  const { t } = useLang()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className={styles.spSelect} ref={ref}>
+      <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
+        {value
+          ? <><img src={value.icon} alt="" className={styles.spSelectIcon} /><span className={styles.spSelectName}>{value.name}</span></>
+          : <span className={styles.spSelectName}>{t('sp.wingsNone')}</span>
+        }
+        <span className={styles.spSelectArrow}>▾</span>
+      </button>
+      {open && (
+        <div className={styles.spSelectDropdown}>
+          <button
+            type="button"
+            className={`${styles.spSelectOption} ${!value ? styles.spSelectOptionActive : ''}`}
+            onClick={() => { onChange(null); setOpen(false) }}
+          >
+            <span>{t('sp.wingsNone')}</span>
+          </button>
+          {SP_WINGS.map(w => (
+            <button
+              key={w.name}
+              type="button"
+              className={`${styles.spSelectOption} ${value?.name === w.name ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange(w); setOpen(false) }}
+            >
+              <img src={w.icon} alt="" className={styles.spSelectIcon} />
+              <span>{w.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── AddSPModal ─────────────────────────────────────────────────────────────
 
 function AddSPModal({ charClass, onClose, onAdd }) {
@@ -1095,7 +1144,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
   const [statDef,     setStatDef]     = useState(0)
   const [statElem,    setStatElem]    = useState(0)
   const [statHpmp,    setStatHpmp]    = useState(0)
-  const [wings,       setWings]       = useState('')
+  const [wings,       setWings]       = useState(null)
 
   const handleAdd = () => {
     if (!name) return
@@ -1112,7 +1161,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
         element: parseInt(statElem) || 0,
         hpmp:    parseInt(statHpmp) || 0,
       },
-      wings: wings.trim() || null,
+      wings: wings ?? null,
     })
     onClose()
   }
@@ -1176,13 +1225,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
 
         <div className={styles.modalField}>
           <label className={styles.modalLabel}>{t('sp.wings')}</label>
-          <input
-            className={styles.modalInput}
-            type="text"
-            value={wings}
-            onChange={e => setWings(e.target.value)}
-            placeholder={t('sp.wingsPlaceholder')}
-          />
+          <WingsSelect value={wings} onChange={setWings} />
         </div>
 
         <div className={styles.modalActions}>
@@ -1244,7 +1287,10 @@ function SpecialistsTab({ char, onUpdate }) {
                 <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
                 <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
                 {sp.wings && (
-                  <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>🪶 {sp.wings}</span>
+                  <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>
+                    <img src={sp.wings.icon} alt="" className={styles.spWingsIcon} />
+                    {sp.wings.name}
+                  </span>
                 )}
               </div>
               <div className={styles.spStats}>

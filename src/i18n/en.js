@@ -165,7 +165,7 @@ export default {
     improvement:      'Improvement (+0 → +20)',
     perfection:       'Perfection (0 → 100%)',
     wings:            'Wings',
-    wingsPlaceholder: 'Coming soon…',
+    wingsNone:        'No wings',
     statsLabel:       'Perfection Stats',
     statAtk:          'ATK',
     statDef:          'DEF',
