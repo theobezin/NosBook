@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, NOSMATES, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -29,6 +29,7 @@ function makeCharacter(name, cls, level, heroLevel, server) {
       specialists: [],
       fairies:     [],
       tattoos:     [],
+      nosmates:    [],
       books:       [],
     },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
@@ -1871,6 +1872,159 @@ function TattoosTab({ char, onUpdate }) {
   )
 }
 
+// ── NosmatePickerModal ─────────────────────────────────────────────────────
+
+function NosmatePickerModal({ onClose, onAdd, existing }) {
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const existingNames = new Set(existing.map(n => n.name))
+  const filtered = NOSMATES.filter(n =>
+    n.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('nosmate.pickTitle')}</h2>
+        <input
+          className={styles.modalInput}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Rechercher…"
+          autoFocus
+        />
+        <div className={styles.nosmateGrid}>
+          {filtered.map(n => {
+            const already = existingNames.has(n.name)
+            return (
+              <button
+                key={n.name}
+                className={`${styles.nosmatePickItem} ${already ? styles.nosmatePickItemEquipped : ''}`}
+                onClick={() => { if (!already) { onAdd(n); onClose() } }}
+                disabled={already}
+              >
+                <img src={n.icon} alt="" className={styles.nosmatePickIcon} />
+                <span className={styles.nosmatePickName}>{n.name}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── NosmatesTab ────────────────────────────────────────────────────────────
+
+const NOSMATE_STARS = [1, 2, 3, 4, 5, 6]
+
+function NosmatesTab({ char, onUpdate }) {
+  const { t } = useLang()
+  const [showPicker, setShowPicker] = useState(false)
+
+  const nosmates = char.equipment.nosmates ?? []
+
+  const handleAdd = (pet) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        nosmates: [...nosmates, { id: `nosmate-${Date.now()}`, name: pet.name, icon: pet.icon, level: 1, heroLevel: 0, stars: 1 }],
+      },
+    })
+  }
+
+  const handleUpdate = (id, patch) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        nosmates: nosmates.map(n => n.id === id ? { ...n, ...patch } : n),
+      },
+    })
+  }
+
+  const handleDelete = (id) => {
+    onUpdate(char.id, {
+      equipment: { ...char.equipment, nosmates: nosmates.filter(n => n.id !== id) },
+    })
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.spHeader}>
+        <Button variant="primary" size="sm" onClick={() => setShowPicker(true)}>
+          {t('nosmate.addBtn')}
+        </Button>
+      </div>
+
+      {nosmates.length === 0 ? (
+        <div className={styles.spEmpty}>{t('nosmate.empty')}</div>
+      ) : (
+        <div className={styles.nosmateCards}>
+          {nosmates.map(n => (
+            <div key={n.id} className={styles.nosmateCard}>
+              <div className={styles.nosmateCardTop}>
+                <img src={n.icon} alt="" className={styles.nosmateCardIcon} />
+                <span className={styles.nosmateCardName}>{n.name}</span>
+                <button className={styles.spCardDelete} onClick={() => handleDelete(n.id)} title="Remove">✕</button>
+              </div>
+
+              {/* Stars */}
+              <div className={styles.nosmateStarRow}>
+                <span className={styles.nosmateLabel}>{t('nosmate.training')}</span>
+                <div className={styles.nosmateStars}>
+                  {NOSMATE_STARS.map(s => (
+                    <button
+                      key={s}
+                      className={`${styles.nosmateStar} ${s <= n.stars ? styles.nosmateStarFilled : ''}`}
+                      onClick={() => handleUpdate(n.id, { stars: s })}
+                    >★</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Level + Hero Level */}
+              <div className={styles.nosmateInputRow}>
+                <div className={styles.nosmateInputGroup}>
+                  <label className={styles.nosmateLabel}>{t('nosmate.level')}</label>
+                  <input
+                    className={styles.nosmateInput}
+                    type="number"
+                    value={n.level}
+                    min={1} max={99}
+                    onChange={e => handleUpdate(n.id, { level: Math.max(1, Math.min(99, parseInt(e.target.value) || 1)) })}
+                  />
+                </div>
+                <div className={styles.nosmateInputGroup}>
+                  <label className={styles.nosmateLabel}>{t('nosmate.heroLevel')}</label>
+                  <input
+                    className={styles.nosmateInput}
+                    type="number"
+                    value={n.heroLevel}
+                    min={0} max={60}
+                    onChange={e => handleUpdate(n.id, { heroLevel: Math.max(0, Math.min(60, parseInt(e.target.value) || 0)) })}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showPicker && (
+        <NosmatePickerModal
+          existing={nosmates}
+          onClose={() => setShowPicker(false)}
+          onAdd={handleAdd}
+        />
+      )}
+    </div>
+  )
+}
+
 // ── BooksTab ───────────────────────────────────────────────────────────────
 
 function BooksTab({ char, onUpdate }) {
@@ -2038,6 +2192,7 @@ export default function ProfilePage() {
     { key: 'specialists', label: t('tabs.specialists')  },
     { key: 'fairies',   label: t('tabs.fairies')   },
     { key: 'tattoos',   label: t('tabs.tattoos')   },
+    { key: 'nosmates',  label: t('tabs.nosmates')  },
     { key: 'books',     label: t('tabs.books')     },
   ]
 
@@ -2249,8 +2404,9 @@ export default function ProfilePage() {
             {activeTab === 'equipment'   && <EquipmentTab   char={data} onUpdate={updateCharacter} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
             {activeTab === 'fairies'  && <FairiesTab  char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'tattoos'  && <TattoosTab  char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'books'    && <BooksTab char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'tattoos'  && <TattoosTab   char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'nosmates' && <NosmatesTab  char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'books'    && <BooksTab     char={data} onUpdate={updateCharacter} />}
           </div>
 
         </div>

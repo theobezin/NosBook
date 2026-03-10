@@ -1888,6 +1888,146 @@ select.modalInput {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   NOSMATES TAB
+═══════════════════════════════════════════════════════════════ */
+.nosmateCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.nosmateCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.nosmateCardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nosmateCardIcon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.nosmateCardName {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.nosmateLabel {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.nosmateStarRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nosmateStars {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.nosmateStar {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--border);
+  padding: 0;
+  line-height: 1;
+  transition: color 0.1s, transform 0.1s;
+}
+.nosmateStar:hover { transform: scale(1.2); }
+.nosmateStarFilled { color: #f59e0b; }
+
+.nosmateInputRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nosmateInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.nosmateInput {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  width: 100%;
+}
+.nosmateInput:focus { outline: none; border-color: var(--accent); }
+
+/* Picker grid */
+.nosmateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.4rem;
+  max-height: 380px;
+  overflow-y: auto;
+  margin: 0.5rem 0;
+}
+
+.nosmatePickItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.nosmatePickItem:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(99,102,241,0.08);
+}
+
+.nosmatePickItemEquipped {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nosmatePickIcon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.nosmatePickName {
+  font-size: 0.72rem;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    BOOKS TAB
 ═══════════════════════════════════════════════════════════════ */
 .booksGrid {

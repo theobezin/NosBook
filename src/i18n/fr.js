@@ -118,6 +118,7 @@ export default {
     specialists: 'Spécialistes',
     fairies:     'Fées',
     tattoos:     'Tatouages',
+    nosmates:    'Nosmates',
     books:       'Livres',
     booksSoon:   'Livres bientôt disponibles.',
   },
@@ -155,6 +156,14 @@ export default {
     addBtn:    '+ Ajouter un tatouage',
     empty:     'Aucun tatouage ajouté.',
     pickTitle: 'Choisir un tatouage',
+  },
+  nosmate: {
+    addBtn:    '+ Ajouter un Nosmate',
+    empty:     'Aucun Nosmate ajouté.',
+    pickTitle: 'Choisir un Nosmate',
+    level:     'Niveau',
+    heroLevel: 'Niveau héroïque',
+    training:  'Dressage',
   },
   fairy: {
     addBtn:      '+ Ajouter une fée',
