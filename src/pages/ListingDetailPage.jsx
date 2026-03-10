@@ -425,7 +425,8 @@ export default function ListingDetailPage() {
                 }}
                 disabled={actionLoading}
               >
-                {t('market.cancelMyOffer')} ({formatGold(myActiveOffer.price)} {t('market.gold')})
+                {t('market.cancelMyOffer')}
+                {myActiveOffer.price != null && ` (${formatGold(myActiveOffer.price)} ${t('market.gold')})`}
               </button>
             )}
 
@@ -477,6 +478,7 @@ export default function ListingDetailPage() {
       {showOfferModal && (
         <OfferModal
           listing={listing}
+          userProfile={profile}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => { setShowOfferModal(false); refetch() }}
         />

@@ -385,7 +385,8 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               onClick={handleCancelOffer}
               disabled={actionLoading}
             >
-              {t('market.cancelOffer')} ({formatGold(myOffer.price)} {t('market.gold')})
+              {t('market.cancelOffer')}
+              {myOffer.price != null && ` (${formatGold(myOffer.price)} ${t('market.gold')})`}
             </button>
           )}
 

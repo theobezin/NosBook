@@ -396,6 +396,7 @@ export default {
     offerCommentPlaceholder: 'Additional info…',
     offerErrCharName:        'Character name is required.',
     offerErrMustExceed:      'Your offer must exceed {best} gold.',
+    offerScreenshot:         'Screenshot (external link)',
     // Report form
     reportTitle:      'Report a buyer',
     reportReason:     'Reason',

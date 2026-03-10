@@ -396,6 +396,7 @@ export default {
     offerCommentPlaceholder: 'Info complémentaire…',
     offerErrCharName:        'Le nom de personnage est obligatoire.',
     offerErrMustExceed:      'Ton offre doit être supérieure à {best} or.',
+    offerScreenshot:         'Screenshot (lien externe)',
     // Report form
     reportTitle:      'Signaler un acheteur',
     reportReason:     'Raison',
