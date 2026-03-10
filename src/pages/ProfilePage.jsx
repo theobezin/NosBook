@@ -1240,17 +1240,136 @@ function AddSPModal({ charClass, onClose, onAdd }) {
   )
 }
 
+// ── EditSPModal ────────────────────────────────────────────────────────────
+
+function EditSPModal({ charClass, sp, onClose, onSave }) {
+  const { t } = useLang()
+  const spList = SPECIALISTS[charClass] ?? []
+
+  const [name,        setName]        = useState(sp.name)
+  const [improvement, setImprovement] = useState(String(sp.improvement))
+  const [perfection,  setPerfection]  = useState(String(sp.perfection))
+  const [statAtk,     setStatAtk]     = useState(String(sp.stats.attack))
+  const [statDef,     setStatDef]     = useState(String(sp.stats.defense))
+  const [statElem,    setStatElem]    = useState(String(sp.stats.element))
+  const [statHpmp,    setStatHpmp]    = useState(String(sp.stats.hpmp))
+  const [wings,       setWings]       = useState(sp.wings ?? null)
+
+  const handleSave = () => {
+    if (!name) return
+    const spData = spList.find(s => s.name === name)
+    onSave({
+      ...sp,
+      name,
+      icon:        spData?.icon ?? sp.icon,
+      improvement: Math.max(0, Math.min(20,  parseInt(improvement) || 0)),
+      perfection:  Math.max(0, Math.min(100, parseInt(perfection)  || 0)),
+      stats: {
+        attack:  parseInt(statAtk)  || 0,
+        defense: parseInt(statDef)  || 0,
+        element: parseInt(statElem) || 0,
+        hpmp:    parseInt(statHpmp) || 0,
+      },
+      wings: wings ?? null,
+    })
+    onClose()
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+
+        <h2 className={styles.modalTitle}>{t('sp.editModalTitle')}</h2>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.spLabel')}</label>
+          <SPSelect spList={spList} value={name} onChange={setName} />
+        </div>
+
+        <div className={styles.modalRow}>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('sp.improvement')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={improvement}
+              min={0} max={20}
+              onChange={e => setImprovement(e.target.value)}
+            />
+          </div>
+          <div className={styles.modalField}>
+            <label className={styles.modalLabel}>{t('sp.perfection')}</label>
+            <input
+              className={styles.modalInput}
+              type="number"
+              value={perfection}
+              min={0} max={100}
+              onChange={e => setPerfection(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.statsLabel')}</label>
+          <div className={styles.spModalStats}>
+            {[
+              [t('sp.statAtk'),  statAtk,  setStatAtk],
+              [t('sp.statDef'),  statDef,  setStatDef],
+              [t('sp.statElem'), statElem, setStatElem],
+              [t('sp.statHpmp'), statHpmp, setStatHpmp],
+            ].map(([label, val, setter]) => (
+              <div key={label}>
+                <div className={styles.spModalStatLabel}>{label}</div>
+                <input
+                  className={styles.modalInput}
+                  type="number"
+                  value={val}
+                  min={0}
+                  onChange={e => setter(e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.modalField}>
+          <label className={styles.modalLabel}>{t('sp.wings')}</label>
+          <WingsSelect value={wings} onChange={setWings} />
+        </div>
+
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+          <Button variant="solid" size="md" onClick={handleSave} disabled={!name}>
+            {t('sp.saveBtn')}
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── SpecialistsTab ─────────────────────────────────────────────────────────
 
 function SpecialistsTab({ char, onUpdate }) {
   const { t } = useLang()
-  const [showAdd, setShowAdd] = useState(false)
+  const [showAdd,    setShowAdd]    = useState(false)
+  const [editingSp,  setEditingSp]  = useState(null)
 
   const specialists = char.equipment.specialists ?? []
 
   const handleAdd = (sp) => {
     onUpdate(char.id, {
       equipment: { ...char.equipment, specialists: [...specialists, sp] },
+    })
+  }
+
+  const handleEdit = (updated) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        specialists: specialists.map(s => s.id === updated.id ? updated : s),
+      },
     })
   }
 
@@ -1277,11 +1396,18 @@ function SpecialistsTab({ char, onUpdate }) {
               <div className={styles.spCardTop}>
                 {sp.icon && <img src={sp.icon} alt="" className={styles.spCardIcon} />}
                 <span className={styles.spCardName}>{sp.name}</span>
-                <button
-                  className={styles.spCardDelete}
-                  onClick={() => handleDelete(sp.id)}
-                  title="Remove"
-                >✕</button>
+                <div className={styles.spCardActions}>
+                  <button
+                    className={styles.spCardEdit}
+                    onClick={() => setEditingSp(sp)}
+                    title="Edit"
+                  >✏</button>
+                  <button
+                    className={styles.spCardDelete}
+                    onClick={() => handleDelete(sp.id)}
+                    title="Remove"
+                  >✕</button>
+                </div>
               </div>
               <div className={styles.spCardBadges}>
                 <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
@@ -1316,6 +1442,15 @@ function SpecialistsTab({ char, onUpdate }) {
           charClass={char.class}
           onClose={() => setShowAdd(false)}
           onAdd={handleAdd}
+        />
+      )}
+
+      {editingSp && (
+        <EditSPModal
+          charClass={char.class}
+          sp={editingSp}
+          onClose={() => setEditingSp(null)}
+          onSave={handleEdit}
         />
       )}
     </div>

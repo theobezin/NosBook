@@ -161,6 +161,8 @@ export default {
   sp: {
     addBtn:           'Spezialist hinzufügen',
     modalTitle:       'Spezialist hinzufügen',
+    editModalTitle:   'Spezialist bearbeiten',
+    saveBtn:          'Speichern',
     spLabel:          'Spezialistenkarte',
     improvement:      'Verbesserung (+0 → +20)',
     perfection:       'Perfektion (0 → 100%)',

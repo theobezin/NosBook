@@ -1442,6 +1442,29 @@
   line-height: 1.3;
 }
 
+.spCardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.spCardEdit {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.spCardEdit:hover {
+  color: var(--accent);
+  background: rgba(99, 102, 241, 0.1);
+}
+
 .spCardDelete {
   background: transparent;
   border: none;
@@ -1451,7 +1474,6 @@
   padding: 0.15rem 0.35rem;
   border-radius: var(--radius-sm);
   transition: color 0.15s, background 0.15s;
-  flex-shrink: 0;
   line-height: 1;
 }
 .spCardDelete:hover {

@@ -161,6 +161,8 @@ export default {
   sp: {
     addBtn:           'Add a Specialist',
     modalTitle:       'Add a Specialist',
+    editModalTitle:   'Edit Specialist',
+    saveBtn:          'Save',
     spLabel:          'Specialist',
     improvement:      'Improvement (+0 → +20)',
     perfection:       'Perfection (0 → 100%)',
