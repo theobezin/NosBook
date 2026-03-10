@@ -428,7 +428,7 @@ export async function fetchReports(status = null) {
     .select(`
       *,
       reported_by_profile:profiles!market_reports_reported_by_fkey ( id, username ),
-      reported_profile:profiles!market_reports_reported_profile_id_fkey ( id, username, trades_reported, muted_until, is_banned ),
+      reported_profile:profiles!market_reports_reported_profile_id_fkey ( id, username, trades_reported ),
       market_listings ( id, title, server ),
       market_offers ( id, price, comment )
     `)
@@ -437,7 +437,25 @@ export async function fetchReports(status = null) {
   if (status) query = query.eq('status', status)
 
   const { data, error } = await query
-  return { data: data ?? [], error }
+  if (error || !data?.length) return { data: data ?? [], error }
+
+  // Fetch muted_until / is_banned separately to avoid PostgREST double-join alias bug
+  const profileIds = [...new Set(data.map(r => r.reported_profile_id).filter(Boolean))]
+  if (profileIds.length) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, muted_until, is_banned')
+      .in('id', profileIds)
+    const modMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
+    data.forEach(r => {
+      if (r.reported_profile && modMap[r.reported_profile_id]) {
+        r.reported_profile.muted_until = modMap[r.reported_profile_id].muted_until
+        r.reported_profile.is_banned   = modMap[r.reported_profile_id].is_banned
+      }
+    })
+  }
+
+  return { data, error: null }
 }
 
 /**
