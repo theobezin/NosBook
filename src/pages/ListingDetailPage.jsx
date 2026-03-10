@@ -85,8 +85,9 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
   async function handleReject() {
     if (!window.confirm(t('market.rejectOfferConfirm'))) return
     setLoading(true)
-    await rejectOffer(offerId)
+    const { error } = await rejectOffer(offerId)
     setLoading(false)
+    if (error) { console.error('rejectOffer error:', error); return }
     onRefresh()
   }
 

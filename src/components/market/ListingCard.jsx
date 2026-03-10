@@ -144,7 +144,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     onRefresh?.()
   }
 
-  async function handleRejectOffer() {
+  async function handleRejectConfirmation() {
     setActionLoading(true)
     await rejectConfirmation(listing.id)
     setActionLoading(false)
@@ -161,8 +161,9 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   async function handleRejectOffer(offerId) {
     if (!window.confirm(t('market.rejectOfferConfirm'))) return
     setActionLoading(true)
-    await rejectOffer(offerId)
+    const { error } = await rejectOffer(offerId)
     setActionLoading(false)
+    if (error) { console.error('rejectOffer error:', error); return }
     onRefresh?.()
   }
 
@@ -274,7 +275,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             </button>
             <button
               className={styles.btnReject}
-              onClick={handleRejectOffer}
+              onClick={handleRejectConfirmation}
               disabled={actionLoading}
             >
               {t('market.rejectOffer')}

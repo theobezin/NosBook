@@ -334,7 +334,11 @@ export async function cancelOffer(offerId) {
  */
 export async function rejectOffer(offerId) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
-  const { error } = await supabase.rpc('reject_offer', { p_offer_id: offerId })
+  const { error } = await supabase
+    .from('market_offers')
+    .update({ status: 'rejected' })
+    .eq('id', offerId)
+    .eq('status', 'active')
   return { error }
 }
 
