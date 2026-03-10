@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -255,12 +255,21 @@ function TattoosTab({ char }) {
   )
 }
 
-function BooksTab() {
-  const { t } = useLang()
+function BooksTab({ char }) {
+  const owned = new Set(Array.isArray(char.equipment.books) ? char.equipment.books : [])
+
   return (
-    <div className={styles.booksTab}>
-      <span className={styles.booksTabIcon}>📚</span>
-      <p className={styles.booksTabText}>{t('tabs.booksSoon')}</p>
+    <div className={styles.booksGrid}>
+      {TRAINING_BOOKS.map(book => (
+        <div
+          key={book.name}
+          className={`${styles.bookItem} ${owned.has(book.name) ? styles.bookItemOwned : styles.bookItemLocked}`}
+          title={book.name}
+        >
+          <img src={book.icon} alt="" className={styles.bookIcon} />
+          <span className={styles.bookName}>{book.name}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -472,7 +481,7 @@ export default function PlayerProfilePage() {
             {activeTab === 'specialists' && <SpecialistsTab char={data} />}
             {activeTab === 'fairies'  && <FairiesTab  char={data} />}
             {activeTab === 'tattoos'  && <TattoosTab  char={data} />}
-            {activeTab === 'books'    && <BooksTab />}
+            {activeTab === 'books'    && <BooksTab char={data} />}
           </div>
 
         </div>

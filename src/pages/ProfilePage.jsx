@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './ProfilePage.module.css'
 
@@ -26,6 +26,7 @@ function makeCharacter(name, cls, level, heroLevel) {
       specialists: [],
       fairies:     [],
       tattoos:     [],
+      books:       [],
     },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
   }
@@ -1856,12 +1857,29 @@ function TattoosTab({ char, onUpdate }) {
 
 // ── BooksTab ───────────────────────────────────────────────────────────────
 
-function BooksTab() {
-  const { t } = useLang()
+function BooksTab({ char, onUpdate }) {
+  const owned = new Set(char.equipment.books ?? [])
+
+  const toggle = (bookName) => {
+    const next = owned.has(bookName)
+      ? [...owned].filter(n => n !== bookName)
+      : [...owned, bookName]
+    onUpdate(char.id, { equipment: { ...char.equipment, books: next } })
+  }
+
   return (
-    <div className={styles.booksTab}>
-      <span className={styles.booksTabIcon}>📚</span>
-      <p className={styles.booksTabText}>{t('tabs.booksSoon')}</p>
+    <div className={styles.booksGrid}>
+      {TRAINING_BOOKS.map(book => (
+        <button
+          key={book.name}
+          className={`${styles.bookItem} ${owned.has(book.name) ? styles.bookItemOwned : styles.bookItemLocked}`}
+          onClick={() => toggle(book.name)}
+          title={book.name}
+        >
+          <img src={book.icon} alt="" className={styles.bookIcon} />
+          <span className={styles.bookName}>{book.name}</span>
+        </button>
+      ))}
     </div>
   )
 }
@@ -2097,7 +2115,7 @@ export default function ProfilePage() {
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
             {activeTab === 'fairies'  && <FairiesTab  char={data} onUpdate={updateCharacter} />}
             {activeTab === 'tattoos'  && <TattoosTab  char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'books'    && <BooksTab />}
+            {activeTab === 'books'    && <BooksTab char={data} onUpdate={updateCharacter} />}
           </div>
 
         </div>
