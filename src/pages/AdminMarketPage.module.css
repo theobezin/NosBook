@@ -1,0 +1,205 @@
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 64px 24px;
+  color: #9ca3af;
+}
+
+.gateIcon { font-size: 2.5rem; }
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #c9a84c;
+  margin: 0;
+}
+
+/* ── Tabs ─────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #2a2d38;
+}
+
+.tab {
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab:hover { color: #9ca3af; }
+
+.tabActive {
+  color: #c9a84c;
+  border-bottom-color: #c9a84c;
+}
+
+.badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
+/* ── List ─────────────────────────────────── */
+.list { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Report row ───────────────────────────── */
+.reportRow {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #141620;
+  border-bottom: 1px solid #2a2d38;
+}
+
+.statusBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.reportDate { font-size: 0.72rem; color: #6b7280; }
+
+.reportBody {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field { display: flex; flex-direction: column; gap: 2px; }
+
+.fieldLabel {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.fieldValue {
+  font-size: 0.85rem;
+  color: #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reported { color: #ef4444; }
+
+.reportCount {
+  font-size: 0.72rem;
+  color: #e6b430;
+  background: rgba(230,180,48,0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.serverTag { color: #6b7280; font-size: 0.78rem; }
+
+.offerComment { color: #9ca3af; font-style: italic; font-size: 0.8rem; }
+
+/* Note input */
+.noteLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.noteInput {
+  background: #141620;
+  border: 1px solid #2e3144;
+  border-radius: 6px;
+  color: #e8e8e8;
+  font-size: 0.84rem;
+  padding: 7px 10px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.noteInput:focus { border-color: #c9a84c66; }
+
+.error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 0;
+}
+
+/* Action buttons */
+.reportActions { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+
+.btnValidate {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: none;
+  background: #22c55e;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnValidate:hover { opacity: 0.85; }
+.btnValidate:disabled { opacity: 0.5; cursor: default; }
+
+.btnRejectAction {
+  font-size: 0.78rem;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid #3a3d48;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btnRejectAction:hover { border-color: #6b7280; color: #e8e8e8; }
+.btnRejectAction:disabled { opacity: 0.5; cursor: default; }
+
+/* States */
+.centered { display: flex; justify-content: center; padding: 40px 0; }
+.empty    { color: #6b7280; text-align: center; padding: 32px 0; }
+.errorMsg { color: #ef4444; text-align: center; font-size: 0.88rem; }

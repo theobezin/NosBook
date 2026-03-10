@@ -10,6 +10,7 @@ function fromDB(row) {
   return {
     id:          row.id,
     name:        row.name,
+    server:      row.server      ?? null,
     class:       row.class,
     level:       row.level,
     heroLevel:   row.hero_level,
