@@ -52,15 +52,17 @@ function fromDBListing(row) {
 
 function fromDBOffer(row) {
   return {
-    id:        row.id,
-    listingId: row.listing_id,
-    profileId: row.profile_id,
-    price:     row.price ?? null,
-    comment:   row.comment ?? '',
-    imageUrl:  row.image_url ?? null,
-    status:    row.status,
-    createdAt: row.created_at,
-    profile:   row.profiles ?? null,
+    id:            row.id,
+    listingId:     row.listing_id,
+    profileId:     row.profile_id,
+    price:         row.price ?? null,
+    comment:       row.comment ?? '',
+    imageUrl:      row.image_url ?? null,
+    characterName: row.character_name ?? null,
+    discordHandle: row.discord_handle ?? null,
+    status:        row.status,
+    createdAt:     row.created_at,
+    profile:       row.profiles ?? null,
   }
 }
 
@@ -89,7 +91,7 @@ export function useMarketListings(filters = {}) {
         .select(`
           *,
           profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
-          market_offers!listing_id ( id, profile_id, price, status, created_at, profiles!profile_id ( id, username ) )
+          market_offers!listing_id ( id, profile_id, price, comment, character_name, discord_handle, status, created_at, profiles!profile_id ( id, username ) )
         `)
         .eq('status', LISTING_STATUS.ACTIVE)
         .order('last_activity_at', { ascending: false })
@@ -190,7 +192,7 @@ export function useMyListings() {
         .select(`
           *,
           profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
-          market_offers!listing_id ( id, profile_id, price, status, created_at, profiles!profile_id ( id, username ) )
+          market_offers!listing_id ( id, profile_id, price, comment, character_name, discord_handle, status, created_at, profiles!profile_id ( id, username ) )
         `)
         .eq('profile_id', user.id)
         .order('created_at', { ascending: false })
@@ -284,17 +286,19 @@ export async function archiveListing(listingId) {
  * Submit an offer (bid or buy response).
  * Also refreshes last_activity_at on the parent listing.
  */
-export async function createOffer({ listingId, profileId, price, comment, imageUrl }) {
+export async function createOffer({ listingId, profileId, price, comment, imageUrl, characterName, discordHandle }) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
 
   const { data, error } = await supabase
     .from('market_offers')
     .insert({
-      listing_id: listingId,
-      profile_id: profileId,
-      price:      price     ?? null,
-      comment:    comment?.trim() ?? null,
-      image_url:  imageUrl  ?? null,
+      listing_id:     listingId,
+      profile_id:     profileId,
+      price:          price     ?? null,
+      comment:        comment?.trim()       ?? null,
+      image_url:      imageUrl              ?? null,
+      character_name: characterName?.trim() ?? null,
+      discord_handle: discordHandle?.trim() ?? null,
     })
     .select()
     .single()

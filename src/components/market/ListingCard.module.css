@@ -408,6 +408,27 @@
   font-style: italic;
 }
 
+.bumpBar {
+  font-size: 0.7rem;
+  color: #6b7280;
+  font-style: italic;
+  text-align: right;
+  margin: 0;
+  padding: 0 2px 2px;
+}
+
+.offerIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 0 auto;
+}
+
+.offerDiscord {
+  font-size: 0.68rem;
+  color: #7c83e0;
+}
+
 .btnCancelOffer {
   font-size: 0.72rem;
   color: #ef4444;

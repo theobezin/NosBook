@@ -275,10 +275,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             .sort((a, b) => ((b.price ?? b.price) ?? 0) - ((a.price ?? a.price) ?? 0))
             .map(offer => {
               const offerProfileId = getOfferProfileId(offer)
-              const username = getOfferUsername(offer)
+              const displayName    = offer.characterName ?? getOfferUsername(offer)
               return (
                 <div key={offer.id} className={styles.offerRow}>
-                  <span className={styles.offerProfile}>{username}</span>
+                  <div className={styles.offerIdentity}>
+                    <span className={styles.offerProfile}>{displayName}</span>
+                    {offer.discordHandle && (
+                      <span className={styles.offerDiscord}>💬 {offer.discordHandle}</span>
+                    )}
+                  </div>
                   <span className={styles.offerPrice}>
                     {formatGold(offer.price)} {t('market.gold')}
                   </span>
@@ -342,22 +347,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
           )}
 
           {/* Owner: bump */}
-          {isOwner && !isSold && listing.status === LISTING_STATUS.ACTIVE && !isPending && (
-            canBump
-              ? (
-                <button
-                  className={styles.btnBump}
-                  onClick={handleBump}
-                  disabled={actionLoading}
-                  title={t('market.bumpTitle')}
-                >
-                  ↑ {t('market.bumpListing')}
-                </button>
-              ) : (
-                <span className={styles.bumpCooldown}>
-                  ↑ {t('market.bumpCooldown', { h: bumpCooldownHours })}
-                </span>
-              )
+          {isOwner && !isSold && listing.status === LISTING_STATUS.ACTIVE && !isPending && canBump && (
+            <button
+              className={styles.btnBump}
+              onClick={handleBump}
+              disabled={actionLoading}
+              title={t('market.bumpTitle')}
+            >
+              ↑ {t('market.bumpListing')}
+            </button>
           )}
 
           {/* Blocked */}
@@ -416,9 +414,17 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
       </div>
 
       {/* Modals */}
+      {/* Bump cooldown note — shown at bottom of card when on cooldown */}
+      {isOwner && !isSold && listing.status === LISTING_STATUS.ACTIVE && !isPending && !canBump && (
+        <p className={styles.bumpBar}>
+          ↑ {t('market.bumpCooldown', { h: bumpCooldownHours })}
+        </p>
+      )}
+
       {showOfferModal && (
         <OfferModal
           listing={listing}
+          userProfile={userProfile}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => { setShowOfferModal(false); onRefresh?.() }}
         />

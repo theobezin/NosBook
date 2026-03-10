@@ -67,6 +67,28 @@
 .buyoutBtn:hover { opacity: 0.85; }
 .buyoutBtn:disabled { opacity: 0.5; cursor: default; }
 
+.contactRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .contactRow { grid-template-columns: 1fr; }
+}
+
+.bestOfferInfo {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0;
+  background: rgba(74,222,128,0.06);
+  border: 1px solid rgba(74,222,128,0.15);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.bestOfferInfo strong { color: #4ade80; }
+
 .form { display: flex; flex-direction: column; gap: 14px; }
 
 .label {

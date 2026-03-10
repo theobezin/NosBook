@@ -160,10 +160,10 @@ create table if not exists public.market_offers (
   listing_id  uuid references public.market_listings(id) on delete cascade not null,
   profile_id  uuid references public.profiles(id) on delete cascade not null,
   -- Price in gold (required for sell bids, optional for buy responses)
-  price       bigint check (price >= 0),
-  comment     text,
-  -- External image URL (especially for buy listing responses)
-  image_url   text,
+  price          bigint check (price >= 0),
+  comment        text,
+  character_name text,
+  discord_handle text,
   -- active → accepted | cancelled | blocked (admin-validated report)
   status      text not null default 'active'
                    check (status in ('active', 'cancelled', 'accepted', 'blocked')),

@@ -1,44 +1,78 @@
 // ============================================================
 // OfferModal — submit a bid (sell listing) or response (buy listing)
+// Fields: character name (required, dropdown), discord (optional),
+//         price (required for sell, must exceed best offer), comment (optional)
 // ============================================================
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
-import { parseGold, formatGold, MAX_GOLD } from '@/lib/market'
+import { useCharacters } from '@/hooks/useCharacters'
+import { parseGold, formatGold, MAX_GOLD, bestOffer } from '@/lib/market'
 import { createOffer, triggerConfirmation } from '@/hooks/useMarket'
 import styles from './OfferModal.module.css'
 
-export default function OfferModal({ listing, onClose, onSuccess }) {
+export default function OfferModal({ listing, onClose, onSuccess, userProfile }) {
   const { t } = useLang()
   const { user } = useAuth()
+  const { characters } = useCharacters()
 
   const isSell = listing.type === 'sell'
 
-  const [price,    setPrice]    = useState('')
-  const [comment,  setComment]  = useState('')
-  const [imageUrl, setImageUrl] = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState(null)
+  // Characters on the listing's server
+  const serverChars = useMemo(
+    () => characters.filter(c => c.server === listing.server),
+    [characters, listing.server]
+  )
+
+  // Current best offer (client-side — used for minimum bid validation)
+  const currentBest = useMemo(() => bestOffer(listing.offers ?? []), [listing.offers])
+
+  const [characterName, setCharacterName] = useState('')
+  const [discordHandle, setDiscordHandle] = useState(userProfile?.discord_handle ?? '')
+  const [price,         setPrice]         = useState('')
+  const [comment,       setComment]       = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState(null)
+
+  // Pre-select first character on this server once loaded
+  useEffect(() => {
+    if (!characterName && serverChars.length > 0) {
+      setCharacterName(serverChars[0].name)
+    }
+  }, [serverChars]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
 
-    // Validate price for sell bids
+    if (!characterName.trim()) {
+      setError(t('market.offerErrCharName'))
+      return
+    }
+
     if (isSell) {
       const parsed = parseGold(price)
-      if (parsed === null) { setError(t('market.offerErrPrice')); return }
+      if (parsed === null || parsed <= 0) {
+        setError(t('market.offerErrPrice'))
+        return
+      }
+      // Must strictly exceed current best offer
+      if (currentBest != null && parsed <= currentBest.price) {
+        setError(t('market.offerErrMustExceed', { best: formatGold(currentBest.price) }))
+        return
+      }
     }
 
     setLoading(true)
     const parsedPrice = isSell ? parseGold(price) : (price ? parseGold(price) : null)
 
     const { data, error: err } = await createOffer({
-      listingId:  listing.id,
-      profileId:  user.id,
-      price:      parsedPrice,
-      comment:    comment || null,
-      imageUrl:   imageUrl || null,
+      listingId:     listing.id,
+      profileId:     user.id,
+      price:         parsedPrice,
+      comment:       comment || null,
+      characterName: characterName.trim(),
+      discordHandle: discordHandle.trim() || null,
     })
 
     if (err) { setError(err.message); setLoading(false); return }
@@ -54,15 +88,18 @@ export default function OfferModal({ listing, onClose, onSuccess }) {
 
   async function handleBuyout() {
     if (!listing.buyoutPrice) return
+    if (!characterName.trim()) { setError(t('market.offerErrCharName')); return }
+
     setLoading(true)
     setError(null)
 
     const { data, error: err } = await createOffer({
-      listingId: listing.id,
-      profileId: user.id,
-      price:     listing.buyoutPrice,
-      comment:   comment || null,
-      imageUrl:  null,
+      listingId:     listing.id,
+      profileId:     user.id,
+      price:         listing.buyoutPrice,
+      comment:       comment || null,
+      characterName: characterName.trim(),
+      discordHandle: discordHandle.trim() || null,
     })
 
     if (err) { setError(err.message); setLoading(false); return }
@@ -81,6 +118,47 @@ export default function OfferModal({ listing, onClose, onSuccess }) {
         </h2>
         <p className={styles.listingTitle}>{listing.title}</p>
 
+        {/* Character + contact — always first */}
+        <div className={styles.contactRow}>
+          <label className={styles.label}>
+            {t('market.offerCharName')}
+            {serverChars.length > 1 ? (
+              <select
+                className={styles.input}
+                value={characterName}
+                onChange={e => setCharacterName(e.target.value)}
+                required
+              >
+                <option value="">{t('market.offerCharNameSelect')}</option>
+                {serverChars.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className={styles.input}
+                type="text"
+                value={characterName}
+                onChange={e => setCharacterName(e.target.value)}
+                placeholder={t('market.offerCharNamePlaceholder')}
+                required
+              />
+            )}
+          </label>
+
+          <label className={styles.label}>
+            {t('market.offerDiscord')} <span className={styles.optional}>({t('market.formOptional')})</span>
+            <input
+              className={styles.input}
+              type="text"
+              value={discordHandle}
+              onChange={e => setDiscordHandle(e.target.value)}
+              placeholder="pseudo#0000"
+            />
+          </label>
+        </div>
+
+        {/* Buyout button */}
         {isSell && listing.buyoutPrice != null && (
           <button
             className={styles.buyoutBtn}
@@ -91,24 +169,30 @@ export default function OfferModal({ listing, onClose, onSuccess }) {
           </button>
         )}
 
+        {/* Current best offer info */}
+        {isSell && currentBest != null && (
+          <p className={styles.bestOfferInfo}>
+            {t('market.offerCurrentBest')} : <strong>{formatGold(currentBest.price)} {t('market.gold')}</strong>
+          </p>
+        )}
+
         <form className={styles.form} onSubmit={handleSubmit}>
-          {isSell && (
+          {/* Price */}
+          {isSell ? (
             <label className={styles.label}>
               {t('market.offerPrice')}
               <input
                 className={styles.input}
                 type="number"
-                min={0}
+                min={1}
                 max={MAX_GOLD}
                 value={price}
                 onChange={e => setPrice(e.target.value)}
                 required
-                placeholder="0"
+                placeholder={currentBest ? String(currentBest.price + 1) : '0'}
               />
             </label>
-          )}
-
-          {!isSell && (
+          ) : (
             <label className={styles.label}>
               {t('market.offerPrice')} <span className={styles.optional}>({t('market.formOptional')})</span>
               <input
@@ -123,25 +207,15 @@ export default function OfferModal({ listing, onClose, onSuccess }) {
             </label>
           )}
 
+          {/* Comment */}
           <label className={styles.label}>
-            {t('market.offerComment')}
+            {t('market.offerComment')} <span className={styles.optional}>({t('market.formOptional')})</span>
             <textarea
               className={styles.textarea}
               value={comment}
               onChange={e => setComment(e.target.value)}
-              placeholder={t('market.offerComment')}
-              rows={3}
-            />
-          </label>
-
-          <label className={styles.label}>
-            {t('market.offerImage')}
-            <input
-              className={styles.input}
-              type="url"
-              value={imageUrl}
-              onChange={e => setImageUrl(e.target.value)}
-              placeholder={t('market.formImagesPlaceholder')}
+              placeholder={t('market.offerCommentPlaceholder')}
+              rows={2}
             />
           </label>
 
@@ -152,7 +226,7 @@ export default function OfferModal({ listing, onClose, onSuccess }) {
               {t('market.offerCancel')}
             </button>
             <button type="submit" className={styles.btnSubmit} disabled={loading}>
-              {loading ? '…' : t('market.offerSubmit')}
+              {loading ? '…' : isSell ? t('market.offerBid') : t('market.offerSubmit')}
             </button>
           </div>
         </form>
