@@ -329,13 +329,32 @@
   letter-spacing: 0.04em;
 }
 
-.statusActive    { background: rgba(96,165,250,0.12); color: #60a5fa; }
+.statusActive    { background: rgba(96,165,250,0.12);  color: #60a5fa; }
 .statusCancelled { background: rgba(107,114,128,0.15); color: #9ca3af; }
-.statusAccepted  { background: rgba(34,197,94,0.12); color: #22c55e; }
-.statusBlocked   { background: rgba(239,68,68,0.12); color: #ef4444; }
+.statusAccepted  { background: rgba(34,197,94,0.12);   color: #22c55e; }
+.statusRejected  { background: rgba(251,146,60,0.12);  color: #fb923c; }
+.statusBlocked   { background: rgba(239,68,68,0.12);   color: #ef4444; }
 
 .offerPrice        { font-size: 0.95rem; font-weight: 700; color: #4ade80; margin-left: auto; }
 .offerPriceAccepted { color: #22c55e; }
+
+.offerIdentity {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.offerCharName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e8e8e8;
+}
+
+.offerDiscord {
+  font-size: 0.78rem;
+  color: #7c83e0;
+}
 
 .offerComment {
   font-size: 0.82rem;

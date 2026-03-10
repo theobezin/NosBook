@@ -73,6 +73,9 @@
   gap: 10px;
 }
 
+.contactRow .label { min-width: 0; }
+.contactRow .input { min-width: 0; width: 100%; box-sizing: border-box; }
+
 @media (max-width: 420px) {
   .contactRow { grid-template-columns: 1fr; }
 }

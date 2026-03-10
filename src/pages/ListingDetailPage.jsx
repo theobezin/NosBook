@@ -41,6 +41,7 @@ const OFFER_STATUS_KEY = {
   [OFFER_STATUS.ACTIVE]:    'market.offerActive',
   [OFFER_STATUS.CANCELLED]: 'market.offerCancelled',
   [OFFER_STATUS.ACCEPTED]:  'market.offerAccepted',
+  [OFFER_STATUS.REJECTED]:  'market.offerRejected',
   [OFFER_STATUS.BLOCKED]:   'market.offerBlocked',
 }
 
@@ -48,6 +49,7 @@ const OFFER_STATUS_STYLE = {
   [OFFER_STATUS.ACTIVE]:    styles.statusActive,
   [OFFER_STATUS.CANCELLED]: styles.statusCancelled,
   [OFFER_STATUS.ACCEPTED]:  styles.statusAccepted,
+  [OFFER_STATUS.REJECTED]:  styles.statusRejected,
   [OFFER_STATUS.BLOCKED]:   styles.statusBlocked,
 }
 
@@ -57,10 +59,10 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
   const [loading, setLoading] = useState(false)
   const [spamReport, setSpamReport] = useState(false)
 
-  // Offers from useMarketListing have snake_case keys + profiles join
+  // Offers are mapped through fromDBOffer → camelCase
   const offerId         = offer.id
-  const offerProfileId  = offer.profile_id
-  const username        = offer.profiles?.username ?? '—'
+  const offerProfileId  = offer.profileId
+  const username        = offer.profile?.username ?? '—'
   const isMyOffer       = user?.id === offerProfileId
   const isActive        = offer.status === OFFER_STATUS.ACTIVE
   const isAccepted      = offer.status === OFFER_STATUS.ACCEPTED
@@ -101,11 +103,19 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
         <p className={styles.offerComment}>{offer.comment}</p>
       )}
 
+      {/* Character + discord */}
+      {(offer.characterName || offer.discordHandle) && (
+        <div className={styles.offerIdentity}>
+          {offer.characterName && <span className={styles.offerCharName}>{offer.characterName}</span>}
+          {offer.discordHandle && <span className={styles.offerDiscord}>💬 {offer.discordHandle}</span>}
+        </div>
+      )}
+
       {/* Screenshot / image */}
-      {offer.image_url && (
-        <a href={offer.image_url} target="_blank" rel="noopener noreferrer" className={styles.offerImageLink}>
+      {offer.imageUrl && (
+        <a href={offer.imageUrl} target="_blank" rel="noopener noreferrer" className={styles.offerImageLink}>
           <img
-            src={offer.image_url}
+            src={offer.imageUrl}
             alt="screenshot"
             className={styles.offerImage}
             onError={e => { e.target.style.display = 'none' }}
@@ -226,9 +236,9 @@ export default function ListingDetailPage() {
 
   // Sort offers: accepted first, then active (by price desc), then others
   const sortedOffers = [...allOffers].sort((a, b) => {
-    const rank = { accepted: 0, active: 1, cancelled: 2, blocked: 3 }
-    const ra = rank[a.status] ?? 2
-    const rb = rank[b.status] ?? 2
+    const rank = { accepted: 0, active: 1, rejected: 2, cancelled: 3, blocked: 4 }
+    const ra = rank[a.status] ?? 3
+    const rb = rank[b.status] ?? 3
     if (ra !== rb) return ra - rb
     return (b.price ?? 0) - (a.price ?? 0)
   })

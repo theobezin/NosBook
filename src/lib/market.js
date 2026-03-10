@@ -50,6 +50,7 @@ export const OFFER_STATUS = {
   ACTIVE:    'active',
   CANCELLED: 'cancelled',
   ACCEPTED:  'accepted',
+  REJECTED:  'rejected',
   BLOCKED:   'blocked',
 }
 

@@ -164,9 +164,9 @@ create table if not exists public.market_offers (
   comment        text,
   character_name text,
   discord_handle text,
-  -- active → accepted | cancelled | blocked (admin-validated report)
+  -- active → accepted | rejected | cancelled | blocked (admin-validated report)
   status      text not null default 'active'
-                   check (status in ('active', 'cancelled', 'accepted', 'blocked')),
+                   check (status in ('active', 'cancelled', 'accepted', 'rejected', 'blocked')),
   created_at  timestamptz default now()
 );
 
@@ -565,6 +565,13 @@ begin
   -- Mark offer accepted
   update public.market_offers set status = 'accepted' where id = v_offer_id;
 
+  -- Reject all other active offers on this listing
+  update public.market_offers
+     set status = 'rejected'
+   where listing_id = p_listing_id
+     and id <> v_offer_id
+     and status = 'active';
+
   -- Close listing
   update public.market_listings
      set status = 'sold', confirmation_pending = false
@@ -850,3 +857,25 @@ alter table public.profiles
 -- STEP 2 — Create admin_set_moderation function
 -- (copy-paste from the FUNCTION block above — safe to re-run with CREATE OR REPLACE)
 -- ✅ Applied — see admin_set_moderation function block above
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION D — character_name/discord_handle on market_offers
+--              + offer status 'rejected' support
+-- Run after Migration C.
+-- ────────────────────────────────────────────────────────────
+
+-- STEP 1 — New columns on market_offers
+alter table public.market_offers
+  add column if not exists character_name text,
+  add column if not exists discord_handle text;
+
+-- STEP 2 — Extend status check constraint to include 'rejected'
+alter table public.market_offers
+  drop constraint if exists market_offers_status_check;
+
+alter table public.market_offers
+  add constraint market_offers_status_check
+  check (status in ('active', 'cancelled', 'accepted', 'rejected', 'blocked'));
+
+-- STEP 3 — Re-deploy confirm_market_sale function (now rejects other active offers)
+-- (copy-paste the full confirm_market_sale function from the FUNCTION block above)
