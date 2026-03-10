@@ -4,6 +4,7 @@
 // expiry countdown, and action buttons based on context.
 // ============================================================
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
@@ -13,6 +14,7 @@ import {
   triggerConfirmation,
   confirmSale,
   rejectConfirmation,
+  cancelOffer,
 } from '@/hooks/useMarket'
 import OfferModal  from './OfferModal'
 import ReportModal from './ReportModal'
@@ -68,6 +70,8 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   // profile_id can be snake_case (raw row) or camelCase (fromDBOffer mapped)
   const getOfferProfileId = (o) => o.profileId ?? o.profile_id
   const getOfferStatus    = (o) => o.status
+  // Username: from nested profiles join (snake_case raw) or camelCase mapped
+  const getOfferUsername  = (o) => o.profiles?.username ?? o.profile?.username ?? '—'
 
   const activeOffers = offers.filter(o => getOfferStatus(o) === OFFER_STATUS.ACTIVE)
   const top          = bestOffer(offers)
@@ -131,6 +135,14 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     onRefresh?.()
   }
 
+  async function handleCancelOffer() {
+    if (!window.confirm(t('market.cancelOfferConfirm'))) return
+    setActionLoading(true)
+    await cancelOffer(myOffer.id)
+    setActionLoading(false)
+    onRefresh?.()
+  }
+
   function handleSpamReport(offer) {
     const reportedProfileId = getOfferProfileId(offer)
     if (!reportedProfileId) return
@@ -162,7 +174,9 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
       {/* Title + description */}
       <div className={styles.body}>
-        <h3 className={styles.title}>{listing.title}</h3>
+        <Link to={`/market/${listing.id}`} className={styles.titleLink}>
+          <h3 className={styles.title}>{listing.title}</h3>
+        </Link>
         {listing.description && (
           <p className={styles.desc}>{listing.description}</p>
         )}
@@ -245,7 +259,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             .sort((a, b) => ((b.price ?? b.price) ?? 0) - ((a.price ?? a.price) ?? 0))
             .map(offer => {
               const offerProfileId = getOfferProfileId(offer)
-              const username = offer.profile?.username ?? offer.profiles?.username ?? '—'
+              const username = getOfferUsername(offer)
               return (
                 <div key={offer.id} className={styles.offerRow}>
                   <span className={styles.offerProfile}>{username}</span>
@@ -333,9 +347,13 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
           {/* Buyer: cancel own active offer */}
           {myOffer && (
-            <span className={styles.myOfferBadge}>
+            <button
+              className={styles.btnCancelOffer}
+              onClick={handleCancelOffer}
+              disabled={actionLoading}
+            >
               {t('market.cancelOffer')} ({formatGold(myOffer.price)} {t('market.gold')})
-            </span>
+            </button>
           )}
 
           {/* Non-owner: follow/unfollow */}

@@ -1,30 +1,33 @@
 // ============================================================
-// CreateListingModal — form to create a new sell or buy listing
+// EditListingModal — pre-filled form to edit an existing listing.
+// Owner can update: title, description, tags, images, prices.
+// Type and server cannot be changed after creation.
 // ============================================================
 import { useState } from 'react'
 import { useLang } from '@/i18n'
-import { useAuth } from '@/hooks/useAuth'
 import { MARKET_TAGS, parseGold, MAX_GOLD, LISTING_TYPES } from '@/lib/market'
-import { createListing, isBanned, isMuted } from '@/hooks/useMarket'
-import { supabase } from '@/lib/supabase'
+import { updateListing } from '@/hooks/useMarket'
 import styles from './CreateListingModal.module.css'
 
-const MAX_ACTIVE_LISTINGS = 20
+export default function EditListingModal({ listing, onClose, onSuccess }) {
+  const { t } = useLang()
 
-export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServer, userProfile, onClose, onSuccess }) {
-  const { t }  = useLang()
-  const { user } = useAuth()
+  const isSell = listing.type === LISTING_TYPES.SELL
 
-  const isSell = type === LISTING_TYPES.SELL
-
-  const [title,       setTitle]       = useState('')
-  const [description, setDescription] = useState('')
-  const [tags,        setTags]        = useState([])
-  const [imageUrls,   setImageUrls]   = useState([''])
-  const [basePrice,   setBasePrice]   = useState('')
-  const [buyoutPrice, setBuyoutPrice] = useState('')
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState(null)
+  const [title,       setTitle]       = useState(listing.title ?? '')
+  const [description, setDescription] = useState(listing.description ?? '')
+  const [tags,        setTags]        = useState(listing.tags ?? [])
+  const [imageUrls,   setImageUrls]   = useState(
+    listing.imageUrls?.length ? listing.imageUrls : ['']
+  )
+  const [basePrice,   setBasePrice]   = useState(
+    listing.basePrice != null ? String(listing.basePrice) : ''
+  )
+  const [buyoutPrice, setBuyoutPrice] = useState(
+    listing.buyoutPrice != null ? String(listing.buyoutPrice) : ''
+  )
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
 
   function toggleTag(slug) {
     setTags(prev =>
@@ -48,22 +51,7 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
     e.preventDefault()
     setError(null)
 
-    // Moderation guards
-    if (isBanned(userProfile))  { setError(t('market.bannedCannotList')); return }
-    if (isMuted(userProfile))   { setError(t('market.mutedCannotList'));  return }
-
     if (!title.trim()) { setError(t('market.formErrTitle')); return }
-
-    // Active listings limit
-    const { count } = await supabase
-      .from('market_listings')
-      .select('id', { count: 'exact', head: true })
-      .eq('profile_id', user.id)
-      .eq('status', 'active')
-    if (count >= MAX_ACTIVE_LISTINGS) {
-      setError(t('market.formErrLimit'))
-      return
-    }
 
     const parsedBase   = basePrice   ? parseGold(basePrice)   : null
     const parsedBuyout = buyoutPrice ? parseGold(buyoutPrice) : null
@@ -76,16 +64,13 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
 
     setLoading(true)
 
-    const { error: err } = await createListing({
-      profileId:   user.id,
-      server:      userServer,
-      type,
-      title:       title.trim(),
-      description: description.trim() || null,
+    const { error: err } = await updateListing(listing.id, {
+      title:        title.trim(),
+      description:  description.trim() || null,
       tags,
-      imageUrls:   imageUrls.filter(u => u.trim()),
-      basePrice:   isSell ? parsedBase   : null,
-      buyoutPrice: isSell ? parsedBuyout : null,
+      image_urls:   imageUrls.filter(u => u.trim()),
+      base_price:   isSell ? parsedBase   : null,
+      buyout_price: isSell ? parsedBuyout : null,
     })
 
     setLoading(false)
@@ -98,9 +83,7 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
       <div className={styles.modal}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 
-        <h2 className={styles.title}>
-          {isSell ? t('market.createSell') : t('market.createBuy')}
-        </h2>
+        <h2 className={styles.title}>{t('market.editListingTitle')}</h2>
 
         <form className={styles.form} onSubmit={handleSubmit}>
 
@@ -217,7 +200,7 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
               {t('market.formCancel')}
             </button>
             <button type="submit" className={styles.btnSubmit} disabled={loading}>
-              {loading ? '…' : t('market.formSubmit')}
+              {loading ? '…' : t('market.editSave')}
             </button>
           </div>
         </form>

@@ -46,7 +46,7 @@ function fromDBListing(row) {
     createdAt:           row.created_at,
     // Joined fields (may be null if not fetched)
     profile:             row.profiles ?? null,
-    offers:              row.market_offers ?? [],
+    offers:              (row.market_offers ?? []).map(fromDBOffer),
   }
 }
 
@@ -89,7 +89,7 @@ export function useMarketListings(filters = {}) {
         .select(`
           *,
           profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
-          market_offers!listing_id ( id, profile_id, price, status, created_at )
+          market_offers!listing_id ( id, profile_id, price, status, created_at, profiles!profile_id ( id, username ) )
         `)
         .eq('status', LISTING_STATUS.ACTIVE)
         .order('last_activity_at', { ascending: false })
@@ -190,7 +190,7 @@ export function useMyListings() {
         .select(`
           *,
           profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
-          market_offers!listing_id ( id, profile_id, price, status, created_at )
+          market_offers!listing_id ( id, profile_id, price, status, created_at, profiles!profile_id ( id, username ) )
         `)
         .eq('profile_id', user.id)
         .order('created_at', { ascending: false })
@@ -325,6 +325,14 @@ export async function triggerConfirmation(listingId, offerId) {
       accepted_offer_id:    offerId,
     })
     .eq('id', listingId)
+
+  // TODO(emails): à activer après config Resend + déploiement notify-market
+  // if (!error) {
+  //   supabase.functions.invoke('notify-market', {
+  //     body: { type: 'offer_selected', listingId, offerId },
+  //   }).catch(() => {})
+  // }
+
   return { error }
 }
 
@@ -336,6 +344,14 @@ export async function confirmSale(listingId) {
   const { error } = await supabase.rpc('confirm_market_sale', {
     p_listing_id: listingId,
   })
+
+  // TODO(emails): à activer après config Resend + déploiement notify-market
+  // if (!error) {
+  //   supabase.functions.invoke('notify-market', {
+  //     body: { type: 'sale_confirmed', listingId },
+  //   }).catch(() => {})
+  // }
+
   return { error }
 }
 
@@ -422,6 +438,21 @@ export async function setModeration(profileId, action, durationDays = null) {
     p_duration_days: durationDays ?? null,
   })
   return { error }
+}
+
+/**
+ * Admin: fetch all currently muted or banned profiles.
+ */
+export async function fetchModeratedProfiles() {
+  if (!hasSupabase) return { data: [], error: null }
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, is_banned, muted_until, trades_completed, trades_reported')
+    .or(`is_banned.eq.true,muted_until.gt.${now}`)
+    .order('is_banned', { ascending: false })
+    .order('muted_until', { ascending: false })
+  return { data: data ?? [], error }
 }
 
 /**

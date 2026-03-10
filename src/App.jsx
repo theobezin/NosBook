@@ -11,8 +11,9 @@ import AdminRaidsPage        from '@/pages/AdminRaidsPage'
 import MySubmissionsPage    from '@/pages/MySubmissionsPage'
 import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
-import MarketPage        from '@/pages/MarketPage'
-import AdminMarketPage   from '@/pages/AdminMarketPage'
+import MarketPage          from '@/pages/MarketPage'
+import ListingDetailPage  from '@/pages/ListingDetailPage'
+import AdminMarketPage    from '@/pages/AdminMarketPage'
 
 function withLayout(Component) {
   return (
@@ -36,8 +37,9 @@ export default function App() {
           <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
           <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
-          <Route path="/market"          element={withLayout(MarketPage)}        />
-          <Route path="/admin/market"    element={withLayout(AdminMarketPage)}   />
+          <Route path="/market"            element={withLayout(MarketPage)}          />
+          <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
+          <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />
           <Route path="*"               element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>

@@ -312,6 +312,90 @@
 .btnUnmute:hover { border-color: #6b7280; color: #e8e8e8; }
 .btnUnmute:disabled { opacity: 0.5; cursor: default; }
 
+/* ── Section tabs (Reports / Moderation) ─── */
+.sectionTabs {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.sectionTab {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #2a2d38;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.sectionTab:hover {
+  color: #9ca3af;
+  border-color: #3a3d48;
+}
+
+.sectionTabActive {
+  color: #c9a84c;
+  background: rgba(201,168,76,0.08);
+  border-color: #c9a84c55;
+}
+
+/* ── Moderation list ──────────────────────── */
+.modList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modListTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin: 0 0 4px;
+}
+
+.modRow {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.modRowLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modUsername {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e8e8e8;
+}
+
+.modStatus { display: flex; gap: 6px; align-items: center; }
+
+.modReports {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.modRowActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* States */
 .centered { display: flex; justify-content: center; padding: 40px 0; }
 .empty    { color: #6b7280; text-align: center; padding: 32px 0; }

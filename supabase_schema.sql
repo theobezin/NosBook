@@ -843,9 +843,10 @@ $$ language plpgsql security definer;
 -- ────────────────────────────────────────────────────────────
 
 -- STEP 1 — Add moderation columns to profiles
--- alter table public.profiles
---   add column if not exists muted_until timestamptz,
---   add column if not exists is_banned   boolean not null default false;
+alter table public.profiles
+  add column if not exists muted_until timestamptz,
+  add column if not exists is_banned   boolean not null default false;
 
 -- STEP 2 — Create admin_set_moderation function
 -- (copy-paste from the FUNCTION block above — safe to re-run with CREATE OR REPLACE)
+-- ✅ Applied — see admin_set_moderation function block above

@@ -79,12 +79,22 @@
 /* ── Body ───────────────────────────────────────── */
 .body { display: flex; flex-direction: column; gap: 4px; }
 
+.titleLink {
+  text-decoration: none;
+  display: block;
+}
+
+.titleLink:hover .title {
+  color: #c9a84c;
+}
+
 .title {
   font-size: 1rem;
   font-weight: 700;
   color: #e8e8e8;
   margin: 0;
   line-height: 1.3;
+  transition: color 0.2s;
 }
 
 .desc {
@@ -377,3 +387,16 @@
   border-radius: 20px;
   border: 1px solid rgba(74,222,128,0.2);
 }
+
+.btnCancelOffer {
+  font-size: 0.72rem;
+  color: #ef4444;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #ef444455;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btnCancelOffer:hover { background: rgba(239,68,68,0.08); }
+.btnCancelOffer:disabled { opacity: 0.5; cursor: default; }

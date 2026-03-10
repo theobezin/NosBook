@@ -324,6 +324,7 @@ export default function MarketPage() {
         <CreateListingModal
           type={LISTING_TYPES.SELL}
           userServer={userServer}
+          userProfile={profile}
           onClose={() => setShowCreateSell(false)}
           onSuccess={() => { setShowCreateSell(false); refetchAll() }}
         />
@@ -333,6 +334,7 @@ export default function MarketPage() {
         <CreateListingModal
           type={LISTING_TYPES.BUY}
           userServer={userServer}
+          userProfile={profile}
           onClose={() => setShowCreateBuy(false)}
           onSuccess={() => { setShowCreateBuy(false); refetchAll() }}
         />

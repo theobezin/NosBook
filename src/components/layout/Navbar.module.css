@@ -60,15 +60,15 @@
 }
 
 .adminLink {
-  color: #f59e0b;
+  color: var(--gold-dim);
 }
 .adminLink:hover {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.08);
+  color: var(--gold-light);
+  background: var(--gold-faint);
 }
 .adminLink.active {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
+  color: var(--gold-light);
+  background: var(--gold-faint);
 }
 
 /* ── Right group (lang + auth) ────────────── */
@@ -136,6 +136,33 @@
   line-height: 1;
 }
 
+/* ── Admin dropdown ───────────────────────────*/
+.adminMenuWrap {
+  position: relative;
+}
+
+.adminMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.adminMenu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  min-width: 200px;
+  background: #0d0f14;
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
+  padding: 0.35rem;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75);
+}
+
 /* ── User menu ────────────────────────────────*/
 .userMenuWrap {
   position: relative;
@@ -176,12 +203,12 @@
   top: calc(100% + 0.4rem);
   right: 0;
   min-width: 190px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
+  background: #0d0f14;
+  border: 1px solid var(--border-hover);
   border-radius: var(--radius);
   padding: 0.35rem;
   z-index: 200;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75);
 }
 
 .userMenuItem {
