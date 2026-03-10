@@ -68,16 +68,9 @@
 .buyoutBtn:disabled { opacity: 0.5; cursor: default; }
 
 .contactRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-}
-
-.contactRow .label { min-width: 0; }
-.contactRow .input { min-width: 0; width: 100%; box-sizing: border-box; }
-
-@media (max-width: 420px) {
-  .contactRow { grid-template-columns: 1fr; }
 }
 
 .bestOfferInfo {
