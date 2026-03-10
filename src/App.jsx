@@ -6,7 +6,10 @@ import HubPage           from '@/pages/HubPage'
 import ProfilePage       from '@/pages/ProfilePage'
 import PlayersPage       from '@/pages/PlayersPage'
 import PlayerProfilePage from '@/pages/PlayerProfilePage'
-import AuthPage          from '@/pages/AuthPage'
+import RaidsPage         from '@/pages/RaidsPage'
+import AdminRaidsPage        from '@/pages/AdminRaidsPage'
+import MySubmissionsPage    from '@/pages/MySubmissionsPage'
+import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
 import MarketPage        from '@/pages/MarketPage'
 import AdminMarketPage   from '@/pages/AdminMarketPage'
@@ -29,6 +32,9 @@ export default function App() {
           <Route path="/profile"         element={withLayout(ProfilePage)}       />
           <Route path="/players"         element={withLayout(PlayersPage)}       />
           <Route path="/players/:name"   element={withLayout(PlayerProfilePage)} />
+          <Route path="/raids"           element={withLayout(RaidsPage)}         />
+          <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
+          <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
           <Route path="/market"          element={withLayout(MarketPage)}        />
           <Route path="/admin/market"    element={withLayout(AdminMarketPage)}   />
