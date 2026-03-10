@@ -47,7 +47,10 @@ create table if not exists public.characters (
                    check (element in ('Neutral', 'Fire', 'Water', 'Light', 'Shadow')),
   -- { atk, def, matk, mdef, hp, mp, speed, critRate, critDmg, hit, avoid } — null = not set
   stats       jsonb not null default '{}',
-  -- { weapon, offhand, armor, hat, gloves, shoes, necklace, ring, bracelet, sp, fairy }
+  -- { weapon, offhand, armor, hat, gloves, shoes, necklace, ring, bracelet,
+  --   costumeWings, costumeTop, costumeBottom, costumeWeapon,
+  --   specialists: [], fairies: [], tattoos: [] }
+  -- All new fields are stored in this JSONB — no migration required.
   equipment   jsonb not null default '{}',
   -- { fire, water, light, shadow }
   resistances jsonb not null default '{}',
