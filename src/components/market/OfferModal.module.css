@@ -85,6 +85,16 @@
 
 .bestOfferInfo strong { color: #4ade80; }
 
+.rejectedWarning {
+  font-size: 0.78rem;
+  color: #fb923c;
+  margin: 0;
+  background: rgba(251,146,60,0.08);
+  border: 1px solid rgba(251,146,60,0.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
 .form { display: flex; flex-direction: column; gap: 14px; }
 
 .label {

@@ -18,8 +18,9 @@ import {
   cancelOffer,
   rejectOffer,
 } from '@/hooks/useMarket'
-import OfferModal  from './OfferModal'
-import ReportModal from './ReportModal'
+import OfferModal    from './OfferModal'
+import ReportModal   from './ReportModal'
+import ConfirmModal  from '@/components/ui/ConfirmModal'
 import styles from './ListingCard.module.css'
 
 // ── Helpers ────────────────────────────────────────────────
@@ -59,6 +60,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   // Spam report state: { offerId, reportedProfileId } | null
   const [spamReportTarget,     setSpamReportTarget]     = useState(null)
   const [actionLoading,        setActionLoading]        = useState(false)
+  const [confirmState,         setConfirmState]         = useState(null) // { message, onConfirm, danger? }
 
   const isSell    = listing.type === 'sell'
   const isOwner   = user?.id === listing.profileId
@@ -83,7 +85,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.ACTIVE
   )
 
-  // The current user's rejected offer (blocks re-bidding)
+  // L'offre refusée du viewer (s'il en a une) — permet de re-enchérir mais au-dessus
   const myRejectedOffer = offers.find(
     o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.REJECTED
   )
@@ -101,7 +103,6 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     !isPending &&
     !isSold &&
     !viewerRestricted &&
-    !myRejectedOffer &&
     userCharServers.includes(listing.server)
   )
 
@@ -129,12 +130,18 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     onRefresh?.()
   }
 
-  async function handleArchive() {
-    if (!window.confirm(t('market.archiveListing') + ' ?')) return
-    setActionLoading(true)
-    await archiveListing(listing.id)
-    setActionLoading(false)
-    onRefresh?.()
+  function handleArchive() {
+    setConfirmState({
+      message: t('market.archiveListing') + ' ?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null)
+        setActionLoading(true)
+        await archiveListing(listing.id)
+        setActionLoading(false)
+        onRefresh?.()
+      },
+    })
   }
 
   async function handleConfirmSale() {
@@ -158,21 +165,32 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
     onRefresh?.()
   }
 
-  async function handleRejectOffer(offerId) {
-    if (!window.confirm(t('market.rejectOfferConfirm'))) return
-    setActionLoading(true)
-    const { error } = await rejectOffer(offerId)
-    setActionLoading(false)
-    if (error) { console.error('rejectOffer error:', error); return }
-    onRefresh?.()
+  function handleRejectOffer(offerId) {
+    setConfirmState({
+      message: t('market.rejectOfferConfirm'),
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null)
+        setActionLoading(true)
+        const { error } = await rejectOffer(offerId)
+        setActionLoading(false)
+        if (error) { console.error('rejectOffer error:', error); return }
+        onRefresh?.()
+      },
+    })
   }
 
-  async function handleCancelOffer() {
-    if (!window.confirm(t('market.cancelOfferConfirm'))) return
-    setActionLoading(true)
-    await cancelOffer(myOffer.id)
-    setActionLoading(false)
-    onRefresh?.()
+  function handleCancelOffer() {
+    setConfirmState({
+      message: t('market.cancelOfferConfirm'),
+      onConfirm: async () => {
+        setConfirmState(null)
+        setActionLoading(true)
+        await cancelOffer(myOffer.id)
+        setActionLoading(false)
+        onRefresh?.()
+      },
+    })
   }
 
   function handleSpamReport(offer) {
@@ -458,6 +476,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         <OfferModal
           listing={listing}
           userProfile={userProfile}
+          minPrice={myRejectedOffer?.price ?? null}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => { setShowOfferModal(false); onRefresh?.() }}
         />
@@ -482,6 +501,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
           mode="spam"
           onClose={() => setSpamReportTarget(null)}
           onSuccess={() => { setSpamReportTarget(null); onRefresh?.() }}
+        />
+      )}
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          danger={confirmState.danger}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
         />
       )}
     </div>

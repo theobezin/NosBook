@@ -137,11 +137,11 @@ create table if not exists public.market_offers (
 
 create index if not exists market_offers_listing_id_idx on public.market_offers (listing_id);
 
--- Un seul offre non-annulée par utilisateur par annonce.
--- Bloque aussi le re-enchère après refus (rejected ≠ cancelled).
+-- Un seul offre active/acceptée par utilisateur par annonce.
+-- Les offres rejected/cancelled/blocked sont exclues → re-bid autorisé après refus.
 create unique index if not exists market_offers_one_per_user_idx
   on public.market_offers (listing_id, profile_id)
-  where status not in ('cancelled', 'blocked');
+  where status not in ('cancelled', 'blocked', 'rejected');
 
 -- FK circulaire market_listings → market_offers (après création des deux tables)
 alter table public.market_listings
@@ -569,7 +569,7 @@ $$ language plpgsql security definer;
 -- -- Puis déployer admin_set_moderation (cf. bloc FUNCTION ci-dessus)
 
 -- ────────────────────────────────────────────────────────────
--- MIGRATION D — character_name / discord_handle + status 'rejected'
+-- MIGRATION D — character_name / discord_handle + status 'rejected' + re-bid
 -- ────────────────────────────────────────────────────────────
 -- -- 1. Nouvelles colonnes sur market_offers
 -- alter table public.market_offers
@@ -583,10 +583,23 @@ $$ language plpgsql security definer;
 --   add constraint market_offers_status_check
 --   check (status in ('active', 'cancelled', 'accepted', 'rejected', 'blocked'));
 --
--- -- 3. Redéployer confirm_market_sale (cf. bloc FUNCTION ci-dessus)
--- -- 4. Déployer reject_offer          (cf. bloc FUNCTION ci-dessus)
+-- -- 3. Mettre à jour la RLS policy pour autoriser le listing owner à rejeter
+-- drop policy if exists market_offers_update on public.market_offers;
+-- create policy market_offers_update on public.market_offers for update
+-- using (
+--   auth.uid() = profile_id
+--   or exists (
+--     select 1 from public.market_listings ml
+--     where ml.id = listing_id and ml.profile_id = auth.uid()
+--   )
+--   or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+-- );
 --
--- -- 5. Dédupliquer puis créer l'index unique
+-- -- 4. Redéployer confirm_market_sale (cf. bloc FUNCTION ci-dessus)
+-- -- 5. Déployer reject_offer          (cf. bloc FUNCTION ci-dessus — optionnel, remplacé par UPDATE direct)
+--
+-- -- 6. Dédupliquer puis créer l'index unique
+-- --    (rejected exclu → re-bid autorisé après refus)
 -- with ranked as (
 --   select id,
 --          row_number() over (
@@ -594,11 +607,12 @@ $$ language plpgsql security definer;
 --            order by created_at desc
 --          ) as rn
 --   from public.market_offers
---   where status not in ('cancelled', 'blocked')
+--   where status not in ('cancelled', 'blocked', 'rejected')
 -- )
 -- update public.market_offers set status = 'cancelled'
 -- where id in (select id from ranked where rn > 1);
 --
--- create unique index if not exists market_offers_one_per_user_idx
+-- drop index if exists public.market_offers_one_per_user_idx;
+-- create unique index market_offers_one_per_user_idx
 --   on public.market_offers (listing_id, profile_id)
---   where status not in ('cancelled', 'blocked');
+--   where status not in ('cancelled', 'blocked', 'rejected');

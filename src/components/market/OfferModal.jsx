@@ -11,7 +11,7 @@ import { parseGold, formatGold, MAX_GOLD, bestOffer } from '@/lib/market'
 import { createOffer, triggerConfirmation } from '@/hooks/useMarket'
 import styles from './OfferModal.module.css'
 
-export default function OfferModal({ listing, onClose, onSuccess, userProfile }) {
+export default function OfferModal({ listing, onClose, onSuccess, userProfile, minPrice = null }) {
   const { t } = useLang()
   const { user } = useAuth()
   const { characters } = useCharacters()
@@ -55,6 +55,11 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile })
       const parsed = parseGold(price)
       if (parsed === null || parsed <= 0) {
         setError(t('market.offerErrPrice'))
+        return
+      }
+      // Must strictly exceed previous rejected offer (if any)
+      if (minPrice != null && parsed <= minPrice) {
+        setError(t('market.offerErrMustExceed', { best: formatGold(minPrice) }))
         return
       }
       // Must strictly exceed current best offer
@@ -172,6 +177,13 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile })
           >
             {t('market.offerBuyout')} — {formatGold(listing.buyoutPrice)} {t('market.gold')}
           </button>
+        )}
+
+        {/* Rejected offer warning (re-bid flow) */}
+        {isSell && minPrice != null && (
+          <p className={styles.rejectedWarning}>
+            {t('market.offerWasRejected')} {t('market.offerErrMustExceed', { best: formatGold(minPrice) })}
+          </p>
         )}
 
         {/* Current best offer info (sell only) */}

@@ -16,6 +16,7 @@ import OfferModal        from '@/components/market/OfferModal'
 import ReportModal      from '@/components/market/ReportModal'
 import EditListingModal from '@/components/market/EditListingModal'
 import Spinner          from '@/components/ui/Spinner'
+import ConfirmModal     from '@/components/ui/ConfirmModal'
 import styles from './ListingDetailPage.module.css'
 
 // ── Helpers ────────────────────────────────────────────────
@@ -56,8 +57,9 @@ const OFFER_STATUS_STYLE = {
 // ── OfferRow ───────────────────────────────────────────────
 
 function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
-  const [loading, setLoading] = useState(false)
-  const [spamReport, setSpamReport] = useState(false)
+  const [loading,       setLoading]       = useState(false)
+  const [spamReport,    setSpamReport]    = useState(false)
+  const [confirmState,  setConfirmState]  = useState(null)
 
   // Offers are mapped through fromDBOffer → camelCase
   const offerId         = offer.id
@@ -67,12 +69,17 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
   const isActive        = offer.status === OFFER_STATUS.ACTIVE
   const isAccepted      = offer.status === OFFER_STATUS.ACCEPTED
 
-  async function handleCancel() {
-    if (!window.confirm(t('market.cancelOfferConfirm'))) return
-    setLoading(true)
-    await cancelOffer(offerId)
-    setLoading(false)
-    onRefresh()
+  function handleCancel() {
+    setConfirmState({
+      message: t('market.cancelOfferConfirm'),
+      onConfirm: async () => {
+        setConfirmState(null)
+        setLoading(true)
+        await cancelOffer(offerId)
+        setLoading(false)
+        onRefresh()
+      },
+    })
   }
 
   async function handleAccept() {
@@ -82,13 +89,19 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
     onRefresh()
   }
 
-  async function handleReject() {
-    if (!window.confirm(t('market.rejectOfferConfirm'))) return
-    setLoading(true)
-    const { error } = await rejectOffer(offerId)
-    setLoading(false)
-    if (error) { console.error('rejectOffer error:', error); return }
-    onRefresh()
+  function handleReject() {
+    setConfirmState({
+      message: t('market.rejectOfferConfirm'),
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null)
+        setLoading(true)
+        const { error } = await rejectOffer(offerId)
+        setLoading(false)
+        if (error) { console.error('rejectOffer error:', error); return }
+        onRefresh()
+      },
+    })
   }
 
   const isRejected = offer.status === OFFER_STATUS.REJECTED
@@ -179,6 +192,15 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
           onSuccess={() => { setSpamReport(false); onRefresh() }}
         />
       )}
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          danger={confirmState.danger}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </div>
   )
 }
@@ -199,6 +221,7 @@ export default function ListingDetailPage() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [showEditModal,   setShowEditModal]   = useState(false)
   const [actionLoading,   setActionLoading]   = useState(false)
+  const [confirmState,    setConfirmState]    = useState(null)
 
   if (loading) return (
     <div className={styles.page}>
@@ -253,7 +276,6 @@ export default function ListingDetailPage() {
     !isSold &&
     !isArchived &&
     !viewerRestricted &&
-    !myRejectedOffer &&
     userCharServers.includes(listing.server)
   )
 
@@ -280,12 +302,18 @@ export default function ListingDetailPage() {
     refetch()
   }
 
-  async function handleArchive() {
-    if (!window.confirm(t('market.archiveListing') + ' ?')) return
-    setActionLoading(true)
-    await archiveListing(listing.id)
-    setActionLoading(false)
-    navigate('/market')
+  function handleArchive() {
+    setConfirmState({
+      message: t('market.archiveListing') + ' ?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null)
+        setActionLoading(true)
+        await archiveListing(listing.id)
+        setActionLoading(false)
+        navigate('/market')
+      },
+    })
   }
 
   const serverColor = SERVER_COLOR[listing.server] ?? '#6b7280'
@@ -454,13 +482,16 @@ export default function ListingDetailPage() {
             {myActiveOffer && (
               <button
                 className={styles.btnCancelOffer}
-                onClick={async () => {
-                  if (!window.confirm(t('market.cancelOfferConfirm'))) return
-                  setActionLoading(true)
-                  await cancelOffer(myActiveOffer.id)
-                  setActionLoading(false)
-                  refetch()
-                }}
+                onClick={() => setConfirmState({
+                  message: t('market.cancelOfferConfirm'),
+                  onConfirm: async () => {
+                    setConfirmState(null)
+                    setActionLoading(true)
+                    await cancelOffer(myActiveOffer.id)
+                    setActionLoading(false)
+                    refetch()
+                  },
+                })}
                 disabled={actionLoading}
               >
                 {t('market.cancelMyOffer')}
@@ -517,6 +548,7 @@ export default function ListingDetailPage() {
         <OfferModal
           listing={listing}
           userProfile={profile}
+          minPrice={myRejectedOffer?.price ?? null}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => { setShowOfferModal(false); refetch() }}
         />
@@ -536,6 +568,15 @@ export default function ListingDetailPage() {
           listing={listing}
           onClose={() => setShowEditModal(false)}
           onSuccess={() => { setShowEditModal(false); refetch() }}
+        />
+      )}
+
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          danger={confirmState.danger}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
         />
       )}
     </div>
