@@ -333,24 +333,26 @@ function StatsPanel() {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
+    const now = new Date().toISOString()
     Promise.all([
       supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'sell'),
       supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'buy'),
       supabase.from('market_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'sold').gt('updated_at', startOfMonth.toISOString()),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).or(`is_banned.eq.true,muted_until.gt.${new Date().toISOString()}`),
-    ]).then(([sell, buy, pending, sold, sanctioned]) => {
-      const err = sell.error || buy.error || pending.error || sold.error || sanctioned.error
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', true),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', false).gt('muted_until', now),
+    ]).then(([sell, buy, pending, sold, banned, muted]) => {
+      const err = sell.error || buy.error || pending.error || sold.error || banned.error || muted.error
       if (err) { setError(err.message); setLoading(false); return }
       setStats({
         activeListingsSell: sell.count ?? 0,
         activeListingsBuy:  buy.count  ?? 0,
         pendingReports:     pending.count ?? 0,
         completedThisMonth: sold.count ?? 0,
-        sanctionedUsers:    sanctioned.count ?? 0,
+        sanctionedUsers:    (banned.count ?? 0) + (muted.count ?? 0),
       })
       setLoading(false)
-    })
+    }).catch(err => { setError(err.message); setLoading(false) })
   }, [])
 
   if (loading) return <div className={styles.centered}><Spinner size="md" /></div>
