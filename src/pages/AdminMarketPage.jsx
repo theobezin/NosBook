@@ -327,7 +327,6 @@ function StatsPanel() {
   const [error,   setError]   = useState(null)
 
   useEffect(() => {
-    console.log('[StatsPanel] mount, hasSupabase=', hasSupabase)
     if (!hasSupabase) { setLoading(false); return }
 
     const startOfMonth = new Date()
@@ -339,13 +338,12 @@ function StatsPanel() {
       supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'sell'),
       supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'buy'),
       supabase.from('market_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'sold').gt('updated_at', startOfMonth.toISOString()),
+      supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'sold').gt('last_activity_at', startOfMonth.toISOString()),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', true),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', false).gt('muted_until', now),
     ]).then(([sell, buy, pending, sold, banned, muted]) => {
-      console.log('[StatsPanel] results', { sell, buy, pending, sold, banned, muted })
       const err = sell.error || buy.error || pending.error || sold.error || banned.error || muted.error
-      if (err) { console.error('[StatsPanel] error', err); setError(err.message); setLoading(false); return }
+      if (err) { setError(err.message); setLoading(false); return }
       setStats({
         activeListingsSell: sell.count ?? 0,
         activeListingsBuy:  buy.count  ?? 0,
@@ -354,7 +352,7 @@ function StatsPanel() {
         sanctionedUsers:    (banned.count ?? 0) + (muted.count ?? 0),
       })
       setLoading(false)
-    }).catch(err => { console.error('[StatsPanel] catch', err); setError(err.message); setLoading(false) })
+    }).catch(err => { setError(err.message); setLoading(false) })
   }, [])
 
   if (loading) return <div className={styles.centered}><Spinner size="md" /></div>
