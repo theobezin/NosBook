@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, NOSMATES, PARTNERS, PARTNER_SPECIALISTS, PARTNER_CLASS_COLORS, PARTNER_SP_RANKS, PARTNER_SP_RANK_COLORS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -29,6 +29,8 @@ function makeCharacter(name, cls, level, heroLevel, server) {
       specialists: [],
       fairies:     [],
       tattoos:     [],
+      nosmates:    [],
+      partners:    [],
       books:       [],
     },
     resistances: { fire: 0, water: 0, light: 0, shadow: 0 },
@@ -1871,6 +1873,378 @@ function TattoosTab({ char, onUpdate }) {
   )
 }
 
+// ── PartnerSPSelect ────────────────────────────────────────────────────────
+
+function PartnerSPSelect({ spList, value, onChange }) {
+  const { t } = useLang()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = spList.find(sp => sp.name === value) ?? null
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className={styles.spSelect} ref={ref}>
+      <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
+        {selected
+          ? <><img src={selected.icon} alt="" className={styles.spSelectIcon} /><span className={styles.spSelectName}>{selected.name}</span></>
+          : <span className={styles.spSelectName}>{t('partner.spNone')}</span>
+        }
+        <span className={styles.spSelectArrow}>▾</span>
+      </button>
+      {open && (
+        <div className={styles.spSelectDropdown}>
+          <button
+            type="button"
+            className={`${styles.spSelectOption} ${!value ? styles.spSelectOptionActive : ''}`}
+            onClick={() => { onChange(null); setOpen(false) }}
+          >
+            <span>{t('partner.spNone')}</span>
+          </button>
+          {spList.map(sp => (
+            <button
+              key={sp.name}
+              type="button"
+              className={`${styles.spSelectOption} ${value === sp.name ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange(sp.name); setOpen(false) }}
+            >
+              <img src={sp.icon} alt="" className={styles.spSelectIcon} />
+              <span>{sp.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PartnersTab ────────────────────────────────────────────────────────────
+
+function PartnerPickerModal({ onClose, onAdd, existing }) {
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+  const existingNames = new Set(existing.map(p => p.name))
+  const filtered = PARTNERS.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('partner.pickTitle')}</h2>
+        <input
+          className={styles.modalInput}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Rechercher…"
+          autoFocus
+        />
+        <div className={styles.nosmateGrid}>
+          {filtered.map(p => {
+            const already = existingNames.has(p.name)
+            return (
+              <button
+                key={p.name}
+                className={`${styles.nosmatePickItem} ${already ? styles.nosmatePickItemEquipped : ''}`}
+                onClick={() => { if (!already) { onAdd(p); onClose() } }}
+                disabled={already}
+              >
+                <img src={p.icon} alt="" className={styles.nosmatePickIcon} />
+                <span className={styles.nosmatePickName}>{p.name}</span>
+                <span className={styles.partnerClassBadge} style={{ background: PARTNER_CLASS_COLORS[p.class] }}>
+                  {p.class}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PartnersTab({ char, onUpdate }) {
+  const { t } = useLang()
+  const [showPicker, setShowPicker] = useState(false)
+
+  const partners = char.equipment.partners ?? []
+
+  const handleAdd = (p) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        partners: [...partners, { id: `partner-${Date.now()}`, name: p.name, icon: p.icon, class: p.class, sp: null }],
+      },
+    })
+  }
+
+  const handleUpdate = (id, patch) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        partners: partners.map(p => p.id === id ? { ...p, ...patch } : p),
+      },
+    })
+  }
+
+  const handleDelete = (id) => {
+    onUpdate(char.id, {
+      equipment: { ...char.equipment, partners: partners.filter(p => p.id !== id) },
+    })
+  }
+
+  const handleSPChange = (partnerId, spName) => {
+    const spList = PARTNER_SPECIALISTS[partners.find(p => p.id === partnerId)?.class] ?? []
+    const spData = spList.find(s => s.name === spName) ?? null
+    const sp = spData ? {
+      name: spData.name,
+      icon: spData.icon,
+      skills: spData.skills.map(s => ({ name: s, rank: 'F' })),
+    } : null
+    handleUpdate(partnerId, { sp })
+  }
+
+  const handleSkillRank = (partnerId, skillIdx, rank) => {
+    const partner = partners.find(p => p.id === partnerId)
+    if (!partner?.sp) return
+    const skills = partner.sp.skills.map((s, i) => i === skillIdx ? { ...s, rank } : s)
+    handleUpdate(partnerId, { sp: { ...partner.sp, skills } })
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.spHeader}>
+        <Button variant="primary" size="sm" onClick={() => setShowPicker(true)}>
+          {t('partner.addBtn')}
+        </Button>
+      </div>
+
+      {partners.length === 0 ? (
+        <div className={styles.spEmpty}>{t('partner.empty')}</div>
+      ) : (
+        <div className={styles.partnerCards}>
+          {partners.map(p => {
+            const spList = PARTNER_SPECIALISTS[p.class] ?? []
+            return (
+              <div key={p.id} className={styles.partnerCard}>
+                {/* Header */}
+                <div className={styles.partnerCardTop}>
+                  <img src={p.icon} alt="" className={styles.partnerCardIcon} />
+                  <div className={styles.partnerCardInfo}>
+                    <span className={styles.partnerCardName}>{p.name}</span>
+                    <span className={styles.partnerClassBadge} style={{ background: PARTNER_CLASS_COLORS[p.class] }}>
+                      {p.class}
+                    </span>
+                  </div>
+                  <button className={styles.spCardDelete} onClick={() => handleDelete(p.id)}>✕</button>
+                </div>
+
+                {/* SP card select */}
+                <div className={styles.partnerSPSection}>
+                  <label className={styles.nosmateLabel}>{t('partner.spLabel')}</label>
+                  <PartnerSPSelect
+                    spList={spList}
+                    value={p.sp?.name ?? null}
+                    onChange={spName => handleSPChange(p.id, spName)}
+                  />
+
+                  {/* Skills + ranks */}
+                  {p.sp && (
+                    <div className={styles.partnerSkills}>
+                      {p.sp.skills.map((skill, idx) => (
+                        <div key={idx} className={styles.partnerSkillRow}>
+                          <span className={styles.partnerSkillName}>{skill.name}</span>
+                          <div className={styles.partnerRankBtns}>
+                            {PARTNER_SP_RANKS.map(r => (
+                              <button
+                                key={r}
+                                className={`${styles.partnerRankBtn} ${skill.rank === r ? styles.partnerRankBtnActive : ''}`}
+                                style={skill.rank === r ? { background: PARTNER_SP_RANK_COLORS[r], borderColor: PARTNER_SP_RANK_COLORS[r] } : {}}
+                                onClick={() => handleSkillRank(p.id, idx, r)}
+                              >{r}</button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {showPicker && (
+        <PartnerPickerModal
+          existing={partners}
+          onClose={() => setShowPicker(false)}
+          onAdd={handleAdd}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── NosmatePickerModal ─────────────────────────────────────────────────────
+
+function NosmatePickerModal({ onClose, onAdd, existing }) {
+  const { t } = useLang()
+  const [query, setQuery] = useState('')
+
+  const existingNames = new Set(existing.map(n => n.name))
+  const filtered = NOSMATES.filter(n =>
+    n.name.toLowerCase().includes(query.toLowerCase())
+  )
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('nosmate.pickTitle')}</h2>
+        <input
+          className={styles.modalInput}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Rechercher…"
+          autoFocus
+        />
+        <div className={styles.nosmateGrid}>
+          {filtered.map(n => {
+            const already = existingNames.has(n.name)
+            return (
+              <button
+                key={n.name}
+                className={`${styles.nosmatePickItem} ${already ? styles.nosmatePickItemEquipped : ''}`}
+                onClick={() => { if (!already) { onAdd(n); onClose() } }}
+                disabled={already}
+              >
+                <img src={n.icon} alt="" className={styles.nosmatePickIcon} />
+                <span className={styles.nosmatePickName}>{n.name}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── NosmatesTab ────────────────────────────────────────────────────────────
+
+const NOSMATE_STARS = [1, 2, 3, 4, 5, 6]
+
+function NosmatesTab({ char, onUpdate }) {
+  const { t } = useLang()
+  const [showPicker, setShowPicker] = useState(false)
+
+  const nosmates = char.equipment.nosmates ?? []
+
+  const handleAdd = (pet) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        nosmates: [...nosmates, { id: `nosmate-${Date.now()}`, name: pet.name, icon: pet.icon, level: 1, heroLevel: 0, stars: 1 }],
+      },
+    })
+  }
+
+  const handleUpdate = (id, patch) => {
+    onUpdate(char.id, {
+      equipment: {
+        ...char.equipment,
+        nosmates: nosmates.map(n => n.id === id ? { ...n, ...patch } : n),
+      },
+    })
+  }
+
+  const handleDelete = (id) => {
+    onUpdate(char.id, {
+      equipment: { ...char.equipment, nosmates: nosmates.filter(n => n.id !== id) },
+    })
+  }
+
+  return (
+    <div className={styles.spTab}>
+      <div className={styles.spHeader}>
+        <Button variant="primary" size="sm" onClick={() => setShowPicker(true)}>
+          {t('nosmate.addBtn')}
+        </Button>
+      </div>
+
+      {nosmates.length === 0 ? (
+        <div className={styles.spEmpty}>{t('nosmate.empty')}</div>
+      ) : (
+        <div className={styles.nosmateCards}>
+          {nosmates.map(n => (
+            <div key={n.id} className={styles.nosmateCard}>
+              <div className={styles.nosmateCardTop}>
+                <img src={n.icon} alt="" className={styles.nosmateCardIcon} />
+                <span className={styles.nosmateCardName}>{n.name}</span>
+                <button className={styles.spCardDelete} onClick={() => handleDelete(n.id)} title="Remove">✕</button>
+              </div>
+
+              {/* Stars */}
+              <div className={styles.nosmateStarRow}>
+                <span className={styles.nosmateLabel}>{t('nosmate.training')}</span>
+                <div className={styles.nosmateStars}>
+                  {NOSMATE_STARS.map(s => (
+                    <button
+                      key={s}
+                      className={`${styles.nosmateStar} ${s <= n.stars ? styles.nosmateStarFilled : ''}`}
+                      onClick={() => handleUpdate(n.id, { stars: s })}
+                    >★</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Level + Hero Level */}
+              <div className={styles.nosmateInputRow}>
+                <div className={styles.nosmateInputGroup}>
+                  <label className={styles.nosmateLabel}>{t('nosmate.level')}</label>
+                  <input
+                    className={styles.nosmateInput}
+                    type="number"
+                    value={n.level}
+                    min={1} max={99}
+                    onChange={e => handleUpdate(n.id, { level: Math.max(1, Math.min(99, parseInt(e.target.value) || 1)) })}
+                  />
+                </div>
+                <div className={styles.nosmateInputGroup}>
+                  <label className={styles.nosmateLabel}>{t('nosmate.heroLevel')}</label>
+                  <input
+                    className={styles.nosmateInput}
+                    type="number"
+                    value={n.heroLevel}
+                    min={0} max={60}
+                    onChange={e => handleUpdate(n.id, { heroLevel: Math.max(0, Math.min(60, parseInt(e.target.value) || 0)) })}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showPicker && (
+        <NosmatePickerModal
+          existing={nosmates}
+          onClose={() => setShowPicker(false)}
+          onAdd={handleAdd}
+        />
+      )}
+    </div>
+  )
+}
+
 // ── BooksTab ───────────────────────────────────────────────────────────────
 
 function BooksTab({ char, onUpdate }) {
@@ -2038,6 +2412,8 @@ export default function ProfilePage() {
     { key: 'specialists', label: t('tabs.specialists')  },
     { key: 'fairies',   label: t('tabs.fairies')   },
     { key: 'tattoos',   label: t('tabs.tattoos')   },
+    { key: 'nosmates',  label: t('tabs.nosmates')  },
+    { key: 'partners',  label: t('tabs.partners')  },
     { key: 'books',     label: t('tabs.books')     },
   ]
 
@@ -2249,8 +2625,10 @@ export default function ProfilePage() {
             {activeTab === 'equipment'   && <EquipmentTab   char={data} onUpdate={updateCharacter} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} onUpdate={updateCharacter} />}
             {activeTab === 'fairies'  && <FairiesTab  char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'tattoos'  && <TattoosTab  char={data} onUpdate={updateCharacter} />}
-            {activeTab === 'books'    && <BooksTab char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'tattoos'  && <TattoosTab   char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'nosmates' && <NosmatesTab  char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'partners' && <PartnersTab  char={data} onUpdate={updateCharacter} />}
+            {activeTab === 'books'    && <BooksTab     char={data} onUpdate={updateCharacter} />}
           </div>
 
         </div>
