@@ -68,10 +68,10 @@ export default function HubPage() {
 
   const HUB_FEATURES = [
     { to: '/profile', icon: '⚔️', key: 'featureProfile', color: '#c9a84c', ready: true  },
-    { to: '/raids',   icon: '🏆', key: 'featureRanking', color: '#60a5fa', ready: true  },
+    { to: '/records', icon: '🏆', key: 'featureRanking', color: '#60a5fa', ready: true  },
     { to: '/market',  icon: '💰', key: 'featureMarket',  color: '#4caf9a', ready: false },
     { to: '/guild',   icon: '🛡️', key: 'featureGuild',   color: '#7c6ce0', ready: false },
-    { to: '#',        icon: '🏰', key: 'featureRaids',   color: '#e06c5a', ready: false },
+    { to: '/raids',   icon: '🏰', key: 'featureRaids',   color: '#e06c5a', ready: true  },
     { to: '/events',  icon: '🌟', key: 'featureEvents',  color: '#c084fc', ready: false },
     // Todo : Brian faire fonctionnalité famille
   ]

@@ -450,13 +450,13 @@ export default function RaidsPage() {
   const { isAuthenticated } = useAuth()
   const { t, lang } = useLang()
 
-  const [server,       setServer]       = useState('all')
-  const [search,       setSearch]       = useState('')
-  const [records,      setRecords]      = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [expandedSlug, setExpandedSlug] = useState(null)
-  const [showSubmit,   setShowSubmit]   = useState(false)
-  const [characters,   setCharacters]   = useState([])
+  const [server,        setServer]        = useState('all')
+  const [search,        setSearch]        = useState('')
+  const [records,       setRecords]       = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [expandedSlug,  setExpandedSlug]  = useState(null)
+  const [showSubmit,    setShowSubmit]    = useState(false)
+  const [characters,    setCharacters]    = useState([])
 
   useEffect(() => {
     if (!hasSupabase) return
