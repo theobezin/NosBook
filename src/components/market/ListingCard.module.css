@@ -314,6 +314,19 @@
 
 .reputation { font-size: 0.7rem; color: #6b7280; }
 
+.repBadge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: rgba(74,222,128,0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,0.25);
+  vertical-align: middle;
+}
+
 .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 .btnOffer {

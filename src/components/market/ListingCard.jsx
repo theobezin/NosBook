@@ -367,6 +367,9 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         <div className={styles.seller}>
           <span className={styles.sellerName}>
             {t('market.postedBy')} <strong>{listing.profile?.username ?? '—'}</strong>
+            {(listing.profile?.trades_completed ?? 0) > 0 && (
+              <span className={styles.repBadge}>{listing.profile.trades_completed}</span>
+            )}
           </span>
           {listing.profile?.discord_handle && (
             <span className={styles.discord}>

@@ -8,6 +8,28 @@
 --   Consultez les blocs MIGRATION A/B/C/D en fin de fichier
 --   et n'exécutez que les étapes manquantes.
 -- ============================================================
+--
+-- ⚠️  CHECKLIST MISE EN PRODUCTION ⚠️
+-- ────────────────────────────────────────────────────────────
+-- 1. REALTIME (obligatoire pour l'auto-refresh de la page détail)
+--    Activer dans le dashboard Supabase :
+--    → Table Editor > market_offers   > bouton "Realtime" > ON
+--    → Table Editor > market_listings > bouton "Realtime" > ON
+--    Sans ça, la page de détail ne se rafraîchit pas en temps réel
+--    (ne casse rien, mais la feature est inactive).
+--
+-- 2. RLS — vérifier que toutes les policies sont bien appliquées
+--    (cf. blocs RLS ci-dessous). En particulier :
+--    → market_offers_update : doit inclure le listing owner (pour rejectOffer)
+--
+-- 3. MIGRATIONS — exécuter dans l'ordre si DB existante :
+--    Migration C : muted_until + is_banned sur profiles
+--    Migration D : character_name, discord_handle, status 'rejected',
+--                  RLS update, index unique re-bid
+--
+-- 4. ADMIN — accorder les droits admin au(x) compte(s) souhaité(s) :
+--    UPDATE public.profiles SET is_admin = true WHERE username = 'NOM';
+-- ============================================================
 
 create extension if not exists "uuid-ossp";
 

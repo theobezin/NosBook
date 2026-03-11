@@ -222,6 +222,7 @@ export default function ListingDetailPage() {
   const [showEditModal,   setShowEditModal]   = useState(false)
   const [actionLoading,   setActionLoading]   = useState(false)
   const [confirmState,    setConfirmState]    = useState(null)
+  const [lightboxSrc,     setLightboxSrc]     = useState(null)
 
   if (loading) return (
     <div className={styles.page}>
@@ -361,14 +362,14 @@ export default function ListingDetailPage() {
           {listing.imageUrls.length > 0 && (
             <div className={styles.images}>
               {listing.imageUrls.map((url, i) => (
-                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={url}
-                    alt=""
-                    className={styles.image}
-                    onError={e => { e.target.style.display = 'none' }}
-                  />
-                </a>
+                <img
+                  key={i}
+                  src={url}
+                  alt=""
+                  className={styles.image}
+                  onClick={() => setLightboxSrc(url)}
+                  onError={e => { e.target.style.display = 'none' }}
+                />
               ))}
             </div>
           )}
@@ -578,6 +579,13 @@ export default function ListingDetailPage() {
           onConfirm={confirmState.onConfirm}
           onCancel={() => setConfirmState(null)}
         />
+      )}
+
+      {/* Lightbox */}
+      {lightboxSrc && (
+        <div className={styles.lightboxOverlay} onClick={() => setLightboxSrc(null)}>
+          <img src={lightboxSrc} className={styles.lightboxImg} alt="" />
+        </div>
       )}
     </div>
   )

@@ -170,6 +170,16 @@ export function useMarketListing(listingId) {
 
   useEffect(() => { fetch() }, [fetch])
 
+  useEffect(() => {
+    if (!hasSupabase || !listingId) return
+    const channel = supabase
+      .channel(`listing-${listingId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_offers', filter: `listing_id=eq.${listingId}` }, () => { fetch() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_listings', filter: `id=eq.${listingId}` }, () => { fetch() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [listingId, fetch])
+
   return { listing, loading, error, refetch: fetch }
 }
 

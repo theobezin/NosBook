@@ -320,6 +320,63 @@ function ModerationListPanel({ t }) {
   )
 }
 
+// ── StatsPanel ─────────────────────────────────────────────
+function StatsPanel() {
+  const [stats,   setStats]   = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  useEffect(() => {
+    if (!hasSupabase) { setLoading(false); return }
+
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    Promise.all([
+      supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'sell'),
+      supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'buy'),
+      supabase.from('market_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('market_listings').select('*', { count: 'exact', head: true }).eq('status', 'sold').gt('updated_at', startOfMonth.toISOString()),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).or(`is_banned.eq.true,muted_until.gt.${new Date().toISOString()}`),
+    ]).then(([sell, buy, pending, sold, sanctioned]) => {
+      const err = sell.error || buy.error || pending.error || sold.error || sanctioned.error
+      if (err) { setError(err.message); setLoading(false); return }
+      setStats({
+        activeListingsSell: sell.count ?? 0,
+        activeListingsBuy:  buy.count  ?? 0,
+        pendingReports:     pending.count ?? 0,
+        completedThisMonth: sold.count ?? 0,
+        sanctionedUsers:    sanctioned.count ?? 0,
+      })
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) return <div className={styles.centered}><Spinner size="md" /></div>
+  if (error)   return <p className={styles.errorMsg}>{error}</p>
+  if (!stats)  return null
+
+  const items = [
+    { num: stats.activeListingsSell, label: 'Annonces vente actives' },
+    { num: stats.activeListingsBuy,  label: 'Annonces achat actives' },
+    { num: stats.pendingReports,     label: 'Signalements en attente' },
+    { num: stats.completedThisMonth, label: 'Ventes ce mois' },
+    { num: stats.sanctionedUsers,    label: 'Utilisateurs sanctionnés' },
+  ]
+
+  return (
+    <div className={styles.statsGrid}>
+      {items.map(({ num, label }) => (
+        <div key={label} className={styles.statCard}>
+          <span className={styles.statNum}>{num}</span>
+          <span className={styles.statLabel}>{label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── AdminMarketPage ────────────────────────────────────────
 export default function AdminMarketPage() {
   const { t } = useLang()
@@ -327,7 +384,7 @@ export default function AdminMarketPage() {
 
   const [isAdmin,  setIsAdmin]  = useState(false)
   const [checking, setChecking] = useState(true)
-  const [section,  setSection]  = useState('reports') // 'reports' | 'moderation'
+  const [section,  setSection]  = useState('reports') // 'reports' | 'moderation' | 'stats'
   const [tab,      setTab]      = useState('pending')
   const [reports,  setReports]  = useState([])
   const [loading,  setLoading]  = useState(false)
@@ -393,6 +450,12 @@ export default function AdminMarketPage() {
         >
           🔨 {t('market.adminSectionModeration')}
         </button>
+        <button
+          className={`${styles.sectionTab} ${section === 'stats' ? styles.sectionTabActive : ''}`}
+          onClick={() => setSection('stats')}
+        >
+          📊 Statistiques
+        </button>
       </div>
 
       {/* ── Reports section ── */}
@@ -436,6 +499,9 @@ export default function AdminMarketPage() {
 
       {/* ── Moderation section ── */}
       {section === 'moderation' && <ModerationListPanel t={t} />}
+
+      {/* ── Stats section ── */}
+      {section === 'stats' && <StatsPanel t={t} />}
     </div>
   )
 }
