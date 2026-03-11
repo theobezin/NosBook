@@ -119,6 +119,7 @@ export default {
     fairies:     'Fairies',
     tattoos:     'Tattoos',
     nosmates:    'Nosmates',
+    partners:    'Partners',
     books:       'Books',
     booksSoon:   'Books coming soon.',
   },
@@ -164,6 +165,14 @@ export default {
     level:     'Level',
     heroLevel: 'Hero Level',
     training:  'Training',
+  },
+  partner: {
+    addBtn:    '+ Add a Partner',
+    empty:     'No partners added yet.',
+    pickTitle: 'Choose a Partner',
+    spLabel:   'Specialist Card',
+    spNone:    'No SP card',
+    skills:    'Skills',
   },
   fairy: {
     addBtn:      '+ Add a Fairy',

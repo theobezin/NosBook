@@ -1642,6 +1642,95 @@ export const mockNews = [
   },
 ]
 
+// ── Partners ─────────────────────────────────────────────────────────────
+export const PARTNERS = [
+  { name: 'Tom',               icon: N(311),  class: 'Corps à corps' },
+  { name: 'Kliff',             icon: N(120),  class: 'Corps à corps' },
+  { name: 'Par',               icon: N(2783), class: 'Corps à corps' },
+  { name: 'Kiki',              icon: N(2811), class: 'Corps à corps' },
+  { name: 'Frigg',             icon: N(2522), class: 'Corps à corps' },
+  { name: 'Ragnar',            icon: N(2523), class: 'Corps à corps' },
+  { name: 'Bob',               icon: N(312),  class: 'Distance'      },
+  { name: 'Léona',             icon: N(822),  class: 'Distance'      },
+  { name: 'Pur',               icon: N(2784), class: 'Distance'      },
+  { name: 'Koko',              icon: N(2812), class: 'Distance'      },
+  { name: 'Jennifer',          icon: N(2531), class: 'Distance'      },
+  { name: 'Cupidia sans ailes',icon: N(2717), class: 'Distance'      },
+  { name: 'Princesse Sakura',  icon: N(417),  class: 'Magie'         },
+  { name: 'Pir',               icon: N(2785), class: 'Magie'         },
+  { name: 'Koukou',            icon: N(2813), class: 'Magie'         },
+  { name: 'Graham',            icon: N(2505), class: 'Magie'         },
+  { name: 'Erdimine',          icon: N(2525), class: 'Magie'         },
+  { name: 'Yertirand',         icon: N(2530), class: 'Magie'         },
+]
+
+export const PARTNER_CLASS_COLORS = {
+  'Corps à corps': '#ef4444',
+  'Distance':      '#3b82f6',
+  'Magie':         '#a855f7',
+}
+
+export const PARTNER_SP_RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
+
+export const PARTNER_SP_RANK_COLORS = {
+  F: '#6b7280',
+  E: '#9ca3af',
+  D: '#22c55e',
+  C: '#84cc16',
+  B: '#3b82f6',
+  A: '#f59e0b',
+  S: '#ef4444',
+}
+
+export const PARTNER_SPECIALISTS = {
+  'Corps à corps': [
+    { name: "Carte SP d'Ægir",                     icon: I(2573), skills: ["Attaque furibonde à la hache", "Viking d'acier",         "Invincibilité"                       ] },
+    { name: 'Carte SP de Shinobi',                  icon: I(2623), skills: ["Coup de couteau",              "Éclair",                  "Course de l'obscurité"               ] },
+    { name: 'Carte SP de Foxy',                     icon: I(2672), skills: ["Charme fou",                   "Neuf queues !",           "Hurlement perçant"                   ] },
+    { name: 'Carte SP de Fiona',                    icon: I(2729), skills: ["Charme fou",                   "Neuf queues !",           "Hurlement perçant"                   ] },
+    { name: 'Carte SP de Maru',                     icon: I(2681), skills: ["Haiya",                        "Devenir maboul",          "Domination du tigre"                 ] },
+    { name: 'Carte SP de Maru (habits de maman)',   icon: I(2682), skills: ["Haiya",                        "Devenir maboul",          "Domination du tigre"                 ] },
+    { name: "Carte SP d'Amon",                      icon: I(2710), skills: ["Carreau incendiaire",          "Tremblement légendaire",  "Provocation"                         ] },
+    { name: "Carte SP d'archidémon Amon",           icon: I(4060), skills: ["Carreau incendiaire",          "Tremblement légendaire",  "Provocation"                         ] },
+    { name: 'Carte SP de Lucie Longoreil',          icon: I(2711), skills: ["Pourfendeur",                  "Dard",                    "Élan déhanché"                       ] },
+    { name: 'Carte SP de Marion Marionnettiste',    icon: I(2803), skills: ["Coup en peluche",              "Attaque élancée",         "Gigantomanie"                        ] },
+    { name: 'Princesse Vénus',                      icon: I(2810), skills: ["Ombrelle déchirante",          "Bombe de pétales",        "Ombrelle protectrice"                ] },
+    { name: 'Carte SP de Ragnar squelettique',      icon: I(2943), skills: ["Frappe du spectre",            "Réduction obscure",       "Fierté du Viking"                    ] },
+    { name: 'Objet de test du Dr Miaou fou',        icon: I(2962), skills: ["Coup",                        "Soif insupportable",      "Décharge électrostatique"            ] },
+    { name: 'Carte SP de Perti Déplumay',           icon: I(4142), skills: ["Attaque des flammes",          "Souffle de feu",          "Armure des flammes"                  ] },
+    { name: 'Akhénaton, le pharaon maudit',         icon: I(4323), skills: ["Tourbillon mortel",            "Fléau spirituel",         "Souffle de la mort"                  ] },
+    { name: 'Halitus XV',                           icon: I(4855), skills: ["Jet de vapeur",               "Missile antiarmure",      "Pression sur le chaudron"            ] },
+    { name: "Prototype d'Halitus",                  icon: I(4856), skills: ["Jet de chaleur",              "Missile antichar",        "Surchauffe"                          ] },
+    { name: "Feraspa la guêpe d'assaut",            icon: I(7424), skills: ["Rassemblement !",             "Feinte aérienne",         "Bourdonnement d'ailes"               ] },
+  ],
+  'Distance': [
+    { name: 'Carte SP de Barni',                    icon: I(2574), skills: ["Tir de Viking super précis",  "Flèche ordure",           "Vilain garçon"                       ] },
+    { name: 'Carte SP de Lotus',                    icon: I(2624), skills: ["Lancer de dague",             "Danse des flammes",       "Fascination"                         ] },
+    { name: "Carte SP de l'archange Lucifer",       icon: I(2697), skills: ["Jugement de la Lumière",      "Marque de la Lumière",    "Au nom de Dieu"                      ] },
+    { name: 'Carte SP du gardien Lucifer',          icon: I(4058), skills: ["Jugement de la Lumière",      "Marque de la Lumière",    "Au nom de Dieu"                      ] },
+    { name: 'Chloé la cowgirl',                     icon: I(2726), skills: ["Big Bang",                   "Ce tir est expédié en plein ciel", "Feu de secours"              ] },
+    { name: 'Carte SP Chloé la shérif',             icon: I(4059), skills: ["Big Bang",                   "Ce tir est expédié en plein ciel", "Feu de secours"              ] },
+    { name: 'Daniel Ducat',                         icon: I(2789), skills: ["Taillade volante",            "Vaisseau fantôme",        "Tonitruancre"                        ] },
+    { name: 'Nélia Nymphe',                         icon: I(2809), skills: ["Mégamandragore",             "Enracinement",            "Changement de place"                 ] },
+    { name: 'Carte SP de Cupidia',                  icon: I(4103), skills: ["Flèche du cœur",             "Maîtrise du tir à l'arc", "Triple flèche"                       ] },
+    { name: 'Carte SP du lapin de Pâques fou',      icon: I(4122), skills: ["Bombe à œufs fous",          "Résolution renforcée",    "Bombe à œufs pourris"                ] },
+    { name: 'Archère elfe sylvestre Forga',         icon: I(4912), skills: ["Flèche empoisonnée",         "Flèche grimpante",        "Graines mortelles"                   ] },
+    { name: 'Nézarun bienveillant',                 icon: I(7609), skills: ["Force dimensionnelle sacrée","Gigantesque sphère des dimensions","Flux dimensionnel sacré"     ] },
+  ],
+  'Magie': [
+    { name: 'Carte SP de Freya',                    icon: I(2575), skills: ["Frustration de Freya",       "Déclaration de Freya",    "Feu de Freya"                        ] },
+    { name: "Carte SP d'Orkani",                    icon: I(2625), skills: ["Tempête d'éclairs",          "Marqué",                  "Pouvoir obscur"                      ] },
+    { name: 'Carte SP de Hongbi',                   icon: I(2694), skills: ["Danse des diablotins",       "Clone de diablotin",      "Chapeau de diablotin"                ] },
+    { name: 'Carte SP de Cheongbi',                 icon: I(2695), skills: ["Danse des diablotins",       "Clone de diablotin",      "Chapeau de diablotin"                ] },
+    { name: 'Carte SP de Laurena',                  icon: I(2709), skills: ["Impact de Lumière",          "Buisson épineux",         "Parfum de la malédiction"            ] },
+    { name: 'Carte SP de Djinn',                    icon: I(2732), skills: ["Pics gelés",                 "Explobulle",              "Gel éclair"                          ] },
+    { name: 'Princesse des glaces Éliza',           icon: I(2790), skills: ["Chaîne de gel",              "Pluie de glace",          "Voile"                               ] },
+    { name: "Carte SP d'Arlequin",                  icon: I(2806), skills: ["Cirque de la mort",          "Tours de magie",          "Stupéfaction"                        ] },
+    { name: "Carte SP de Yuna l'Ensorceleuse",      icon: I(4078), skills: ["Cercle lumineux magique",    "Griffes félines",         "Bonté de cœur"                       ] },
+    { name: 'Marie la vampire',                     icon: I(7155), skills: ["Cocktail sanglant",          "Explosion de sang",       "Malédiction hémophile"               ] },
+  ],
+}
+
 // ── Nosmates (pets) ──────────────────────────────────────────────────────
 export const NOSMATES = [
   { name: 'Petit renard',                               icon: N(0)    },

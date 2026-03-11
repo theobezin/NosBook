@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS, NOSMATES } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS, NOSMATES, PARTNER_CLASS_COLORS, PARTNER_SP_RANK_COLORS } from '@/lib/mockData'
 import { RAIDS } from '@/lib/raids'
 import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -261,6 +261,59 @@ function TattoosTab({ char }) {
   )
 }
 
+function PartnersTab({ char }) {
+  const { t } = useLang()
+  const partners = Array.isArray(char.equipment.partners) ? char.equipment.partners : []
+
+  if (partners.length === 0) {
+    return <div className={styles.spEmpty}>{t('partner.empty')}</div>
+  }
+
+  return (
+    <div className={styles.partnerCards}>
+      {partners.map(p => (
+        <div key={p.id} className={styles.partnerCard}>
+          <div className={styles.partnerCardTop}>
+            <img src={p.icon} alt="" className={styles.partnerCardIcon} />
+            <div className={styles.partnerCardInfo}>
+              <span className={styles.partnerCardName}>{p.name}</span>
+              <span className={styles.partnerClassBadge} style={{ background: PARTNER_CLASS_COLORS[p.class] }}>
+                {p.class}
+              </span>
+            </div>
+          </div>
+          {p.sp && (
+            <div className={styles.partnerSPSection}>
+              <div className={styles.partnerSPRow}>
+                <img src={p.sp.icon} alt="" className={styles.partnerSPIcon} />
+                <span className={styles.nosmateLabel}>{p.sp.name}</span>
+              </div>
+              <div className={styles.partnerSkills}>
+                {p.sp.skills.map((skill, idx) => (
+                  <div key={idx} className={styles.partnerSkillRow}>
+                    <span className={styles.partnerSkillName}>{skill.name}</span>
+                    <span
+                      className={styles.partnerRankBtnActive}
+                      style={{
+                        background: PARTNER_SP_RANK_COLORS[skill.rank],
+                        color: '#fff',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.4rem',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    >{skill.rank}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function NosmatesTab({ char }) {
   const { t } = useLang()
   const nosmates = Array.isArray(char.equipment.nosmates) ? char.equipment.nosmates : []
@@ -385,6 +438,7 @@ export default function PlayerProfilePage() {
     { key: 'fairies',  label: t('tabs.fairies')  },
     { key: 'tattoos',  label: t('tabs.tattoos')  },
     { key: 'nosmates', label: t('tabs.nosmates') },
+    { key: 'partners', label: t('tabs.partners') },
     { key: 'books',    label: t('tabs.books')    },
   ]
 
@@ -544,8 +598,9 @@ export default function PlayerProfilePage() {
             {activeTab === 'specialists' && <SpecialistsTab char={data} />}
             {activeTab === 'fairies'  && <FairiesTab  char={data} />}
             {activeTab === 'tattoos'  && <TattoosTab  char={data} />}
-            {activeTab === 'nosmates' && <NosmatesTab char={data} />}
-            {activeTab === 'books'    && <BooksTab    char={data} />}
+            {activeTab === 'nosmates' && <NosmatesTab  char={data} />}
+            {activeTab === 'partners' && <PartnersTab  char={data} />}
+            {activeTab === 'books'    && <BooksTab     char={data} />}
           </div>
 
         </div>
