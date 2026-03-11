@@ -1873,6 +1873,56 @@ function TattoosTab({ char, onUpdate }) {
   )
 }
 
+// ── PartnerSPSelect ────────────────────────────────────────────────────────
+
+function PartnerSPSelect({ spList, value, onChange }) {
+  const { t } = useLang()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = spList.find(sp => sp.name === value) ?? null
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className={styles.spSelect} ref={ref}>
+      <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
+        {selected
+          ? <><img src={selected.icon} alt="" className={styles.spSelectIcon} /><span className={styles.spSelectName}>{selected.name}</span></>
+          : <span className={styles.spSelectName}>{t('partner.spNone')}</span>
+        }
+        <span className={styles.spSelectArrow}>▾</span>
+      </button>
+      {open && (
+        <div className={styles.spSelectDropdown}>
+          <button
+            type="button"
+            className={`${styles.spSelectOption} ${!value ? styles.spSelectOptionActive : ''}`}
+            onClick={() => { onChange(null); setOpen(false) }}
+          >
+            <span>{t('partner.spNone')}</span>
+          </button>
+          {spList.map(sp => (
+            <button
+              key={sp.name}
+              type="button"
+              className={`${styles.spSelectOption} ${value === sp.name ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange(sp.name); setOpen(false) }}
+            >
+              <img src={sp.icon} alt="" className={styles.spSelectIcon} />
+              <span>{sp.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── PartnersTab ────────────────────────────────────────────────────────────
 
 function PartnerPickerModal({ onClose, onAdd, existing }) {
@@ -1998,19 +2048,11 @@ function PartnersTab({ char, onUpdate }) {
                 {/* SP card select */}
                 <div className={styles.partnerSPSection}>
                   <label className={styles.nosmateLabel}>{t('partner.spLabel')}</label>
-                  <div className={styles.partnerSPRow}>
-                    {p.sp && <img src={p.sp.icon} alt="" className={styles.partnerSPIcon} />}
-                    <select
-                      className={styles.modalInput}
-                      value={p.sp?.name ?? ''}
-                      onChange={e => handleSPChange(p.id, e.target.value || null)}
-                    >
-                      <option value="">{t('partner.spNone')}</option>
-                      {spList.map(sp => (
-                        <option key={sp.name} value={sp.name}>{sp.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <PartnerSPSelect
+                    spList={spList}
+                    value={p.sp?.name ?? null}
+                    onChange={spName => handleSPChange(p.id, spName)}
+                  />
 
                   {/* Skills + ranks */}
                   {p.sp && (
