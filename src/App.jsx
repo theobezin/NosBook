@@ -14,6 +14,7 @@ import MySubmissionsPage    from '@/pages/MySubmissionsPage'
 import NotificationsPage    from '@/pages/NotificationsPage'
 import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
+import PlannerPage       from '@/pages/PlannerPage'
 import MarketPage          from '@/pages/MarketPage'
 import ListingDetailPage  from '@/pages/ListingDetailPage'
 import AdminMarketPage    from '@/pages/AdminMarketPage'
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/notifications"   element={withLayout(NotificationsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
+          <Route path="/planner"         element={<PageLayout fullWidth><PlannerPage /></PageLayout>} />
           <Route path="/market"            element={withLayout(MarketPage)}          />
           <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
           <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />

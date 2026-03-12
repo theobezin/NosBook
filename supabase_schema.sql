@@ -43,7 +43,7 @@ create table if not exists public.profiles (
   avatar_url       text,
   -- Serveur principal du joueur : 'undercity' | 'dragonveil'
   server           text check (server in ('undercity', 'dragonveil')),
-  planner_data     jsonb,
+  planner_data jsonb default '{}'::jsonb,
   is_admin         boolean not null default false,
   -- Réputation marché
   discord_handle   text,
@@ -55,6 +55,9 @@ create table if not exists public.profiles (
   created_at       timestamptz default now(),
   updated_at       timestamptz default now()
 );
+
+-- Migration si la table existe déjà (projet existant) :
+-- alter table public.profiles add column if not exists planner_data jsonb default '{}'::jsonb;
 
 -- ────────────────────────────────────────────────────────────
 -- TABLE: characters

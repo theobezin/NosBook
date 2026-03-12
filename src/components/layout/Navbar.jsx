@@ -105,6 +105,7 @@ export default function Navbar() {
         <div className={styles.links}>
           <NavLink to="/" end className={linkClass}>{t('nav.hub')}</NavLink>
           <NavLink to="/players" className={linkClass}>{t('nav.profile')}</NavLink>
+          <NavLink to="/planner" className={linkClass}>{t('nav.planner')}</NavLink>
           {isAdmin && (
             <div className={styles.adminMenuWrap} ref={adminMenuRef}>
               <button
