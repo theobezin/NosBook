@@ -73,6 +73,11 @@ create table if not exists public.characters (
   element     text not null default 'Neutral'
                    check (element in ('Neutral', 'Fire', 'Water', 'Light', 'Shadow')),
   stats       jsonb not null default '{}',
+
+  -- { weapon, offhand, armor, hat, gloves, shoes, necklace, ring, bracelet,
+  --   costumeWings, costumeTop, costumeBottom, costumeWeapon,
+  --   specialists: [], fairies: [], tattoos: [] }
+  -- All new fields are stored in this JSONB — no migration required.
   equipment   jsonb not null default '{}',
   resistances jsonb not null default '{}',
   created_at  timestamptz default now(),
@@ -745,6 +750,61 @@ $$ language plpgsql security definer;
 -- ADMIN
 -- Grant  : UPDATE public.profiles SET is_admin = true  WHERE username = 'NOM';
 -- Revoke : UPDATE public.profiles SET is_admin = false WHERE username = 'NOM';
+-- ────────────────────────────────────────────────────────────
+-- TABLE: raid_sessions
+-- Sessions de raid planifiées par les leaders.
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.raid_sessions (
+  id                   uuid        primary key default gen_random_uuid(),
+  raid_slug            text        not null,
+  date                 date        not null,
+  time                 time,
+  max_players          int         not null default 15 check (max_players between 1 and 100),
+  max_chars_per_person int         not null default 1  check (max_chars_per_person between 1 and 10),
+  comments             text,
+  leader_id            uuid        references auth.users(id) on delete set null,
+  created_at           timestamptz not null default now()
+);
+
+create index if not exists raid_sessions_date_idx      on public.raid_sessions (date desc);
+create index if not exists raid_sessions_leader_id_idx on public.raid_sessions (leader_id);
+
+-- ── RLS — raid_sessions ───────────────────────────────────────
+alter table public.raid_sessions enable row level security;
+
+-- Lecture publique : toutes les sessions
+create policy "read_all_sessions"
+  on public.raid_sessions
+  for select
+  using (true);
+
+-- Insert : utilisateurs connectés uniquement, leader_id forcé à leur uid
+create policy "insert_own_sessions"
+  on public.raid_sessions
+  for insert
+  to authenticated
+  with check (leader_id = auth.uid());
+
+-- Update / Delete : le leader peut modifier ou supprimer sa propre session
+create policy "manage_own_sessions"
+  on public.raid_sessions
+  for all
+  to authenticated
+  using (leader_id = auth.uid());
+
+-- Admin : gestion complète
+create policy "admin_manage_sessions"
+  on public.raid_sessions
+  for all
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid() and is_admin = true
+    )
+  );
+
+-- ── MIGRATION — only needed if you ran the old schema before.
 -- ────────────────────────────────────────────────────────────
 
 

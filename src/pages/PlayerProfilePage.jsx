@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
-import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS, NOSMATES, PARTNER_CLASS_COLORS, PARTNER_SP_RANK_COLORS } from '@/lib/mockData'
 import { RAIDS } from '@/lib/raids'
 import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import { LISTING_STATUS } from '@/lib/market'
@@ -89,7 +89,54 @@ function EquipmentTab({ char }) {
     <div className={styles.equipTabList}>
       <WeaponSlotRO label={t('equipKeys.weapon')}  w={char.equipment.weapon}  t={t} />
       <WeaponSlotRO label={t('equipKeys.offhand')} w={char.equipment.offhand} t={t} />
-      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand').map(key => (
+      <WeaponSlotRO label={t('equipKeys.armor')}   w={char.equipment.armor}   t={t} />
+      <WeaponSlotRO label={t('equipKeys.gloves')}    w={char.equipment.gloves}    t={t} />
+      <WeaponSlotRO label={t('equipKeys.shoes')}     w={char.equipment.shoes}     t={t} />
+      <WeaponSlotRO label={t('equipKeys.necklace')}  w={char.equipment.necklace}  t={t} />
+      <WeaponSlotRO label={t('equipKeys.ring')}      w={char.equipment.ring}      t={t} />
+      <WeaponSlotRO label={t('equipKeys.bracelet')}  w={char.equipment.bracelet}  t={t} />
+      {/* Hat row — icon grid display */}
+      {(() => {
+        const hats = Array.isArray(char.equipment.hat) ? char.equipment.hat : []
+        return (
+          <div className={styles.equipTabRow}>
+            <span className={styles.equipTabLabel}>{t('equipKeys.hat')}</span>
+            {hats.length > 0 ? (
+              <div className={styles.hatIconRow}>
+                {hats.map(h => (
+                  <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                ))}
+              </div>
+            ) : (
+              <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+            )}
+          </div>
+        )
+      })()}
+      {/* Costume icon rows */}
+      {[
+        ['costumeWings',  t('equipKeys.costumeWings')],
+        ['costumeTop',    t('equipKeys.costumeTop')],
+        ['costumeBottom', t('equipKeys.costumeBottom')],
+        ['costumeWeapon', t('equipKeys.costumeWeapon')],
+      ].map(([key, label]) => {
+        const items = Array.isArray(char.equipment[key]) ? char.equipment[key] : []
+        return (
+          <div key={key} className={styles.equipTabRow}>
+            <span className={styles.equipTabLabel}>{label}</span>
+            {items.length > 0 ? (
+              <div className={styles.hatIconRow}>
+                {items.map(h => (
+                  <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                ))}
+              </div>
+            ) : (
+              <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
+            )}
+          </div>
+        )
+      })}
+      {EQUIP_KEYS.filter(k => k !== 'weapon' && k !== 'offhand' && k !== 'armor' && k !== 'hat' && k !== 'gloves' && k !== 'shoes' && k !== 'necklace' && k !== 'ring' && k !== 'bracelet' && k !== 'costumeWings' && k !== 'costumeTop' && k !== 'costumeBottom' && k !== 'costumeWeapon').map(key => (
         <div key={key} className={styles.equipTabRow}>
           <span className={styles.equipTabLabel}>{t(`equipKeys.${key}`)}</span>
           {char.equipment[key]
@@ -123,7 +170,10 @@ function SpecialistsTab({ char }) {
               <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
               <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
               {sp.wings && (
-                <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>🪶 {sp.wings}</span>
+                <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>
+                  <img src={sp.wings.icon} alt="" className={styles.spWingsIcon} />
+                  {sp.wings.name}
+                </span>
               )}
             </div>
             <div className={styles.spStats}>
@@ -146,26 +196,180 @@ function SpecialistsTab({ char }) {
   )
 }
 
+
 function FairiesTab({ char }) {
   const { t } = useLang()
+  const fairies = Array.isArray(char.equipment.fairies) ? char.equipment.fairies : []
+
+  if (fairies.length === 0) {
+    return <div className={styles.spEmpty}>{t('fairy.empty')}</div>
+  }
+
   return (
-    <div className={styles.fairyTab}>
-      <div className={styles.fairyCard}>
-        <div className={styles.fairyCardLabel}>{t('equipKeys.fairy')}</div>
-        <div className={`${styles.fairyCardName} ${!char.equipment.fairy ? styles.equipTabEmpty : ''}`}>
-          {char.equipment.fairy || t('equipKeys.empty')}
-        </div>
+    <div className={styles.spTab}>
+      <div className={styles.spGrid}>
+        {fairies.map((f, idx) => (
+          <div key={idx} className={styles.spCard}>
+            <div className={styles.spCardTop}>
+              <img src={f.icon} alt={f.name} className={styles.spCardIcon} />
+              <span className={styles.spCardName}>{f.name}</span>
+            </div>
+            <div className={styles.spCardBadges}>
+              <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{f.improvement}</span>
+            </div>
+            {f.rune?.length > 0 && (
+              <div className={styles.fairyRuneEffects}>
+                {f.rune.map((eff, i) => {
+                  const def   = FAIRY_RUNE_EFFECTS.find(e => e.key === eff.key)
+                  const color = FAIRY_RUNE_RANK_COLORS[eff.rank ?? 'C']
+                  return (
+                    <div key={i} className={styles.fairyRuneEffectRow} style={{ color }}>
+                      {def?.label?.replace('X', eff.value) ?? eff.key}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-function BooksTab() {
+function TattoosTab({ char }) {
   const { t } = useLang()
+  const tattoos = Array.isArray(char.equipment.tattoos) ? char.equipment.tattoos : []
+
+  if (tattoos.length === 0) {
+    return <div className={styles.spEmpty}>{t('tattoo.empty')}</div>
+  }
+
   return (
-    <div className={styles.booksTab}>
-      <span className={styles.booksTabIcon}>📚</span>
-      <p className={styles.booksTabText}>{t('tabs.booksSoon')}</p>
+    <div className={styles.spTab}>
+      <div className={styles.tattooCards}>
+        {tattoos.map((tattoo, idx) => (
+          <div key={idx} className={styles.tattooCard}>
+            <div className={styles.tattooCardLeft}>
+              <img src={tattoo.icon} alt={tattoo.name} className={styles.tattooCardIcon} />
+              <span className={styles.tattooCardName}>{tattoo.name}</span>
+            </div>
+            <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{tattoo.improvement}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PartnersTab({ char }) {
+  const { t } = useLang()
+  const partners = Array.isArray(char.equipment.partners) ? char.equipment.partners : []
+
+  if (partners.length === 0) {
+    return <div className={styles.spEmpty}>{t('partner.empty')}</div>
+  }
+
+  return (
+    <div className={styles.partnerCards}>
+      {partners.map(p => (
+        <div key={p.id} className={styles.partnerCard}>
+          <div className={styles.partnerCardTop}>
+            <img src={p.icon} alt="" className={styles.partnerCardIcon} />
+            <div className={styles.partnerCardInfo}>
+              <span className={styles.partnerCardName}>{p.name}</span>
+              <span className={styles.partnerClassBadge} style={{ background: PARTNER_CLASS_COLORS[p.class] }}>
+                {p.class}
+              </span>
+            </div>
+          </div>
+          {p.sp && (
+            <div className={styles.partnerSPSection}>
+              <div className={styles.partnerSPRow}>
+                <img src={p.sp.icon} alt="" className={styles.partnerSPIcon} />
+                <span className={styles.nosmateLabel}>{p.sp.name}</span>
+              </div>
+              <div className={styles.partnerSkills}>
+                {p.sp.skills.map((skill, idx) => (
+                  <div key={idx} className={styles.partnerSkillRow}>
+                    <span className={styles.partnerSkillName}>{skill.name}</span>
+                    <span
+                      className={styles.partnerRankBtnActive}
+                      style={{
+                        background: PARTNER_SP_RANK_COLORS[skill.rank],
+                        color: '#fff',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.4rem',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    >{skill.rank}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function NosmatesTab({ char }) {
+  const { t } = useLang()
+  const nosmates = Array.isArray(char.equipment.nosmates) ? char.equipment.nosmates : []
+
+  if (nosmates.length === 0) {
+    return <div className={styles.spEmpty}>{t('nosmate.empty')}</div>
+  }
+
+  return (
+    <div className={styles.nosmateCards}>
+      {nosmates.map(n => (
+        <div key={n.id} className={styles.nosmateCard}>
+          <div className={styles.nosmateCardTop}>
+            <img src={n.icon} alt="" className={styles.nosmateCardIcon} />
+            <span className={styles.nosmateCardName}>{n.name}</span>
+          </div>
+          <div className={styles.nosmateStarRow}>
+            <span className={styles.nosmateLabel}>{t('nosmate.training')}</span>
+            <div className={styles.nosmateStars}>
+              {[1,2,3,4,5,6].map(s => (
+                <span key={s} className={`${styles.nosmateStar} ${s <= n.stars ? styles.nosmateStarFilled : ''}`}>★</span>
+              ))}
+            </div>
+          </div>
+          <div className={styles.nosmateInputRow}>
+            <div className={styles.nosmateInputGroup}>
+              <span className={styles.nosmateLabel}>{t('nosmate.level')}</span>
+              <span className={styles.spStatVal}>{n.level}</span>
+            </div>
+            <div className={styles.nosmateInputGroup}>
+              <span className={styles.nosmateLabel}>{t('nosmate.heroLevel')}</span>
+              <span className={styles.spStatVal}>{n.heroLevel}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BooksTab({ char }) {
+  const owned = new Set(Array.isArray(char.equipment.books) ? char.equipment.books : [])
+
+  return (
+    <div className={styles.booksGrid}>
+      {TRAINING_BOOKS.map(book => (
+        <div
+          key={book.name}
+          className={`${styles.bookItem} ${owned.has(book.name) ? styles.bookItemOwned : styles.bookItemLocked}`}
+          title={book.name}
+        >
+          <img src={book.icon} alt="" className={styles.bookIcon} />
+          <span className={styles.bookName}>{book.name}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -250,8 +454,11 @@ export default function PlayerProfilePage() {
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
     { key: 'specialists', label: t('tabs.specialists')  },
-    { key: 'fairies',     label: t('tabs.fairies')      },
-    { key: 'books',       label: t('tabs.books')        },
+    { key: 'fairies',  label: t('tabs.fairies')  },
+    { key: 'tattoos',  label: t('tabs.tattoos')  },
+    { key: 'nosmates', label: t('tabs.nosmates') },
+    { key: 'partners', label: t('tabs.partners') },
+    { key: 'books',    label: t('tabs.books')    },
   ]
 
   // ── Loading ──────────────────────────────────────────────────────────────
@@ -408,8 +615,11 @@ export default function PlayerProfilePage() {
           <div className={styles.tabPanel}>
             {activeTab === 'equipment'   && <EquipmentTab   char={data} />}
             {activeTab === 'specialists' && <SpecialistsTab char={data} />}
-            {activeTab === 'fairies'     && <FairiesTab     char={data} />}
-            {activeTab === 'books'       && <BooksTab />}
+            {activeTab === 'fairies'  && <FairiesTab  char={data} />}
+            {activeTab === 'tattoos'  && <TattoosTab  char={data} />}
+            {activeTab === 'nosmates' && <NosmatesTab  char={data} />}
+            {activeTab === 'partners' && <PartnersTab  char={data} />}
+            {activeTab === 'books'    && <BooksTab     char={data} />}
           </div>
 
         </div>
