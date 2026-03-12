@@ -2364,13 +2364,17 @@ export default function ProfilePage() {
   const [serverEditing,  setServerEditing]  = useState(false)
   const [serverSaving,   setServerSaving]   = useState(false)
   const [serverDraft,    setServerDraft]    = useState(null)
+  const [discordHandle,  setDiscordHandle]  = useState(null)
+  const [discordEditing, setDiscordEditing] = useState(false)
+  const [discordSaving,  setDiscordSaving]  = useState(false)
+  const [discordDraft,   setDiscordDraft]   = useState('')
 
   // Load profile.server on mount
   useEffect(() => {
     if (!user || !hasSupabase) return
     supabase
       .from('profiles')
-      .select('server')
+      .select('server, discord_handle')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
@@ -2379,8 +2383,24 @@ export default function ProfilePage() {
         } else {
           setServerEditing(true) // Show selector immediately if not set
         }
+        setDiscordHandle(data?.discord_handle ?? null)
       })
   }, [user?.id])
+
+  const saveDiscord = async () => {
+    if (!user || !hasSupabase) return
+    setDiscordSaving(true)
+    const value = discordDraft.trim() || null
+    const { error } = await supabase
+      .from('profiles')
+      .update({ discord_handle: value })
+      .eq('id', user.id)
+    setDiscordSaving(false)
+    if (!error) {
+      setDiscordHandle(value)
+      setDiscordEditing(false)
+    }
+  }
 
   const saveServer = async () => {
     if (!serverDraft || !user || !hasSupabase) return
@@ -2507,6 +2527,55 @@ export default function ProfilePage() {
                 {serverSaving ? '…' : t('profile.serverSave')}
               </button>
             </div>
+          )}
+        </div>
+
+        {/* Discord handle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', minWidth: '5rem' }}>
+            💬 {t('profile.discordHandle')}
+          </span>
+          {!discordEditing ? (
+            <>
+              <span style={{ fontSize: '0.82rem', color: discordHandle ? '#7c83e0' : 'var(--text-faint)' }}>
+                {discordHandle ?? t('profile.discordNone')}
+              </span>
+              <button
+                style={{ fontSize: '0.72rem', color: 'var(--text-faint)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { setDiscordDraft(discordHandle ?? ''); setDiscordEditing(true) }}
+              >
+                {t('profile.discordEdit')}
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={discordDraft}
+                onChange={e => setDiscordDraft(e.target.value)}
+                placeholder={t('profile.discordPlaceholder')}
+                maxLength={80}
+                style={{
+                  fontSize: '0.82rem', padding: '0.25rem 0.6rem',
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)', color: 'var(--text)', outline: 'none',
+                  width: '220px', fontFamily: "'Exo 2', sans-serif",
+                }}
+              />
+              <button
+                style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.25rem 0.7rem', background: 'var(--gold-faint)', border: '1px solid var(--gold-dim)', borderRadius: 'var(--radius-sm)', color: 'var(--gold-light)', cursor: 'pointer', fontFamily: "'Exo 2', sans-serif" }}
+                onClick={saveDiscord}
+                disabled={discordSaving}
+              >
+                {discordSaving ? '…' : t('profile.discordSave')}
+              </button>
+              <button
+                style={{ fontSize: '0.72rem', color: 'var(--text-faint)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                onClick={() => setDiscordEditing(false)}
+              >
+                ✕
+              </button>
+            </>
           )}
         </div>
 

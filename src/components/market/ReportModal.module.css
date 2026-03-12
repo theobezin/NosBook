@@ -1,0 +1,131 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: #1a1d24;
+  border: 1px solid #ef444440;
+  border-radius: 14px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.closeBtn:hover { color: #e8e8e8; }
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ef4444;
+  margin: 0;
+}
+
+.listingTitle {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+  font-style: italic;
+}
+
+.form { display: flex; flex-direction: column; gap: 14px; }
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.textarea {
+  background: #141620;
+  border: 1px solid #2e3144;
+  border-radius: 7px;
+  color: #e8e8e8;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus { border-color: #ef444466; }
+
+.error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.btnRow { display: flex; gap: 10px; justify-content: flex-end; }
+
+.btnCancel {
+  font-size: 0.82rem;
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid #2e3144;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.btnCancel:hover { border-color: #6b7280; }
+
+.btnSubmit {
+  font-size: 0.82rem;
+  padding: 7px 18px;
+  border-radius: 7px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnSubmit:hover { opacity: 0.85; }
+.btnSubmit:disabled { opacity: 0.45; cursor: default; }
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.successIcon { font-size: 2rem; }
+
+.successBox p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #22c55e;
+  text-align: center;
+}

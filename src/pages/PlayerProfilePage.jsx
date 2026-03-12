@@ -6,6 +6,7 @@ import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS, NOSMATES, PARTNER_CLASS_COLORS, PARTNER_SP_RANK_COLORS } from '@/lib/mockData'
 import { RAIDS } from '@/lib/raids'
 import { formatTime, SERVER_COLORS } from '@/lib/utils'
+import { LISTING_STATUS } from '@/lib/market'
 import Button from '@/components/ui/Button'
 import styles     from './ProfilePage.module.css'
 import pageStyles from './PlayerProfilePage.module.css'
@@ -381,6 +382,7 @@ export default function PlayerProfilePage() {
   const { t, lang } = useLang()
 
   const [username,   setUsername]   = useState(null)
+  const [profileId,  setProfileId]  = useState(null)
   const [characters, setCharacters] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [notFound,   setNotFound]   = useState(false)
@@ -389,6 +391,8 @@ export default function PlayerProfilePage() {
   const [activeTab,      setActiveTab]      = useState('equipment')
   const [pveRecords,     setPveRecords]     = useState([])
   const [recordsLoading, setRecordsLoading] = useState(false)
+  const [marketListings,        setMarketListings]        = useState([])
+  const [marketListingsLoading, setMarketListingsLoading] = useState(false)
 
   const decoded = decodeURIComponent(usernameParam)
 
@@ -402,7 +406,7 @@ export default function PlayerProfilePage() {
 
     supabase
       .from('profiles')
-      .select('username, characters(*)')
+      .select('id, username, characters(*)')
       .ilike('username', decoded)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -410,6 +414,7 @@ export default function PlayerProfilePage() {
           setNotFound(true)
         } else {
           setUsername(data.username)
+          setProfileId(data.id)
           setCharacters(
             [...(data.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(fromDB)
           )
@@ -431,6 +436,20 @@ export default function PlayerProfilePage() {
       .then(({ data }) => setPveRecords(data ?? []))
       .finally(() => setRecordsLoading(false))
   }, [username])
+
+  // Fetch active market listings for this profile
+  useEffect(() => {
+    if (!profileId || !hasSupabase) { setMarketListings([]); return }
+    setMarketListingsLoading(true)
+    supabase
+      .from('market_listings')
+      .select('id, type, title, server, base_price, buyout_price, tags, last_activity_at')
+      .eq('profile_id', profileId)
+      .eq('status', LISTING_STATUS.ACTIVE)
+      .order('last_activity_at', { ascending: false })
+      .then(({ data }) => setMarketListings(data ?? []))
+      .finally(() => setMarketListingsLoading(false))
+  }, [profileId])
 
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
@@ -647,6 +666,36 @@ export default function PlayerProfilePage() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Market listings ──────────────────────────────────────── */}
+      <div className={pageStyles.recordsSection}>
+        <h3 className={pageStyles.recordsTitle}>🏷️ {t('playerProfile.marketListings')}</h3>
+        {marketListingsLoading ? (
+          <div className={pageStyles.recordsSkeleton} />
+        ) : marketListings.length === 0 ? (
+          <p className={pageStyles.recordsEmpty}>{t('playerProfile.noMarketListings')}</p>
+        ) : (
+          <div className={pageStyles.marketList}>
+            {marketListings.map(l => (
+              <Link key={l.id} to={`/market/${l.id}`} className={pageStyles.marketRow}>
+                <span className={pageStyles.marketType}>
+                  {l.type === 'sell' ? '🏷️ WTS' : '🔍 WTB'}
+                </span>
+                <span className={pageStyles.marketTitle}>{l.title}</span>
+                <span
+                  className={pageStyles.marketServer}
+                  style={{
+                    color: l.server === 'undercity' ? '#6a5acd' : '#20b2aa',
+                    borderColor: (l.server === 'undercity' ? '#6a5acd' : '#20b2aa') + '55',
+                  }}
+                >
+                  {l.server === 'undercity' ? 'Undercity' : 'Dragonveil'}
+                </span>
+              </Link>
+            ))}
           </div>
         )}
       </div>

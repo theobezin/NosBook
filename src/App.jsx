@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/hooks/useAuth'
 import { LangProvider } from '@/i18n'
-import PageLayout   from '@/components/layout/PageLayout'
+import PageLayout        from '@/components/layout/PageLayout'
 import HubPage           from '@/pages/HubPage'
 import ProfilePage       from '@/pages/ProfilePage'
 import PlayersPage       from '@/pages/PlayersPage'
@@ -14,6 +14,9 @@ import MySubmissionsPage    from '@/pages/MySubmissionsPage'
 import NotificationsPage    from '@/pages/NotificationsPage'
 import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
+import MarketPage          from '@/pages/MarketPage'
+import ListingDetailPage  from '@/pages/ListingDetailPage'
+import AdminMarketPage    from '@/pages/AdminMarketPage'
 
 function withLayout(Component) {
   return (
@@ -40,7 +43,10 @@ export default function App() {
           <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/notifications"   element={withLayout(NotificationsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
-          <Route path="*"                element={withLayout(NotFoundPage)}      />
+          <Route path="/market"            element={withLayout(MarketPage)}          />
+          <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
+          <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />
+          <Route path="*"               element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

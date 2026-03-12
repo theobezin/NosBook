@@ -12,10 +12,13 @@ export function LangProvider({ children }) {
     () => localStorage.getItem('nosbook-lang') || 'en'
   )
 
-  const t = (key) => {
+  const t = (key, vars) => {
     const parts = key.split('.')
     let val = LANGS[lang]
     for (const k of parts) val = val?.[k]
+    if (typeof val === 'string' && vars) {
+      return val.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`)
+    }
     return val ?? key
   }
 

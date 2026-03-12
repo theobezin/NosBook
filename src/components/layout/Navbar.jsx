@@ -15,12 +15,15 @@ export default function Navbar() {
   const { lang, setLang, t } = useLang()
   const navigate = useNavigate()
 
-  const [menuOpen,     setMenuOpen]     = useState(false)
-  const [pendingCount, setPendingCount] = useState(0)
+  const [menuOpen,      setMenuOpen]      = useState(false)
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
+  const [pendingCount,  setPendingCount]  = useState(0)
   const [unreadCount,  setUnreadCount]  = useState(0)
-  const menuRef = useRef(null)
+  const [marketPending, setMarketPending] = useState(0)
+  const menuRef      = useRef(null)
+  const adminMenuRef = useRef(null)
 
-  // Badge admin : nombre de records en attente
+  // Badge admin : records raids en attente
   useEffect(() => {
     if (!isAdmin || !hasSupabase) return
     supabase
@@ -30,6 +33,8 @@ export default function Navbar() {
       .then(({ count }) => setPendingCount(count ?? 0))
   }, [isAdmin])
 
+
+  // Badge admin : signalements marché en attente
   // Badge notifications non-lues
   useEffect(() => {
     if (!user?.id || !hasSupabase) return
@@ -60,13 +65,24 @@ export default function Navbar() {
 
   // Fermeture du menu au clic extérieur
   useEffect(() => {
-    if (!menuOpen) return
+    if (!isAdmin || !hasSupabase) return
+    supabase
+      .from('market_reports')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .then(({ count }) => setMarketPending(count ?? 0))
+  }, [isAdmin])
+
+  // Fermeture des menus au clic extérieur
+  useEffect(() => {
+    if (!menuOpen && !adminMenuOpen) return
     const handler = e => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target)) setAdminMenuOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [menuOpen])
+  }, [menuOpen, adminMenuOpen])
 
   const handleSignOut = async () => {
     await signOut()
@@ -90,15 +106,45 @@ export default function Navbar() {
           <NavLink to="/" end className={linkClass}>{t('nav.hub')}</NavLink>
           <NavLink to="/players" className={linkClass}>{t('nav.profile')}</NavLink>
           {isAdmin && (
-            <NavLink
-              to="/admin/raids"
-              className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''} ${styles.adminLink}`}
-            >
-              🛡️ Admin
-              {pendingCount > 0 && (
-                <span className={styles.adminBadge}>{pendingCount > 99 ? '99+' : pendingCount}</span>
+            <div className={styles.adminMenuWrap} ref={adminMenuRef}>
+              <button
+                className={`${styles.link} ${styles.adminLink} ${styles.adminMenuTrigger}`}
+                onClick={() => setAdminMenuOpen(v => !v)}
+              >
+                🛡️ Admin
+                {(pendingCount + marketPending) > 0 && (
+                  <span className={styles.adminBadge}>
+                    {(pendingCount + marketPending) > 99 ? '99+' : pendingCount + marketPending}
+                  </span>
+                )}
+                <span className={styles.userMenuCaret}>{adminMenuOpen ? '▴' : '▾'}</span>
+              </button>
+
+              {adminMenuOpen && (
+                <div className={styles.adminMenu}>
+                  <Link
+                    to="/admin/raids"
+                    className={styles.userMenuItem}
+                    onClick={() => setAdminMenuOpen(false)}
+                  >
+                    📊 Classement PVE
+                    {pendingCount > 0 && (
+                      <span className={styles.adminBadge}>{pendingCount}</span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/admin/market"
+                    className={styles.userMenuItem}
+                    onClick={() => setAdminMenuOpen(false)}
+                  >
+                    🏷️ Marché
+                    {marketPending > 0 && (
+                      <span className={styles.adminBadge}>{marketPending}</span>
+                    )}
+                  </Link>
+                </div>
               )}
-            </NavLink>
+            </div>
           )}
         </div>
 
