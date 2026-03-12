@@ -362,11 +362,41 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         </div>
       )}
 
+      {/* My offer status badge (non-owner) */}
+      {!isOwner && user && (() => {
+        const myAcceptedOffer = offers.find(
+          o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.ACCEPTED
+        )
+        const myRejectedOfferBadge = offers.find(
+          o => getOfferProfileId(o) === user?.id && getOfferStatus(o) === OFFER_STATUS.REJECTED
+        )
+        if (myOffer) {
+          const label = isSell
+            ? `⏳ Votre offre : ${formatGold(myOffer.price)} or`
+            : '⏳ Votre réponse en attente'
+          return <div className={styles.myOfferStatus}>{label}</div>
+        }
+        if (myAcceptedOffer) {
+          return <div className={`${styles.myOfferStatus} ${styles.myOfferAccepted}`}>✅ Offre acceptée !</div>
+        }
+        if (myRejectedOfferBadge) {
+          return <div className={`${styles.myOfferStatus} ${styles.myOfferRejected}`}>❌ Offre refusée — vous pouvez re-enchérir</div>
+        }
+        return null
+      })()}
+
       {/* Seller info */}
       <div className={styles.footer}>
         <div className={styles.seller}>
           <span className={styles.sellerName}>
-            {t('market.postedBy')} <strong>{listing.profile?.username ?? '—'}</strong>
+            {t('market.postedBy')}{' '}
+            {listing.profile?.username ? (
+              <Link to={`/profile/${listing.profile.username}`} className={styles.sellerLink}>
+                <strong>{listing.profile.username}</strong>
+              </Link>
+            ) : (
+              <strong>—</strong>
+            )}
             {(listing.profile?.trades_completed ?? 0) > 0 && (
               <span className={styles.repBadge}>{listing.profile.trades_completed}</span>
             )}

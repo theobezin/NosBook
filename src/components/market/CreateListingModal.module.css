@@ -116,9 +116,21 @@
 /* Images */
 .imageFields { display: flex; flex-direction: column; gap: 6px; }
 
+.imageFieldGroup { display: flex; flex-direction: column; gap: 6px; }
+
 .imageRow { display: flex; gap: 8px; align-items: center; }
 
 .imageRow .input { flex: 1; }
+
+.imagePreview {
+  max-height: 120px;
+  width: auto;
+  max-width: 100%;
+  border-radius: 6px;
+  border: 1px solid #2e3144;
+  object-fit: contain;
+  display: block;
+}
 
 .removeImg {
   background: none;

@@ -183,22 +183,33 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
             {t('market.formImages')}
             <div className={styles.imageFields}>
               {imageUrls.map((url, i) => (
-                <div key={i} className={styles.imageRow}>
-                  <input
-                    className={styles.input}
-                    type="url"
-                    value={url}
-                    onChange={e => updateImage(i, e.target.value)}
-                    placeholder={t('market.formImagesPlaceholder')}
-                  />
-                  {imageUrls.length > 1 && (
-                    <button
-                      type="button"
-                      className={styles.removeImg}
-                      onClick={() => removeImageField(i)}
-                    >
-                      ✕
-                    </button>
+                <div key={i} className={styles.imageFieldGroup}>
+                  <div className={styles.imageRow}>
+                    <input
+                      className={styles.input}
+                      type="url"
+                      value={url}
+                      onChange={e => updateImage(i, e.target.value)}
+                      placeholder={t('market.formImagesPlaceholder')}
+                    />
+                    {imageUrls.length > 1 && (
+                      <button
+                        type="button"
+                        className={styles.removeImg}
+                        onClick={() => removeImageField(i)}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {url.trim() && (
+                    <img
+                      src={url}
+                      alt=""
+                      className={styles.imagePreview}
+                      onError={e => { e.target.style.display = 'none' }}
+                      onLoad={e => { e.target.style.display = 'block' }}
+                    />
                   )}
                 </div>
               ))}
