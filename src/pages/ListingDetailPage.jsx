@@ -4,13 +4,14 @@
 // Shows: all listing info, all offers with full details,
 // action buttons based on context (owner / buyer / visitor).
 // ============================================================
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { useCharacters } from '@/hooks/useCharacters'
 import { useMarketListing, cancelOffer, rejectOffer, triggerConfirmation, confirmSale, rejectConfirmation, archiveListing, isBanned, isMuted } from '@/hooks/useMarket'
+import { supabase, hasSupabase } from '@/lib/supabase'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
 import OfferModal        from '@/components/market/OfferModal'
 import ReportModal      from '@/components/market/ReportModal'
@@ -28,6 +29,58 @@ function daysLeft(lastActivityAt) {
 
 const SERVER_COLOR = { undercity: '#6a5acd', dragonveil: '#20b2aa' }
 const SERVER_LABEL = { undercity: 'Undercity', dragonveil: 'Dragonveil' }
+
+// ── SellerOtherListings ─────────────────────────────────────
+// Affiche jusqu'à 4 autres annonces actives du même vendeur.
+// Requête isolée : aucun impact sur le reste de la page.
+function SellerOtherListings({ sellerId, currentListingId, t }) {
+  const [listings, setListings] = useState([])
+
+  useEffect(() => {
+    if (!hasSupabase || !sellerId) return
+    supabase
+      .from('market_listings')
+      .select('id, title, type, base_price, buyout_price, server')
+      .eq('profile_id', sellerId)
+      .eq('status', 'active')
+      .neq('id', currentListingId)
+      .order('last_activity_at', { ascending: false })
+      .limit(4)
+      .then(({ data }) => setListings(data ?? []))
+  }, [sellerId, currentListingId])
+
+  if (!listings.length) return null
+
+  return (
+    <div className={styles.sellerOther}>
+      <h3 className={styles.sellerOtherTitle}>{t('market.sellerOtherListings')}</h3>
+      <div className={styles.sellerOtherGrid}>
+        {listings.map(l => {
+          const price = l.buyout_price ?? l.base_price
+          const color = SERVER_COLOR[l.server] ?? '#6b7280'
+          return (
+            <Link key={l.id} to={`/market/${l.id}`} className={styles.sellerOtherCard}>
+              <div className={styles.sellerOtherHeader}>
+                <span className={`${styles.sellerOtherType} ${l.type === 'sell' ? styles.sellerOtherSell : styles.sellerOtherBuy}`}>
+                  {l.type === 'sell' ? '🏷️ WTS' : '🔍 WTB'}
+                </span>
+                <span className={styles.sellerOtherServer} style={{ color }}>
+                  {SERVER_LABEL[l.server] ?? l.server}
+                </span>
+              </div>
+              <span className={styles.sellerOtherName}>{l.title}</span>
+              {price != null && (
+                <span className={styles.sellerOtherPrice}>
+                  {new Intl.NumberFormat().format(price)} {t('market.gold')}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function TagPill({ slug, t }) {
   const tagDef = MARKET_TAGS.find(tg => tg.slug === slug)
@@ -75,7 +128,7 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
       onConfirm: async () => {
         setConfirmState(null)
         setLoading(true)
-        await cancelOffer(offerId, listing.id)
+        await cancelOffer(offerId)
         setLoading(false)
         onRefresh()
       },
@@ -226,6 +279,14 @@ export default function ListingDetailPage() {
   const [actionLoading,   setActionLoading]   = useState(false)
   const [confirmState,    setConfirmState]    = useState(null)
   const [lightboxSrc,     setLightboxSrc]     = useState(null)
+  const [copied,          setCopied]          = useState(false)
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   if (loading) return (
     <div className={styles.page}>
@@ -344,6 +405,13 @@ export default function ListingDetailPage() {
             {isSold && <span className={styles.soldBadge}>{t('market.sold')}</span>}
             {isArchived && <span className={styles.archivedBadge}>{t('market.archived')}</span>}
             {isPending && <span className={styles.pendingBadge}>{t('market.pending')}</span>}
+            <button
+              className={`${styles.btnShare} ${copied ? styles.btnShareCopied : ''}`}
+              onClick={handleShare}
+              title={t('market.shareListing')}
+            >
+              {copied ? `✓ ${t('market.linkCopied')}` : `🔗 ${t('market.shareListing')}`}
+            </button>
           </div>
 
           {/* Title */}
@@ -551,6 +619,15 @@ export default function ListingDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Autres annonces du vendeur */}
+      {listing.profileId && (
+        <SellerOtherListings
+          sellerId={listing.profileId}
+          currentListingId={listing.id}
+          t={t}
+        />
+      )}
 
       {/* Modals */}
       {showOfferModal && (

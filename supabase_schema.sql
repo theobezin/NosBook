@@ -501,6 +501,57 @@ end;
 $$ language plpgsql security definer;
 
 -- ────────────────────────────────────────────────────────────
+-- FUNCTION: cancel_offer
+-- Acheteur annule son offre active.
+-- Réinitialise aussi confirmation_pending sur l'annonce si l'offre
+-- était en attente de validation vendeur (achat immédiat déclenché).
+-- Bloque l'annulation si l'offre est déjà acceptée (vendeur a confirmé).
+-- ────────────────────────────────────────────────────────────
+create or replace function public.cancel_offer(p_offer_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_listing_id uuid;
+  v_profile_id uuid;
+  v_status     text;
+begin
+  select listing_id, profile_id, status
+    into v_listing_id, v_profile_id, v_status
+  from market_offers
+  where id = p_offer_id;
+
+  if v_profile_id is null then
+    raise exception 'Offre introuvable';
+  end if;
+
+  if v_profile_id <> auth.uid() then
+    raise exception 'Non autorisé';
+  end if;
+
+  -- Seule une offre encore active peut être annulée
+  if v_status <> 'active' then
+    raise exception 'Cette offre ne peut plus être annulée';
+  end if;
+
+  update market_offers
+  set status = 'cancelled'
+  where id = p_offer_id;
+
+  -- Réinitialiser l'annonce si c'était l'offre en attente de confirmation
+  update market_listings
+  set confirmation_pending = false,
+      accepted_offer_id    = null
+  where id = v_listing_id
+    and accepted_offer_id = p_offer_id;
+end;
+$$;
+
+grant execute on function public.cancel_offer(uuid) to authenticated;
+
+-- ────────────────────────────────────────────────────────────
 -- FUNCTION: admin_set_moderation
 -- Admin : mute ou ban un profil du marché.
 -- Actions : 'mute' (+ p_duration_days) | 'ban' | 'unmute' | 'unban'
@@ -638,3 +689,23 @@ $$ language plpgsql security definer;
 -- create unique index market_offers_one_per_user_idx
 --   on public.market_offers (listing_id, profile_id)
 --   where status not in ('cancelled', 'blocked', 'rejected');
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION E — fonction cancel_offer (SECURITY DEFINER)
+-- Remplace le UPDATE direct côté client qui était bloqué par RLS
+-- (le buyer n'a pas le droit UPDATE sur market_listings).
+-- La fonction : vérifie ownership, vérifie status = 'active',
+-- annule l'offre, réinitialise confirmation_pending si besoin.
+-- ────────────────────────────────────────────────────────────
+-- Déployer le bloc FUNCTION cancel_offer ci-dessus (search "FUNCTION: cancel_offer").
+-- Pas de changement de schéma (colonnes / tables) nécessaire.
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION F — correctifs i18n + validation mise de départ
+-- ────────────────────────────────────────────────────────────
+-- Pas de migration SQL. Changements frontend uniquement :
+--   • OfferModal lit désormais listing.basePrice (camelCase) au lieu de
+--     listing.base_price → la validation mise minimum fonctionne correctement.
+--   • Clés i18n ajoutées : myOfferPending, myOfferPendingBuy,
+--     myOfferAcceptedBadge, myOfferRejectedBadge, offerErrMinBase (fr/en/de).
+--   • StatsPanel : résistant aux erreurs partielles (requêtes profiles RLS).

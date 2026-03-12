@@ -61,6 +61,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   const [spamReportTarget,     setSpamReportTarget]     = useState(null)
   const [actionLoading,        setActionLoading]        = useState(false)
   const [confirmState,         setConfirmState]         = useState(null) // { message, onConfirm, danger? }
+  const [copied,               setCopied]               = useState(false)
+
+  function handleShare() {
+    const url = `${window.location.origin}/market/${listing.id}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const isSell    = listing.type === 'sell'
   const isOwner   = user?.id === listing.profileId
@@ -186,7 +195,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
       onConfirm: async () => {
         setConfirmState(null)
         setActionLoading(true)
-        await cancelOffer(myOffer.id, listing.id)
+        await cancelOffer(myOffer.id)
         setActionLoading(false)
         onRefresh?.()
       },
@@ -494,6 +503,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               {t('market.reportBuyer')}
             </button>
           )}
+
+          {/* Share link */}
+          <button
+            className={`${styles.btnShare} ${copied ? styles.btnShareCopied : ''}`}
+            onClick={handleShare}
+            title={t('market.shareListing')}
+          >
+            {copied ? '✓' : '🔗'}
+          </button>
         </div>
       </div>
 

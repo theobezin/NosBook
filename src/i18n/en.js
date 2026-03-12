@@ -310,6 +310,10 @@ export default {
     clearTags:         'Clear all',
     searchPlaceholder: 'Search by title or description…',
     noListings:        'No listings found.',
+    endOfList:         '— end of results —',
+    shareListing:      'Copy link',
+    linkCopied:        'Link copied!',
+    sellerOtherListings: 'More from this seller',
     // Detail page
     backToMarket:      '← Back to market',
     allOffers:         'All offers',

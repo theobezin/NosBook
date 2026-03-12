@@ -3,7 +3,7 @@
 // Tabs: Listings (WTS) | Wanted (WTB) | My Listings
 // Accessible from the Hub only (not in Navbar).
 // ============================================================
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
@@ -52,25 +52,48 @@ function TagFilter({ selected, onChange, t }) {
 }
 
 // ── ListingsGrid ───────────────────────────────────────────
-function ListingsGrid({ listings, loading, error, onRefresh, userProfile, userCharServers, followedIds, onToggleFollow, t }) {
+// Gère l'affichage + l'infinite scroll via IntersectionObserver.
+// Le div sentinel en bas de liste déclenche loadMore() quand il
+// entre dans le viewport.
+function ListingsGrid({ listings, loading, loadingMore = false, hasMore = false, loadMore = () => {}, error, onRefresh, userProfile, userCharServers, followedIds, onToggleFollow, t }) {
+  const sentinelRef = useRef(null)
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) loadMore()
+    }, { rootMargin: '200px' })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore])
+
   if (loading) return <div className={styles.centered}><Spinner size="md" /></div>
   if (error)   return <div className={styles.errorMsg}>{error}</div>
   if (!listings.length) return <div className={styles.empty}>{t('market.noListings')}</div>
 
   return (
-    <div className={styles.grid}>
-      {listings.map(listing => (
-        <ListingCard
-          key={listing.id}
-          listing={listing}
-          onRefresh={onRefresh}
-          userProfile={userProfile}
-          userCharServers={userCharServers}
-          isFollowed={followedIds?.has(listing.id) ?? false}
-          onToggleFollow={onToggleFollow}
-        />
-      ))}
-    </div>
+    <>
+      <div className={styles.grid}>
+        {listings.map(listing => (
+          <ListingCard
+            key={listing.id}
+            listing={listing}
+            onRefresh={onRefresh}
+            userProfile={userProfile}
+            userCharServers={userCharServers}
+            isFollowed={followedIds?.has(listing.id) ?? false}
+            onToggleFollow={onToggleFollow}
+          />
+        ))}
+      </div>
+      {/* Sentinel : déclenche le chargement de la page suivante */}
+      {hasMore && <div ref={sentinelRef} className={styles.sentinel} />}
+      {loadingMore && <div className={styles.centered}><Spinner size="sm" /></div>}
+      {!hasMore && listings.length > 0 && (
+        <p className={styles.endOfList}>{t('market.endOfList')}</p>
+      )}
+    </>
   )
 }
 
@@ -106,8 +129,8 @@ export default function MarketPage() {
     search: searchQuery.trim()  || undefined,
   }), [serverFilter, selectedTags, searchQuery])
 
-  const { listings: sellListings,     loading: sellLoading,     error: sellError,     refetch: refetchSell     } = useMarketListings(sellFilters)
-  const { listings: buyListings,      loading: buyLoading,      error: buyError,      refetch: refetchBuy      } = useMarketListings(buyFilters)
+  const { listings: sellListings, loading: sellLoading, loadingMore: sellLoadingMore, hasMore: sellHasMore, loadMore: sellLoadMore, error: sellError, refetch: refetchSell } = useMarketListings(sellFilters)
+  const { listings: buyListings,  loading: buyLoading,  loadingMore: buyLoadingMore,  hasMore: buyHasMore,  loadMore: buyLoadMore,  error: buyError,  refetch: refetchBuy  } = useMarketListings(buyFilters)
   const { listings: myListingsAll,    loading: myLoading,       error: myError,       refetch: refetchMy       } = useMyListings()
   const { listings: followedListings, loading: followedLoading, error: followedError, refetch: refetchFollowed } = useFollowedListings()
   const { followedIds, toggle: toggleFollow } = useMyFollows()
@@ -251,6 +274,9 @@ export default function MarketPage() {
         <ListingsGrid
           listings={sellListings}
           loading={sellLoading}
+          loadingMore={sellLoadingMore}
+          hasMore={sellHasMore}
+          loadMore={sellLoadMore}
           error={sellError}
           onRefresh={refetchAll}
           userProfile={profile}
@@ -265,6 +291,9 @@ export default function MarketPage() {
         <ListingsGrid
           listings={buyListings}
           loading={buyLoading}
+          loadingMore={buyLoadingMore}
+          hasMore={buyHasMore}
+          loadMore={buyLoadMore}
           error={buyError}
           onRefresh={refetchAll}
           userProfile={profile}

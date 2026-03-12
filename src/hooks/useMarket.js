@@ -2,7 +2,7 @@
 // NosBook — useMarket hook
 // All Supabase operations for the market feature.
 // ============================================================
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { LISTING_STATUS, OFFER_STATUS, isExpired } from '@/lib/market'
@@ -68,8 +68,12 @@ function fromDBOffer(row) {
 
 // ── Listing queries ────────────────────────────────────────
 
+// Nombre d'annonces chargées par page (infinite scroll)
+const PAGE_SIZE = 20
+
 /**
  * Fetch active listings with their offer count and seller profile.
+ * Supports infinite scroll: returns hasMore + loadMore().
  * Filters out listings inactive for 30+ days on the client side
  * (Supabase free tier doesn't support pg_cron; auto-archive is
  * handled lazily on read, and a nightly function could be added later).
@@ -77,46 +81,61 @@ function fromDBOffer(row) {
  * @param {{ type?: string, server?: string, tags?: string[], search?: string }} filters
  */
 export function useMarketListings(filters = {}) {
-  const [listings, setListings] = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState(null)
+  const [listings,     setListings]     = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [loadingMore,  setLoadingMore]  = useState(false)
+  const [error,        setError]        = useState(null)
+  const [hasMore,      setHasMore]      = useState(false)
+  // useRef pour suivre la page courante sans provoquer de re-render
+  const pageRef = useRef(0)
 
-  const fetch = useCallback(async () => {
-    if (!hasSupabase) { setLoading(false); return }
-    setLoading(true)
-    setError(null)
+  // Construit la requête de base (sans .range) selon les filtres courants
+  const buildQuery = useCallback(() => {
+    let q = supabase
+      .from('market_listings')
+      .select(`
+        *,
+        profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
+        market_offers!listing_id ( id, profile_id, price, comment, character_name, discord_handle, status, created_at, profiles!profile_id ( id, username ) )
+      `)
+      .eq('status', LISTING_STATUS.ACTIVE)
+      .order('last_activity_at', { ascending: false })
+    if (filters.type)         q = q.eq('type', filters.type)
+    if (filters.server)       q = q.eq('server', filters.server)
+    if (filters.tags?.length) q = q.overlaps('tags', filters.tags)
+    if (filters.search?.trim()) {
+      const term = `%${filters.search.trim()}%`
+      q = q.or(`title.ilike.${term},description.ilike.${term}`)
+    }
+    return q
+  }, [filters.type, filters.server, JSON.stringify(filters.tags), filters.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Charge une page donnée.  replace=true → réinitialise la liste (changement de filtres).
+  const fetchPage = useCallback(async (pageIndex, replace) => {
+    if (!hasSupabase) { if (replace) setLoading(false); return }
+    if (replace) { setLoading(true); setError(null) }
+    else setLoadingMore(true)
+
     try {
-      let query = supabase
-        .from('market_listings')
-        .select(`
-          *,
-          profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
-          market_offers!listing_id ( id, profile_id, price, comment, character_name, discord_handle, status, created_at, profiles!profile_id ( id, username ) )
-        `)
-        .eq('status', LISTING_STATUS.ACTIVE)
-        .order('last_activity_at', { ascending: false })
-
-      if (filters.type)   query = query.eq('type', filters.type)
-      if (filters.server) query = query.eq('server', filters.server)
-      if (filters.tags?.length) query = query.overlaps('tags', filters.tags)
-      // Full-text search on title + description (case-insensitive)
-      if (filters.search?.trim()) {
-        const term = `%${filters.search.trim()}%`
-        query = query.or(`title.ilike.${term},description.ilike.${term}`)
-      }
-
-      const { data, error: err } = await query
+      const from = pageIndex * PAGE_SIZE
+      const to   = from + PAGE_SIZE - 1
+      const { data, error: err } = await buildQuery().range(from, to)
       if (err) throw err
 
-      // Client-side inactivity filter — archive lazily
-      const active = (data ?? []).filter(r => !isExpired(r.last_activity_at))
-      setListings(active.map(fromDBListing))
+      // Filtre côté client les annonces expirées
+      const active  = (data ?? []).filter(r => !isExpired(r.last_activity_at))
+      const mapped  = active.map(fromDBListing)
 
-      // Fire-and-forget: auto-archive expired listings found above
+      if (replace) setListings(mapped)
+      else         setListings(prev => [...prev, ...mapped])
+
+      // S'il y a exactement PAGE_SIZE résultats, il peut y en avoir d'autres
+      setHasMore((data ?? []).length === PAGE_SIZE)
+
+      // Fire-and-forget : auto-archive des annonces expirées découvertes
       const expired = (data ?? []).filter(r => isExpired(r.last_activity_at))
       if (expired.length) {
-        supabase
-          .from('market_listings')
+        supabase.from('market_listings')
           .update({ status: LISTING_STATUS.ARCHIVED })
           .in('id', expired.map(r => r.id))
           .then(() => {})
@@ -124,13 +143,31 @@ export function useMarketListings(filters = {}) {
     } catch (e) {
       setError(e.message)
     } finally {
-      setLoading(false)
+      if (replace) setLoading(false)
+      else         setLoadingMore(false)
     }
-  }, [filters.type, filters.server, JSON.stringify(filters.tags), filters.search])
+  }, [buildQuery])
 
-  useEffect(() => { fetch() }, [fetch])
+  // Réinitialise et recharge depuis la page 0 à chaque changement de filtres
+  useEffect(() => {
+    pageRef.current = 0
+    fetchPage(0, true)
+  }, [fetchPage])
 
-  return { listings, loading, error, refetch: fetch }
+  // Charge la page suivante (appelé par IntersectionObserver dans MarketPage)
+  function loadMore() {
+    if (loadingMore || !hasMore) return
+    pageRef.current += 1
+    fetchPage(pageRef.current, false)
+  }
+
+  // refetch repart de la page 0 (utilisé après create/archive/edit)
+  function refetch() {
+    pageRef.current = 0
+    fetchPage(0, true)
+  }
+
+  return { listings, loading, loadingMore, error, hasMore, loadMore, refetch }
 }
 
 /**
@@ -329,23 +366,13 @@ export async function createOffer({ listingId, profileId, price, comment, imageU
  * Cancel an offer (by the offer owner).
  * Cancelled offers do NOT reset last_activity_at.
  */
-export async function cancelOffer(offerId, listingId = null) {
+export async function cancelOffer(offerId) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
-  const { error } = await supabase
-    .from('market_offers')
-    .update({ status: OFFER_STATUS.CANCELLED })
-    .eq('id', offerId)
-  if (error) return { error }
-  // Si cet offre était l'offre acceptée (achat immédiat déclenché), réinitialise
-  // la confirmation en attente sur l'annonce
-  if (listingId) {
-    await supabase
-      .from('market_listings')
-      .update({ confirmation_pending: false, accepted_offer_id: null })
-      .eq('id', listingId)
-      .eq('accepted_offer_id', offerId)
-  }
-  return { error: null }
+  // Utilise une fonction SECURITY DEFINER pour : (1) annuler l'offre,
+  // (2) réinitialiser confirmation_pending sur l'annonce si besoin —
+  // le buyer n'a pas de droit UPDATE direct sur market_listings (RLS).
+  const { error } = await supabase.rpc('cancel_offer', { p_offer_id: offerId })
+  return { error }
 }
 
 /**

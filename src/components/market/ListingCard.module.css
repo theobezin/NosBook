@@ -395,6 +395,20 @@
 
 .btnReport:hover { background: rgba(239,68,68,0.08); }
 
+.btnShare {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #2e3144;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btnShare:hover  { border-color: #4b5563; color: #9ca3af; }
+.btnShareCopied  { border-color: #22c55e88 !important; color: #22c55e !important; }
+
 .blockedMsg {
   font-size: 0.72rem;
   color: #ef4444;

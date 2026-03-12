@@ -310,6 +310,10 @@ export default {
     clearTags:         'Tout effacer',
     searchPlaceholder: 'Rechercher par titre ou description…',
     noListings:        'Aucune annonce trouvée.',
+    endOfList:         '— fin des résultats —',
+    shareListing:      'Copier le lien',
+    linkCopied:        'Lien copié !',
+    sellerOtherListings: 'Autres annonces du vendeur',
     // Detail page
     backToMarket:      '← Retour au marché',
     allOffers:         'Toutes les propositions',

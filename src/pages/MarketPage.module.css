@@ -300,3 +300,13 @@
   background: rgba(239,68,68,0.06);
   border-radius: 8px;
 }
+
+/* Infinite scroll */
+.sentinel { height: 1px; }
+
+.endOfList {
+  text-align: center;
+  color: #374151;
+  font-size: 0.8rem;
+  padding: 16px 0 4px;
+}

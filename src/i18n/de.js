@@ -310,6 +310,10 @@ export default {
     clearTags:         'Alles löschen',
     searchPlaceholder: 'Nach Titel oder Beschreibung suchen…',
     noListings:        'Keine Anzeigen gefunden.',
+    endOfList:         '— Ende der Ergebnisse —',
+    shareListing:      'Link kopieren',
+    linkCopied:        'Link kopiert!',
+    sellerOtherListings: 'Weitere Angebote dieses Verkäufers',
     // Detail page
     backToMarket:      '← Zurück zum Markt',
     allOffers:         'Alle Angebote',
