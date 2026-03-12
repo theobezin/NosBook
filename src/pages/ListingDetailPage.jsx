@@ -309,9 +309,10 @@ export default function ListingDetailPage() {
   const isArchived = listing.status === LISTING_STATUS.ARCHIVED
 
   // All offers (the detail view has full data via useMarketListing)
-  const allOffers    = listing.offers ?? []
-  const activeOffers = allOffers.filter(o => o.status === OFFER_STATUS.ACTIVE)
-  const top          = bestOffer(allOffers)
+  const allOffers     = listing.offers ?? []
+  const activeOffers  = allOffers.filter(o => o.status === OFFER_STATUS.ACTIVE)
+  const top           = bestOffer(allOffers)
+  const acceptedOffer = allOffers.find(o => o.status === OFFER_STATUS.ACCEPTED) ?? null
 
   // Viewer's eligibility to make an offer
   const userCharServers = (() => {
@@ -460,17 +461,28 @@ export default function ListingDetailPage() {
                   {listing.buyoutPrice != null ? `${formatGold(listing.buyoutPrice)} ${t('market.gold')}` : t('market.noBuyoutPrice')}
                 </span>
               </div>
-              {top && (
-                <div className={styles.priceRow}>
-                  <span className={styles.priceLabel}>{t('market.bestOffer')}</span>
-                  <span className={`${styles.priceValue} ${styles.bestValue}`}>
-                    {formatGold(top.price)} {t('market.gold')}
+              {isSold && acceptedOffer?.price != null ? (
+                <div className={`${styles.priceRow} ${styles.priceRowSold}`}>
+                  <span className={styles.priceLabel}>{t('market.soldPrice')}</span>
+                  <span className={`${styles.priceValue} ${styles.soldPriceValue}`}>
+                    {formatGold(acceptedOffer.price)} {t('market.gold')}
                   </span>
                 </div>
+              ) : (
+                <>
+                  {top && (
+                    <div className={styles.priceRow}>
+                      <span className={styles.priceLabel}>{t('market.bestOffer')}</span>
+                      <span className={`${styles.priceValue} ${styles.bestValue}`}>
+                        {formatGold(top.price)} {t('market.gold')}
+                      </span>
+                    </div>
+                  )}
+                  <div className={styles.offerCount}>
+                    {activeOffers.length} {t('market.offersCount')}
+                  </div>
+                </>
               )}
-              <div className={styles.offerCount}>
-                {activeOffers.length} {t('market.offersCount')}
-              </div>
             </div>
           )}
 

@@ -86,8 +86,9 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   // Username: from nested profiles join (snake_case raw) or camelCase mapped
   const getOfferUsername  = (o) => o.profiles?.username ?? o.profile?.username ?? '—'
 
-  const activeOffers = offers.filter(o => getOfferStatus(o) === OFFER_STATUS.ACTIVE)
-  const top          = bestOffer(offers)
+  const activeOffers  = offers.filter(o => getOfferStatus(o) === OFFER_STATUS.ACTIVE)
+  const top           = bestOffer(offers)
+  const acceptedOffer = offers.find(o => getOfferStatus(o) === OFFER_STATUS.ACCEPTED) ?? null
 
   // The current user's own active offer on this listing
   const myOffer = offers.find(
@@ -276,15 +277,26 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               {listing.buyoutPrice != null ? `${formatGold(listing.buyoutPrice)} ${t('market.gold')}` : t('market.noBuyoutPrice')}
             </span>
           </div>
-          <div className={styles.priceRow}>
-            <span className={styles.priceLabel}>{t('market.bestOffer')}</span>
-            <span className={`${styles.priceValue} ${styles.bestValue}`}>
-              {top ? `${formatGold(top.price)} ${t('market.gold')}` : t('market.noOffers')}
-            </span>
-          </div>
-          <div className={styles.offerCount}>
-            {activeOffers.length} {t('market.offersCount')}
-          </div>
+          {isSold && acceptedOffer?.price != null ? (
+            <div className={`${styles.priceRow} ${styles.priceRowSold}`}>
+              <span className={styles.priceLabel}>{t('market.soldPrice')}</span>
+              <span className={`${styles.priceValue} ${styles.soldPriceValue}`}>
+                {formatGold(acceptedOffer.price)} {t('market.gold')}
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className={styles.priceRow}>
+                <span className={styles.priceLabel}>{t('market.bestOffer')}</span>
+                <span className={`${styles.priceValue} ${styles.bestValue}`}>
+                  {top ? `${formatGold(top.price)} ${t('market.gold')}` : t('market.noOffers')}
+                </span>
+              </div>
+              <div className={styles.offerCount}>
+                {activeOffers.length} {t('market.offersCount')}
+              </div>
+            </>
+          )}
         </div>
       )}
 

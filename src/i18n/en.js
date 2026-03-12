@@ -335,6 +335,7 @@ export default {
     expired:          'Expired',
     sold:             'Sold',
     soldBuy:          'Found',
+    soldPrice:        'Sale price',
     soldNoticeSell:   '✅ Sale completed — this listing will be archived in 30 days.',
     soldNoticeBuy:    '✅ Purchase completed — this listing will be archived in 30 days.',
     archived:         'Archived',

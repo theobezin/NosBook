@@ -163,6 +163,8 @@
 .priceValue { font-size: 0.82rem; color: #9ca3af; font-weight: 500; }
 .buyoutValue { color: #c9a84c; }
 .bestValue  { color: #4ade80; font-weight: 700; }
+.priceRowSold { margin-top: 2px; }
+.soldPriceValue { color: #4ade80; font-weight: 800; font-size: 0.95rem; }
 
 .offerCount {
   font-size: 0.7rem;
