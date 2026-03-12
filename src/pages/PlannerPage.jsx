@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLang }        from '@/i18n'
 import { useAuth }        from '@/hooks/useAuth'
-import { usePlannerData } from '@/hooks/usePlannerData'
+import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
@@ -375,13 +375,20 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {dailies.map(b=>{
-          const key=`${today}__${char}__${b.id}`,isDone=!!checks[key],color=ACTIVITY_COLORS[b.type],atype=actTypes.find(a=>a.id===b.type)
+          const key=`${today}__${char}__${b.id}`,isDone=!!checks[key]
+          // Les blocs session utilisent leur couleur de raid spécifique
+          const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
+          const atype=actTypes.find(a=>a.id===b.type)
+          // Bordure distincte pour les blocs session (non-cochés)
+          const borderColor=isDone?th.border:b._isSession?(color+'66'):th.borderSoft
           return(
-            <div key={b.id} onClick={()=>setChecks(p=>({...p,[key]:!p[key]}))} style={{display:'flex',alignItems:'center',gap:13,padding:'13px 16px',borderRadius:10,cursor:'pointer',background:isDone?th.surface:th.surfaceHov,border:`1px solid ${isDone?th.border:th.borderSoft}`,transition:'all .2s'}}>
+            <div key={b.id} onClick={()=>setChecks(p=>({...p,[key]:!p[key]}))} style={{display:'flex',alignItems:'center',gap:13,padding:'13px 16px',borderRadius:10,cursor:'pointer',background:isDone?th.surface:th.surfaceHov,border:`1px solid ${borderColor}`,transition:'all .2s',opacity:b._isSession&&isDone?.7:1}}>
               <div style={{width:20,height:20,borderRadius:4,flexShrink:0,background:isDone?'#2980b9':'transparent',border:`2px solid ${isDone?'#2980b9':th.textMuted}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#fff'}}>{isDone?'✓':''}</div>
               <div style={{flex:1,fontSize:16,fontFamily:'Crimson Pro',color:isDone?th.textSub:th.text,textDecoration:isDone?'line-through':'none',display:'flex',alignItems:'center',gap:7}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={18}/> {b.label}</div>
               {b.reminder?.enabled&&<span style={{fontSize:15}}>🔔</span>}
               {b.repeat&&<div style={{fontSize:10,padding:'2px 7px',borderRadius:20,background:th.gold+'12',color:th.gold+'88',border:`1px solid ${th.gold}22`,fontFamily:'Cinzel'}}>{i18n.dailyBadge}</div>}
+              {/* Badge SESSION — distingue visuellement les blocs de sessions organisées */}
+              {b._isSession&&<div style={{fontSize:9,padding:'2px 7px',borderRadius:20,background:color+'18',color,border:`1px solid ${color}44`,fontFamily:'Cinzel',letterSpacing:.5,flexShrink:0}}>{i18n.sessionBadge??'SESSION'}</div>}
               <div style={{fontSize:11,padding:'3px 9px',borderRadius:20,background:color+'18',color:color+'cc',border:`1px solid ${color}30`,fontFamily:'Cinzel'}}>{atype?.label||b.type}</div>
               <div style={{fontSize:12,color:th.textSub,fontFamily:'Cinzel'}}>{fmtHour(b.startHour)}</div>
             </div>
@@ -392,7 +399,7 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
   )
 }
 
-function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, days, months }) {
+function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, onSessionClick, days, months }) {
   const[weekOf,setWeekOf]=useState(()=>weekStart(new Date()))
   const[selectedDay,setSelectedDay]=useState(()=>new Date())
   const[viewMode,setViewMode]=useState('week')
@@ -447,16 +454,28 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
           })}
           <div style={{position:'absolute',top:0,left:48,right:0,bottom:0,pointerEvents:'none'}}>
             {dayBlocks.map((b,i)=>{
-              const color=ACTIVITY_COLORS[b.type]||ACTIVITY_COLORS.custom
+              // Les blocs session utilisent leur couleur de raid spécifique
+              const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
               const start=Math.max(b.startHour||0,0),end=Math.min(b.endHour||start+1,24)
               const top=start*HH,height=Math.max((end-start)*HH-4,24)
               const overlap=dayBlocks.slice(0,i).filter(x=>(x.startHour||0)<(b.endHour||0)&&(x.endHour||0)>(b.startHour||0)).length
               const lp=overlap*6,wp=100-lp-2
+              // Clic : session → navigation vers la page de session ; bloc perso → modal édition
+              const handleClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
               return(
-                <div key={b.id} style={{position:'absolute',top,left:`${lp}%`,width:`${wp}%`,height,background:`linear-gradient(135deg,${color}28,${color}18)`,border:`1px solid ${color}66`,borderLeft:`3px solid ${color}`,borderRadius:6,padding:'4px 8px',overflow:'hidden',pointerEvents:'all',cursor:'pointer',zIndex:1+overlap,boxShadow:`0 2px 8px ${color}22`,transition:'opacity .15s'}} onClick={()=>setEditBlock(b)}>
-                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={13}/><span style={{fontFamily:'Crimson Pro',fontSize:12,color,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span></div>
+                <div key={b.id} style={{position:'absolute',top,left:`${lp}%`,width:`${wp}%`,height,background:`linear-gradient(135deg,${color}28,${color}18)`,border:`1px solid ${b._isSession?color+'88':color+'66'}`,borderLeft:`3px solid ${color}`,borderRadius:6,padding:'4px 8px',overflow:'hidden',pointerEvents:'all',cursor:'pointer',zIndex:1+overlap,boxShadow:`0 2px 8px ${color}22`,transition:'opacity .15s'}} onClick={handleClick}>
+                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                    <NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={13}/>
+                    <span style={{fontFamily:'Crimson Pro',fontSize:12,color,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span>
+                    {/* Indicateur session en haut à droite */}
+                    {b._isSession&&<span style={{marginLeft:'auto',fontSize:8,fontFamily:'Cinzel',color,opacity:.8,flexShrink:0}}>⚔</span>}
+                  </div>
                   {height>36&&<div style={{fontSize:10,color:th.textSub,fontFamily:'Cinzel',letterSpacing:.3}}>{fmtHour(b.startHour||0)} — {fmtHour(b.endHour||0)}{b.repeat&&<span style={{marginLeft:6,color:th.gold}}>↻</span>}</div>}
-                  {height>56&&<div style={{marginTop:4,display:'flex',gap:6}}><button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:color+'30',border:`1px solid ${color}`,color,borderRadius:4,padding:'2px 6px',fontFamily:'Cinzel',fontSize:9,cursor:'pointer'}}>⏱</button>{!b.repeat&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'#e74c3c18',border:'1px solid #e74c3c44',color:'#e74c3c',borderRadius:4,padding:'2px 6px',fontSize:9,cursor:'pointer'}}>✕</button>}</div>}
+                  {height>56&&<div style={{marginTop:4,display:'flex',gap:6}}>
+                    <button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:color+'30',border:`1px solid ${color}`,color,borderRadius:4,padding:'2px 6px',fontFamily:'Cinzel',fontSize:9,cursor:'pointer'}}>⏱</button>
+                    {/* Bouton suppression uniquement pour les blocs perso non-récurrents */}
+                    {!b.repeat&&!b._isSession&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'#e74c3c18',border:'1px solid #e74c3c44',color:'#e74c3c',borderRadius:4,padding:'2px 6px',fontSize:9,cursor:'pointer'}}>✕</button>}
+                  </div>}
                 </div>
               )
             })}
@@ -487,16 +506,24 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:8}}>
                   {[...dayBlocks].sort((a,b)=>(a.startHour||0)-(b.startHour||0)).map(b=>{
-                    const color=ACTIVITY_COLORS[b.type]||ACTIVITY_COLORS.custom
+                    const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
+                    // Clic : session → navigation ; bloc perso → modal édition
+                    const handleBlockClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
                     return(
-                      <div key={b.id} style={{background:color+'1e',border:`1px solid ${color}55`,borderRadius:6,padding:'5px 7px'}}>
-                        <div style={{fontSize:11,color,fontFamily:'Crimson Pro',lineHeight:1.3,display:'flex',alignItems:'center',gap:4}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={14}/><span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span></div>
+                      <div key={b.id} onClick={handleBlockClick} style={{background:color+'1e',border:`1px solid ${b._isSession?color+'66':color+'55'}`,borderRadius:6,padding:'5px 7px',cursor:'pointer',borderLeft:b._isSession?`2px solid ${color}`:''}}>
+                        <div style={{fontSize:11,color,fontFamily:'Crimson Pro',lineHeight:1.3,display:'flex',alignItems:'center',gap:4}}>
+                          <NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={14}/>
+                          <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span>
+                          {/* Icône ⚔ pour les blocs session */}
+                          {b._isSession&&<span style={{fontSize:9,flexShrink:0,opacity:.8}}>⚔</span>}
+                        </div>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4}}>
                           <span style={{fontSize:9,color:th.textSub,fontFamily:'Cinzel'}}>{fmtHour(b.startHour||0)}</span>
                           <div style={{display:'flex',gap:4}}>
-                            <button onClick={()=>onStartTimer(b)} style={{background:'transparent',border:'none',color,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>⏱</button>
-                            <button onClick={()=>setEditBlock(b)} style={{background:'transparent',border:'none',color:th.textSub,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✏️</button>
-                            {!b.repeat&&<button onClick={()=>handleDelete(b.id)} style={{background:'transparent',border:'none',color:'#e74c3c88',cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✕</button>}
+                            <button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:'transparent',border:'none',color,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>⏱</button>
+                            {/* Boutons édition et suppression uniquement pour les blocs perso */}
+                            {!b._isSession&&<button onClick={e=>{e.stopPropagation();setEditBlock(b)}} style={{background:'transparent',border:'none',color:th.textSub,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✏️</button>}
+                            {!b.repeat&&!b._isSession&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'transparent',border:'none',color:'#e74c3c88',cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✕</button>}
                           </div>
                         </div>
                       </div>
@@ -711,7 +738,7 @@ function NotesBar({notes,setNotes,th,i18n}){
 
 // ── Main PlannerPage ───────────────────────────────────────────────────────
 export default function PlannerPage() {
-  const { t }    = useLang()
+  const { t, lang } = useLang()
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const p        = t('planner')
@@ -719,6 +746,12 @@ export default function PlannerPage() {
   const plannerData = usePlannerData(p.defaultChar)
   const { loaded, syncing, syncErr, chars, setChars, activeChar, setActiveChar, blocks, setBlocks, checks, setChecks, raids, setRaids, goals, setGoals, notes, setNotes } = plannerData
   const { characters: profileChars } = useCharacters()
+
+  // Blocs provenant des sessions de raid (lecture seule, non stockés dans planner_data)
+  const { sessionBlocks } = useSessionBlocks(user?.id, lang)
+  // Fusion pour l'affichage : blocs perso + blocs session
+  // Les blocs session sont reconnaissables par _isSession:true et ne sont jamais écrits
+  const allBlocks = [...blocks, ...sessionBlocks]
 
   const [activeTab,   setTab]   = useState('planning')
   const [timer,       setTimer] = useState(null)
@@ -749,7 +782,7 @@ export default function PlannerPage() {
   const addChar=()=>{const n=newCharName.trim();if(!n||chars.includes(n))return;setChars(prev=>[...prev,n]);setActiveChar(n);setNCN('');setAC(false)}
 
   const todayKey=isoDay(new Date()),todayDow=new Date().getDay()
-  const todayBlocks=blocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
+  const todayBlocks=allBlocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
   const doneDailies=todayBlocks.filter(b=>checks[`${todayKey}__${activeChar}__${b.id}`]).length
   const readyRaids=RAIDS.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
 
@@ -824,11 +857,11 @@ export default function PlannerPage() {
             {TABS.map(tab=><button key={tab.id} onClick={()=>setTab(tab.id)} style={{padding:'11px 22px',background:'transparent',border:'none',borderBottom:`2px solid ${activeTab===tab.id?th.gold:'transparent'}`,color:activeTab===tab.id?th.gold:th.tabInact,fontFamily:'Cinzel',fontSize:12,letterSpacing:1,cursor:'pointer',transition:'all .2s'}}>{tab.label}</button>)}
           </div>
 
-          {activeTab==='planning'&&<WeeklyPlanning blocks={blocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} i18nModal={{...p.modal,activityTypes:p.activityTypes,reminder:p.reminder}} onStartTimer={setTimer} days={p.days} months={p.months}/>}
+          {activeTab==='planning'&&<WeeklyPlanning blocks={allBlocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} i18nModal={{...p.modal,activityTypes:p.activityTypes,reminder:p.reminder}} onStartTimer={setTimer} onSessionClick={sid=>navigate(`/raid-sessions/${sid}`)} days={p.days} months={p.months}/>}
           {activeTab==='dailies'&&(
             <div>
               <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.dailies.title} {activeChar?.toUpperCase()}</div>
-              <DailyChecklist blocks={blocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
+              <DailyChecklist blocks={allBlocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
             </div>
           )}
           {activeTab==='raids'&&(

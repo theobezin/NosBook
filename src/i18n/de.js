@@ -304,6 +304,7 @@ export default {
       empty:       'Keine Aktivitäten für heute.',
       emptySub:    'Füge Aktivitäten im Planungs-Tab hinzu.',
       dailyBadge:  'TÄGLICH',
+      sessionBadge: 'SESSION',
     },
     planning: {
       weekView:    '📅 Woche',
