@@ -17,6 +17,7 @@ export default function Navbar() {
 
   const [menuOpen,     setMenuOpen]     = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  const [unreadCount,  setUnreadCount]  = useState(0)
   const menuRef = useRef(null)
 
   // Badge admin : nombre de records en attente
@@ -28,6 +29,34 @@ export default function Navbar() {
       .eq('status', 'pending')
       .then(({ count }) => setPendingCount(count ?? 0))
   }, [isAdmin])
+
+  // Badge notifications non-lues
+  useEffect(() => {
+    if (!user?.id || !hasSupabase) return
+    // Chargement initial
+    supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('read', false)
+      .then(({ count }) => setUnreadCount(count ?? 0))
+    // Realtime
+    const ch = supabase
+      .channel(`notif-badge-${user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false)
+          .then(({ count }) => setUnreadCount(count ?? 0))
+      })
+      .subscribe()
+    return () => supabase.removeChannel(ch)
+  }, [user?.id])
 
   // Fermeture du menu au clic extérieur
   useEffect(() => {
@@ -97,6 +126,11 @@ export default function Navbar() {
                     aria-expanded={menuOpen}
                   >
                     <span className={styles.usernameText}>{username}</span>
+                    {unreadCount > 0 && (
+                      <span className={styles.notifBadge}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                     <span className={styles.userMenuCaret}>{menuOpen ? '▴' : '▾'}</span>
                   </button>
 
@@ -115,6 +149,18 @@ export default function Navbar() {
                         onClick={() => setMenuOpen(false)}
                       >
                         📋 {t('nav.mySubmissions')}
+                      </Link>
+                      <Link
+                        to="/notifications"
+                        className={styles.userMenuItem}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        🔔 {t('notif.title')}
+                        {unreadCount > 0 && (
+                          <span className={styles.notifMenuBadge}>
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
                       </Link>
                     </div>
                   )}
