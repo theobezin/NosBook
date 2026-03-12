@@ -98,7 +98,9 @@ export default function NotificationsPage() {
                 className={`${styles.notifCard} ${!n.read ? styles.notifUnread : ''}`}
               >
                 <div className={styles.notifIcon}>
-                  {raid ? (
+                  {n.type === 'session_cancelled' ? (
+                    <span className={styles.cancelledIcon}>🚫</span>
+                  ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
                       alt=""
@@ -108,7 +110,9 @@ export default function NotificationsPage() {
                 </div>
                 <div className={styles.notifBody}>
                   <p className={styles.notifType}>
-                    {t('notif.raidMessage')}
+                    {n.type === 'session_cancelled'
+                      ? t('notif.sessionCancelled')
+                      : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
                     )}
@@ -124,7 +128,7 @@ export default function NotificationsPage() {
                   </p>
                 </div>
                 <div className={styles.notifActions}>
-                  {n.session_id && (
+                  {n.session_id && n.type !== 'session_cancelled' && (
                     <Button
                       variant="ghost"
                       size="sm"

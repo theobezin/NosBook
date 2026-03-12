@@ -65,6 +65,11 @@
   background: rgba(255, 200, 50, 0.03);
 }
 
+.cancelledIcon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
 .notifIcon {
   width: 36px;
   height: 36px;

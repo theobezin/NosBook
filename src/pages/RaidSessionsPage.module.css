@@ -136,21 +136,6 @@
 }
 
 /* ── Durée (formulaire) ────────────────────────────────────────── */
-.durationRow {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.durationInput {
-  width: 3.5rem !important;
-  text-align: center;
-}
-
-.durationUnit {
-  font-size: 0.8rem;
-  color: var(--text-faint);
-}
 
 /* ── Sessions list ─────────────────────────────────────────────── */
 .sessionList {
@@ -411,6 +396,57 @@
 
 .fieldInput::placeholder {
   color: var(--text-faint);
+}
+
+/* ── Duration picker ────────────────────────────────────────────── */
+.durationPicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 36px;
+}
+
+.durationUnit {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--input-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 0.3rem;
+  height: 100%;
+}
+
+.durationBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  height: 100%;
+}
+.durationBtn:hover {
+  color: var(--gold-light);
+  background: rgba(255,255,255,0.06);
+}
+
+.durationVal {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 2.4rem;
+  text-align: center;
+  user-select: none;
+}
+.durationVal small {
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 0.1rem;
 }
 
 .fieldTextarea {

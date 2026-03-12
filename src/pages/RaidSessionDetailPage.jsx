@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useCharacters } from '@/hooks/useCharacters'
 import { useLang } from '@/i18n'
@@ -29,12 +29,22 @@ function computeEndTime(timeStr, durationMinutes) {
   return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
 }
 
+function fmtDuration(minutes) {
+  if (!minutes) return null
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h && m)  return `${h}h${String(m).padStart(2, '0')}`
+  if (h)       return `${h}h`
+  return `${m}min`
+}
+
 const SERVER_COLORS_DETAIL = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
 
 function SessionHeader({ session, raid, lang, t, regCount }) {
   const dateStr  = fmtDate(session.date, lang)
   const timeStr  = session.time ? session.time.slice(0, 5) : t('session.noTime')
   const endTime  = computeEndTime(session.time, session.duration_minutes)
+  const duration = fmtDuration(session.duration_minutes)
 
   return (
     <div className={styles.header} style={{ '--raid-color': raid.color }}>
@@ -50,6 +60,7 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
           <p className={styles.headerDate}>
             {dateStr} · {timeStr}
             {endTime && <span className={styles.headerEndTime}> → {endTime}</span>}
+            {duration && <span className={styles.headerDuration}> ({duration})</span>}
           </p>
           {session.comments && (
             <p className={styles.headerComments}>{session.comments}</p>
@@ -329,7 +340,7 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
     }
 
     // ── Guard 2 : chevauchement de sessions ───────────────────────
-    if (session.time && session.duration_minutes) {
+    if (session.time) {
       const { data: otherRegs } = await supabase
         .from('raid_session_registrations')
         .select('session_id, raid_sessions(date, time, duration_minutes)')
@@ -337,17 +348,19 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
         .neq('session_id', session.id)
 
       if (otherRegs?.length) {
-        const [sh, sm]    = session.time.split(':').map(Number)
-        const sessionStart = sh * 60 + sm
-        const sessionEnd   = sessionStart + session.duration_minutes
+        const [sh, sm]  = session.time.split(':').map(Number)
+        const newStart  = sh * 60 + sm
+        const newEnd    = newStart + (session.duration_minutes ?? 0)
 
         const overlap = otherRegs.some(r => {
           const other = r.raid_sessions
-          if (!other?.date || other.date !== session.date || !other.time || !other.duration_minutes) return false
-          const [oh, om] = other.time.split(':').map(Number)
-          const otherStart = oh * 60 + om
-          const otherEnd   = otherStart + other.duration_minutes
-          return sessionStart < otherEnd && sessionEnd > otherStart
+          if (!other?.date || other.date !== session.date || !other.time) return false
+          const [oh, om]  = other.time.split(':').map(Number)
+          const othStart  = oh * 60 + om
+          const othEnd    = othStart + (other.duration_minutes ?? 0)
+          // si l'une ou l'autre n'a pas de durée, collision si meme heure de début
+          if (!session.duration_minutes && !other.duration_minutes) return newStart === othStart
+          return newStart < othEnd && newEnd > othStart
         })
         if (overlap) {
           setSubmitting(false)
@@ -692,14 +705,17 @@ export default function RaidSessionDetailPage() {
   const { user, isAuthenticated } = useAuth()
   const { t, lang } = useLang()
   const { characters: userChars } = useCharacters()
+  const navigate = useNavigate()
 
-  const [session,     setSession]     = useState(null)
-  const [regs,        setRegs]        = useState([])
-  const [profile,     setProfile]     = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [showRegister, setShowRegister] = useState(false)
-  const [spTarget,    setSPTarget]    = useState(null)   // reg for SP picker
-  const [profileTarget, setProfileTarget] = useState(null) // reg for profile modal
+  const [session,       setSession]       = useState(null)
+  const [regs,          setRegs]          = useState([])
+  const [profile,       setProfile]       = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [showRegister,  setShowRegister]  = useState(false)
+  const [showCancel,    setShowCancel]    = useState(false)
+  const [cancelling,    setCancelling]    = useState(false)
+  const [spTarget,      setSPTarget]      = useState(null)
+  const [profileTarget, setProfileTarget] = useState(null)
   const dragIdRef = useRef(null)
 
   const raid       = session ? RAIDS.find(r => r.slug === session.raid_slug) : null
@@ -776,6 +792,27 @@ export default function RaidSessionDetailPage() {
     await supabase.from('raid_session_registrations').delete().eq('id', regId)
   }
 
+  // ── Cancel session ────────────────────────────────────────────────────────────
+  const handleCancelSession = async () => {
+    setCancelling(true)
+    // Notifier tous les joueurs inscrits (sauf le leader)
+    const targets = [...new Set(regs.map(r => r.player_id))].filter(id => id !== user?.id)
+    if (targets.length > 0) {
+      await supabase.from('notifications').insert(
+        targets.map(uid => ({
+          user_id:           uid,
+          type:              'session_cancelled',
+          session_id:        sessionId,
+          session_raid_name: session.raid_slug,
+          content_preview:   null,
+        }))
+      )
+    }
+    await supabase.from('raid_sessions').delete().eq('id', sessionId)
+    setCancelling(false)
+    navigate('/raids')
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -806,7 +843,14 @@ export default function RaidSessionDetailPage() {
 
   return (
     <div className={styles.page}>
-      <Link to="/raids" className={styles.back}>← {t('detail.back')}</Link>
+      <div className={styles.topBar}>
+        <Link to="/raids" className={styles.back}>← {t('detail.back')}</Link>
+        {isLeader && (
+          <button className={styles.cancelSessionBtn} onClick={() => setShowCancel(true)}>
+            🗑 {t('detail.cancelBtn')}
+          </button>
+        )}
+      </div>
 
       <SessionHeader session={session} raid={raid} lang={lang} t={t} regCount={regs.length} />
 
@@ -880,6 +924,29 @@ export default function RaidSessionDetailPage() {
           onClose={() => setProfileTarget(null)}
           t={t}
         />
+      )}
+
+      {/* ── Modale confirmation annulation ── */}
+      {showCancel && (
+        <div className={styles.overlay} onClick={() => !cancelling && setShowCancel(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <h3 className={styles.modalTitle}>⚠️ {t('detail.cancelConfirmTitle')}</h3>
+              <button className={styles.modalClose} onClick={() => setShowCancel(false)} disabled={cancelling}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <p className={styles.cancelConfirmBody}>{t('detail.cancelConfirmBody')}</p>
+            </div>
+            <div className={styles.modalFoot}>
+              <Button variant="ghost" onClick={() => setShowCancel(false)} disabled={cancelling}>
+                {t('detail.cancelAbort')}
+              </Button>
+              <Button variant="solid" onClick={handleCancelSession} disabled={cancelling} className={styles.cancelConfirmBtn}>
+                {cancelling ? '…' : t('detail.cancelConfirm')}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

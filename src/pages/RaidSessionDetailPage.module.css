@@ -6,15 +6,42 @@
   padding-bottom: 4rem;
 }
 
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .back {
   font-size: 0.82rem;
   color: var(--text-faint);
   text-decoration: none;
   transition: color 0.15s;
-  align-self: flex-start;
 }
 
 .back:hover { color: var(--gold-dim); }
+
+.cancelSessionBtn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: var(--radius-sm);
+  color: #ef4444;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cancelSessionBtn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.cancelConfirmBody {
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.55;
+}
 
 /* ── Session header ────────────────────────────────────────────── */
 .header {
@@ -69,6 +96,12 @@
 .headerEndTime {
   color: var(--text-faint);
   font-size: 0.82rem;
+}
+
+.headerDuration {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  opacity: 0.7;
 }
 
 .headerComments {

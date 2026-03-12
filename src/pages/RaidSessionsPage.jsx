@@ -10,6 +10,43 @@ import styles from './RaidSessionsPage.module.css'
 
 const SERVERS = ['undercity', 'dragonveil']
 
+function DurationPicker({ value, onChange }) {
+  // useRef so the click handler always reads the latest value,
+  // even if React hasn't flushed the prop update yet between rapid clicks
+  const valueRef = useRef(value)
+  valueRef.current = value
+
+  const adjust = (type, delta) => {
+    const v = valueRef.current
+    const h = Math.floor(v / 60)
+    const m = v % 60
+    if (type === 'h') {
+      onChange(Math.max(0, Math.min(23, h + delta)) * 60 + m)
+    } else {
+      const nm = Math.round((m + delta) / 5) * 5
+      onChange(h * 60 + Math.max(0, Math.min(55, nm)))
+    }
+  }
+
+  const hours   = Math.floor(value / 60)
+  const minutes = value % 60
+
+  return (
+    <div className={styles.durationPicker}>
+      <div className={styles.durationUnit}>
+        <button type="button" className={styles.durationBtn} onClick={() => adjust('h', -1)}>−</button>
+        <span className={styles.durationVal}>{hours}<small>h</small></span>
+        <button type="button" className={styles.durationBtn} onClick={() => adjust('h', +1)}>+</button>
+      </div>
+      <div className={styles.durationUnit}>
+        <button type="button" className={styles.durationBtn} onClick={() => adjust('m', -5)}>−</button>
+        <span className={styles.durationVal}>{String(minutes).padStart(2, '0')}<small>min</small></span>
+        <button type="button" className={styles.durationBtn} onClick={() => adjust('m', +5)}>+</button>
+      </div>
+    </div>
+  )
+}
+
 // ── SessionRaidSelect ─────────────────────────────────────────────────────────
 
 function SessionRaidSelect({ value, onChange, recentSlugs, lang, t }) {
@@ -113,8 +150,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     minLevel:          1,
     maxPlayers:        '',
     maxCharsPerPerson: 1,
-    durationH:         1,
-    durationMin:       0,
+    durationMinutes:   60,
     server:            '',
     comments:          '',
     teams:             [t('session.defaultTeam')],
@@ -177,8 +213,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       raidSlug:          form.raidSlug,
       minLevel:          form.minLevel,
       maxCharsPerPerson: form.maxCharsPerPerson,
-      durationH:         form.durationH,
-      durationMin:       form.durationMin,
+      durationMinutes:   form.durationMinutes,
       comments:          form.comments,
       teams:             form.teams,
     }
@@ -197,8 +232,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       maxPlayers:        raid?.maxPlayers ?? 15,
       minLevel:          config.minLevel ?? raid?.minLevel ?? 1,
       maxCharsPerPerson: config.maxCharsPerPerson,
-      durationH:         config.durationH   ?? 1,
-      durationMin:       config.durationMin ?? 0,
+      durationMinutes:   config.durationMinutes ?? 60,
       comments:          config.comments,
       teams:             config.teams ?? [t('session.defaultTeam')],
     }))
@@ -232,7 +266,48 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
         .single()
       leaderUsername = profile?.username ?? null
     }
-    const durationMinutes = Number(form.durationH) * 60 + Number(form.durationMin)
+    // ── Guard : chevauchement de sessions ─────────────────────────
+    if (form.time && form.durationMinutes && user?.id) {
+      const [fh, fm] = form.time.split(':').map(Number)
+      const newStart = fh * 60 + fm
+      const newEnd   = newStart + form.durationMinutes
+
+      function overlaps(oTime, oDur) {
+        if (!oTime) return false
+        const [oh, om] = oTime.split(':').map(Number)
+        const oStart = oh * 60 + om
+        const oEnd   = oStart + (oDur ?? 0)
+        return newStart < oEnd && newEnd > oStart
+      }
+
+      // Sessions dont l'utilisateur est leader ce jour-là
+      const { data: ledSessions } = await supabase
+        .from('raid_sessions')
+        .select('time, duration_minutes')
+        .eq('leader_id', user.id)
+        .eq('date', form.date)
+
+      if ((ledSessions ?? []).some(s => overlaps(s.time, s.duration_minutes))) {
+        setSubmitting(false)
+        return setError(t('session.errOverlap'))
+      }
+
+      // Sessions auxquelles l'utilisateur est inscrit ce jour-là
+      const { data: regs } = await supabase
+        .from('raid_session_registrations')
+        .select('raid_sessions(date, time, duration_minutes)')
+        .eq('player_id', user.id)
+
+      const regOverlap = (regs ?? []).some(r => {
+        const s = r.raid_sessions
+        return s?.date === form.date && overlaps(s.time, s.duration_minutes)
+      })
+      if (regOverlap) {
+        setSubmitting(false)
+        return setError(t('session.errOverlap'))
+      }
+    }
+
     const { error: dbErr } = await supabase.from('raid_sessions').insert({
       raid_slug:            form.raidSlug,
       date:                 form.date,
@@ -240,7 +315,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       min_level:            Number(form.minLevel),
       max_players:          Number(form.maxPlayers),
       max_chars_per_person: Number(form.maxCharsPerPerson),
-      duration_minutes:     durationMinutes > 0 ? durationMinutes : null,
+      duration_minutes:     Number(form.durationMinutes) || null,
       server:               form.server || null,
       comments:             form.comments.trim() || null,
       teams:                form.teams,
@@ -352,24 +427,10 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
             </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>{t('session.formDuration')}</label>
-              <div className={styles.durationRow}>
-                <input
-                  type="number"
-                  className={`${styles.fieldInput} ${styles.durationInput}`}
-                  value={form.durationH}
-                  min={0} max={23}
-                  onChange={e => setField('durationH', e.target.value)}
-                />
-                <span className={styles.durationUnit}>{t('session.durationH')}</span>
-                <input
-                  type="number"
-                  className={`${styles.fieldInput} ${styles.durationInput}`}
-                  value={form.durationMin}
-                  min={0} max={55} step={5}
-                  onChange={e => setField('durationMin', e.target.value)}
-                />
-                <span className={styles.durationUnit}>{t('session.durationMin')}</span>
-              </div>
+              <DurationPicker
+                value={form.durationMinutes}
+                onChange={v => setField('durationMinutes', v)}
+              />
             </div>
           </div>
 
@@ -604,12 +665,23 @@ export default function RaidSessionsPage() {
 
   useEffect(() => { loadSessions() }, [])
 
-  // Filtrage côté client (simple et sans requête supplémentaire)
+  // Filtrage côté client (sans requête supplémentaire)
   const actSlugs = filterAct
     ? new Set(RAIDS.filter(r => r.act === filterAct).map(r => r.slug))
     : null
 
+  const nowMs  = Date.now()
+  const today  = new Date().toISOString().slice(0, 10)
+
   const filtered = sessions.filter(s => {
+    // Masquer les sessions dont l'heure de fin est dépassée
+    if (s.date === today && s.time) {
+      const [h, m]    = s.time.split(':').map(Number)
+      const endMinutes = h * 60 + m + (s.duration_minutes ?? 0)
+      const now        = new Date()
+      const nowMinutes = now.getHours() * 60 + now.getMinutes()
+      if (nowMinutes > endMinutes) return false
+    }
     if (filterServer && s.server !== filterServer) return false
     if (actSlugs    && !actSlugs.has(s.raid_slug)) return false
     if (filterDate  && s.date !== filterDate)       return false
