@@ -302,6 +302,12 @@
   gap: 0.75rem;
 }
 
+.fieldRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
 .fieldError {
   font-size: 0.82rem;
   color: var(--hp);
@@ -540,13 +546,78 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* ── Teams ─────────────────────────────────────────────────────── */
+.teamList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+}
+
+.teamName {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+}
+
+.teamName:hover {
+  color: var(--text);
+}
+
+.teamInput {
+  flex: 1;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.88rem;
+}
+
+.teamActions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.addTeamBtn {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-faint);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.addTeamBtn:hover {
+  border-color: var(--gold-dim);
+  color: var(--text-dim);
+}
+
 /* ── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .sessionCardMeta {
     display: none;
   }
 
-  .fieldRow {
+  .fieldRow,
+  .fieldRow3 {
     grid-template-columns: 1fr;
   }
 }

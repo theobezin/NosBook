@@ -107,10 +107,13 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     raidSlug:          '',
     date:              today,
     time:              '',
+    minLevel:          1,
     maxPlayers:        '',
     maxCharsPerPerson: 1,
     comments:          '',
+    teams:             [t('session.defaultTeam')],
   })
+  const [editingTeamIdx, setEditingTeamIdx] = useState(null)
   const [showSaveConfig, setShowSaveConfig] = useState(false)
   const [configName,     setConfigName]     = useState('')
   const [submitting,     setSubmitting]     = useState(false)
@@ -127,17 +130,42 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
 
   const handleRaidChange = (slug) => {
     const raid = RAIDS.find(r => r.slug === slug)
-    setForm(f => ({ ...f, raidSlug: slug, maxPlayers: raid?.maxPlayers ?? 15 }))
+    setForm(f => ({
+      ...f,
+      raidSlug:   slug,
+      maxPlayers: raid?.maxPlayers ?? 15,
+      minLevel:   raid?.minLevel   ?? 1,
+    }))
   }
 
+  // ── Team helpers ────────────────────────────────────────────────
+  const addTeam = () => {
+    const idx = form.teams.length + 1
+    setForm(f => ({ ...f, teams: [...f.teams, `${t('session.defaultTeam').replace(' 1', '')} ${idx}`] }))
+  }
+  const renameTeam = (idx, name) => {
+    setForm(f => {
+      const next = [...f.teams]
+      next[idx] = name
+      return { ...f, teams: next }
+    })
+  }
+  const removeTeam = (idx) => {
+    setForm(f => ({ ...f, teams: f.teams.filter((_, i) => i !== idx) }))
+    if (editingTeamIdx === idx) setEditingTeamIdx(null)
+  }
+
+  // ── Saved configs ───────────────────────────────────────────────
   const handleSaveConfig = () => {
     if (!configName.trim()) return
     const config = {
       id:                Date.now().toString(),
       name:              configName.trim(),
       raidSlug:          form.raidSlug,
+      minLevel:          form.minLevel,
       maxCharsPerPerson: form.maxCharsPerPerson,
       comments:          form.comments,
+      teams:             form.teams,
     }
     const next = [...savedConfigs, config]
     setSavedConfigs(next)
@@ -152,8 +180,10 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       ...f,
       raidSlug:          config.raidSlug,
       maxPlayers:        raid?.maxPlayers ?? 15,
+      minLevel:          config.minLevel ?? raid?.minLevel ?? 1,
       maxCharsPerPerson: config.maxCharsPerPerson,
       comments:          config.comments,
+      teams:             config.teams ?? [t('session.defaultTeam')],
     }))
   }
 
@@ -163,6 +193,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     localStorage.setItem('nosbook_session_configs', JSON.stringify(next))
   }
 
+  // ── Submit ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setError('')
     if (!form.raidSlug) return setError(t('session.errRaid'))
@@ -178,9 +209,11 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       raid_slug:            form.raidSlug,
       date:                 form.date,
       time:                 form.time || null,
+      min_level:            Number(form.minLevel),
       max_players:          Number(form.maxPlayers),
       max_chars_per_person: Number(form.maxCharsPerPerson),
       comments:             form.comments.trim() || null,
+      teams:                form.teams,
       leader_id:            user?.id ?? null,
     })
     setSubmitting(false)
@@ -270,8 +303,19 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
             </div>
           </div>
 
-          {/* Joueurs max + Persos par joueur */}
-          <div className={styles.fieldRow}>
+          {/* Niveau min + Joueurs max + Persos max par joueur */}
+          <div className={styles.fieldRow3}>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>{t('session.formMinLevel')}</label>
+              <input
+                type="number"
+                className={styles.fieldInput}
+                value={form.minLevel}
+                min={1}
+                max={99}
+                onChange={e => setField('minLevel', e.target.value)}
+              />
+            </div>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>{t('session.formMaxPlayers')}</label>
               <input
@@ -294,6 +338,46 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
                 onChange={e => setField('maxCharsPerPerson', e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Équipes */}
+          <div className={styles.field}>
+            <label className={styles.fieldLabel}>{t('session.formTeams')}</label>
+            <div className={styles.teamList}>
+              {form.teams.map((team, idx) => (
+                <div key={idx} className={styles.teamRow}>
+                  {editingTeamIdx === idx ? (
+                    <input
+                      className={`${styles.fieldInput} ${styles.teamInput}`}
+                      value={team}
+                      onChange={e => renameTeam(idx, e.target.value)}
+                      onBlur={() => setEditingTeamIdx(null)}
+                      onKeyDown={e => e.key === 'Enter' && setEditingTeamIdx(null)}
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className={styles.teamName}
+                      onClick={() => setEditingTeamIdx(idx)}
+                      title={t('session.teamClickToRename')}
+                    >
+                      {team}
+                    </span>
+                  )}
+                  <div className={styles.teamActions}>
+                    <button className={styles.configLoadBtn} onClick={() => setEditingTeamIdx(idx)}>
+                      ✏
+                    </button>
+                    {form.teams.length > 1 && (
+                      <button className={styles.configDeleteBtn} onClick={() => removeTeam(idx)}>✕</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className={styles.addTeamBtn} onClick={addTeam}>
+              + {t('session.addTeam')}
+            </button>
           </div>
 
           {/* Commentaires */}
