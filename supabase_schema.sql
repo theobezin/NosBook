@@ -595,19 +595,21 @@ begin
 
   -- ── Anti-spam : mise à jour du compteur d'annulations ────
   -- Calcul du nouveau cancel_count :
-  --   • Pas de ligne existante OU cooldown expiré → repart à 1 (ardoise propre)
-  --   • Cooldown encore actif               → incrémente (ne devrait pas arriver
-  --     car create_offer bloque la création, mais on gère le cas par sécurité)
-  --   • Si nouveau count >= 3               → déclenche cooldown 30 min
+  --   • Pas de ligne existante             → 1 (première annulation)
+  --   • cooldown_until IS NULL             → incrémente (pas encore de cooldown déclenché)
+  --   • cooldown_until expiré              → repart à 1 (ardoise propre après purge)
+  --   • cooldown_until actif               → incrémente (ne devrait pas arriver :
+  --                                          create_offer bloque déjà, mais on gère)
+  --   • Si nouveau count >= 3              → déclenche cooldown 30 min
+  -- ⚠️  BUG CORRIGÉ : l'ancienne condition groupait "NULL" et "expiré" → reset
+  --    systématique à 1, empêchant le compteur de monter au-delà de 1.
   with new_state as (
     select
-      coalesce(
-        case
-          when c.cooldown_until is null or c.cooldown_until < now() then 1
-          else c.cancel_count + 1
-        end,
-        1
-      ) as cnt
+      case
+        when c.profile_id is null                                        then 1
+        when c.cooldown_until is not null and c.cooldown_until < now()   then 1
+        else c.cancel_count + 1
+      end as cnt
     from             (select 1) dummy
     left join public.market_offer_cooldowns c
            on c.profile_id = v_profile_id
