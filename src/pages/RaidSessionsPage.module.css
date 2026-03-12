@@ -47,8 +47,109 @@
 /* ── Controls ──────────────────────────────────────────────────── */
 .controls {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ── Filtres ───────────────────────────────────────────────────── */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.filterGroup {
+  display: flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.filterBtn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+.filterBtnActive {
+  color: var(--gold-light);
+  background: var(--gold-faint);
+  border-color: var(--gold-dim);
+}
+
+.filterDateInput {
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.filterDateInput:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+  color: var(--text);
+}
+
+/* ── Serveur (formulaire) ──────────────────────────────────────── */
+.serverBtns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.serverBtn {
+  flex: 1;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.serverBtn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+.serverBtnActive {
+  color: var(--srv-color, var(--gold-light));
+  background: rgba(from var(--srv-color, #fff) r g b / 0.1);
+  border-color: var(--srv-color, var(--gold-dim));
+}
+
+/* ── Durée (formulaire) ────────────────────────────────────────── */
+.durationRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.durationInput {
+  width: 3.5rem !important;
+  text-align: center;
+}
+
+.durationUnit {
+  font-size: 0.8rem;
+  color: var(--text-faint);
 }
 
 /* ── Sessions list ─────────────────────────────────────────────── */

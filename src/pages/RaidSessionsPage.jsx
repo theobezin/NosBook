@@ -4,8 +4,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
+import { SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import styles from './RaidSessionsPage.module.css'
+
+const SERVERS = ['undercity', 'dragonveil']
 
 // ── SessionRaidSelect ─────────────────────────────────────────────────────────
 
@@ -110,9 +113,19 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     minLevel:          1,
     maxPlayers:        '',
     maxCharsPerPerson: 1,
+    durationH:         1,
+    durationMin:       0,
+    server:            '',
     comments:          '',
     teams:             [t('session.defaultTeam')],
   })
+
+  // Pré-remplir le serveur depuis le profil du leader
+  useEffect(() => {
+    if (!user?.id || !hasSupabase) return
+    supabase.from('profiles').select('server').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.server) setForm(f => ({ ...f, server: data.server })) })
+  }, [user?.id])
   const [editingTeamIdx, setEditingTeamIdx] = useState(null)
   const [showSaveConfig, setShowSaveConfig] = useState(false)
   const [configName,     setConfigName]     = useState('')
@@ -164,6 +177,8 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       raidSlug:          form.raidSlug,
       minLevel:          form.minLevel,
       maxCharsPerPerson: form.maxCharsPerPerson,
+      durationH:         form.durationH,
+      durationMin:       form.durationMin,
       comments:          form.comments,
       teams:             form.teams,
     }
@@ -182,6 +197,8 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       maxPlayers:        raid?.maxPlayers ?? 15,
       minLevel:          config.minLevel ?? raid?.minLevel ?? 1,
       maxCharsPerPerson: config.maxCharsPerPerson,
+      durationH:         config.durationH   ?? 1,
+      durationMin:       config.durationMin ?? 0,
       comments:          config.comments,
       teams:             config.teams ?? [t('session.defaultTeam')],
     }))
@@ -198,6 +215,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     setError('')
     if (!form.raidSlug) return setError(t('session.errRaid'))
     if (!form.date)     return setError(t('session.errDate'))
+    if (!form.server)   return setError(t('session.errServerRequired'))
 
     const recent = [form.raidSlug, ...recentSlugs.filter(s => s !== form.raidSlug)].slice(0, 5)
     localStorage.setItem('nosbook_recent_raids', JSON.stringify(recent))
@@ -214,6 +232,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
         .single()
       leaderUsername = profile?.username ?? null
     }
+    const durationMinutes = Number(form.durationH) * 60 + Number(form.durationMin)
     const { error: dbErr } = await supabase.from('raid_sessions').insert({
       raid_slug:            form.raidSlug,
       date:                 form.date,
@@ -221,6 +240,8 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       min_level:            Number(form.minLevel),
       max_players:          Number(form.maxPlayers),
       max_chars_per_person: Number(form.maxCharsPerPerson),
+      duration_minutes:     durationMinutes > 0 ? durationMinutes : null,
+      server:               form.server || null,
       comments:             form.comments.trim() || null,
       teams:                form.teams,
       leader_id:            user?.id ?? null,
@@ -291,8 +312,26 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
             />
           </div>
 
-          {/* Date + Heure */}
-          <div className={styles.fieldRow}>
+          {/* Serveur */}
+          <div className={styles.field}>
+            <label className={styles.fieldLabel}>{t('session.formServer')}</label>
+            <div className={styles.serverBtns}>
+              {SERVERS.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`${styles.serverBtn} ${form.server === s ? styles.serverBtnActive : ''}`}
+                  style={{ '--srv-color': SERVER_COLORS[s] }}
+                  onClick={() => setField('server', s)}
+                >
+                  {t(`raids.server.${s}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date + Heure + Durée */}
+          <div className={styles.fieldRow3}>
             <div className={styles.field}>
               <label className={styles.fieldLabel}>{t('session.formDate')}</label>
               <input
@@ -310,6 +349,27 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
                 value={form.time}
                 onChange={e => setField('time', e.target.value)}
               />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel}>{t('session.formDuration')}</label>
+              <div className={styles.durationRow}>
+                <input
+                  type="number"
+                  className={`${styles.fieldInput} ${styles.durationInput}`}
+                  value={form.durationH}
+                  min={0} max={23}
+                  onChange={e => setField('durationH', e.target.value)}
+                />
+                <span className={styles.durationUnit}>{t('session.durationH')}</span>
+                <input
+                  type="number"
+                  className={`${styles.fieldInput} ${styles.durationInput}`}
+                  value={form.durationMin}
+                  min={0} max={55} step={5}
+                  onChange={e => setField('durationMin', e.target.value)}
+                />
+                <span className={styles.durationUnit}>{t('session.durationMin')}</span>
+              </div>
             </div>
           </div>
 
@@ -479,6 +539,14 @@ function SessionCard({ session, lang, t }) {
         )}
       </div>
       <div className={styles.sessionCardMeta}>
+        {session.server && (
+          <span
+            className={styles.sessionMetaBadge}
+            style={{ color: SERVER_COLORS[session.server], borderColor: SERVER_COLORS[session.server] + '55' }}
+          >
+            ● {t(`raids.server.${session.server}`)}
+          </span>
+        )}
         {session.leader_username && (
           <span className={styles.sessionMetaBadge}>
             👑 {session.leader_username}
@@ -516,6 +584,11 @@ export default function RaidSessionsPage() {
   const [loading,     setLoading]     = useState(true)
   const [showCreate,  setShowCreate]  = useState(false)
 
+  // Filtres
+  const [filterServer, setFilterServer] = useState('')      // '' = tous
+  const [filterAct,    setFilterAct]    = useState('')      // act key ou ''
+  const [filterDate,   setFilterDate]   = useState('')      // date ISO ou ''
+
   const loadSessions = () => {
     if (!hasSupabase) { setLoading(false); return }
     setLoading(true)
@@ -531,6 +604,18 @@ export default function RaidSessionsPage() {
 
   useEffect(() => { loadSessions() }, [])
 
+  // Filtrage côté client (simple et sans requête supplémentaire)
+  const actSlugs = filterAct
+    ? new Set(RAIDS.filter(r => r.act === filterAct).map(r => r.slug))
+    : null
+
+  const filtered = sessions.filter(s => {
+    if (filterServer && s.server !== filterServer) return false
+    if (actSlugs    && !actSlugs.has(s.raid_slug)) return false
+    if (filterDate  && s.date !== filterDate)       return false
+    return true
+  })
+
   return (
     <div className={styles.page}>
 
@@ -541,8 +626,57 @@ export default function RaidSessionsPage() {
         <p className={styles.sub}>{t('session.sub')}</p>
       </section>
 
-      {/* ── Contrôles ── */}
+      {/* ── Contrôles + Filtres ── */}
       <div className={styles.controls}>
+        <div className={styles.filters}>
+          {/* Filtre serveur */}
+          <div className={styles.filterGroup}>
+            <button
+              className={`${styles.filterBtn} ${!filterServer ? styles.filterBtnActive : ''}`}
+              onClick={() => setFilterServer('')}
+            >{t('session.filterAll')}</button>
+            {SERVERS.map(s => (
+              <button
+                key={s}
+                className={`${styles.filterBtn} ${filterServer === s ? styles.filterBtnActive : ''}`}
+                style={filterServer === s ? { '--f-color': SERVER_COLORS[s] } : {}}
+                onClick={() => setFilterServer(v => v === s ? '' : s)}
+              >
+                <span style={{ color: SERVER_COLORS[s] }}>●</span> {t(`raids.server.${s}`)}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtre acte */}
+          <div className={styles.filterGroup}>
+            <button
+              className={`${styles.filterBtn} ${!filterAct ? styles.filterBtnActive : ''}`}
+              onClick={() => setFilterAct('')}
+            >{t('session.filterAll')}</button>
+            {RAID_CATEGORIES.map(cat => (
+              <button
+                key={cat.key}
+                className={`${styles.filterBtn} ${filterAct === cat.key ? styles.filterBtnActive : ''}`}
+                onClick={() => setFilterAct(v => v === cat.key ? '' : cat.key)}
+              >{cat[lang] ?? cat.en}</button>
+            ))}
+          </div>
+
+          {/* Filtre date */}
+          <div className={styles.filterGroup}>
+            <input
+              type="date"
+              className={styles.filterDateInput}
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              title={t('session.filterByDate')}
+            />
+            {filterDate && (
+              <button className={styles.filterBtn} onClick={() => setFilterDate('')}>✕</button>
+            )}
+          </div>
+        </div>
+
         {isAuthenticated ? (
           <Button variant="solid" size="sm" onClick={() => setShowCreate(true)}>
             + {t('session.createBtn')}
@@ -565,8 +699,13 @@ export default function RaidSessionsPage() {
             <span className={styles.emptyIcon}>🏰</span>
             <span>{t('session.empty')}</span>
           </div>
+        ) : filtered.length === 0 && (filterServer || filterAct || filterDate) ? (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>🔍</span>
+            <span>{t('raids.noResults')}</span>
+          </div>
         ) : (
-          sessions.map(s => (
+          filtered.map(s => (
             <SessionCard key={s.id} session={s} lang={lang} t={t} />
           ))
         )}

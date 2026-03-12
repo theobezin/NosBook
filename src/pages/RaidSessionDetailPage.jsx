@@ -20,9 +20,21 @@ function fmtDate(dateStr, lang) {
 
 // ── SessionHeader ─────────────────────────────────────────────────────────────
 
+function computeEndTime(timeStr, durationMinutes) {
+  if (!timeStr || !durationMinutes) return null
+  const [h, m] = timeStr.split(':').map(Number)
+  const total  = h * 60 + m + durationMinutes
+  const eh = Math.floor(total / 60) % 24
+  const em = total % 60
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+}
+
+const SERVER_COLORS_DETAIL = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
+
 function SessionHeader({ session, raid, lang, t, regCount }) {
-  const dateStr = fmtDate(session.date, lang)
-  const timeStr = session.time ? session.time.slice(0, 5) : t('session.noTime')
+  const dateStr  = fmtDate(session.date, lang)
+  const timeStr  = session.time ? session.time.slice(0, 5) : t('session.noTime')
+  const endTime  = computeEndTime(session.time, session.duration_minutes)
 
   return (
     <div className={styles.header} style={{ '--raid-color': raid.color }}>
@@ -35,13 +47,24 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
         />
         <div className={styles.headerInfo}>
           <h1 className={styles.headerTitle}>{raid[lang] ?? raid.en}</h1>
-          <p className={styles.headerDate}>{dateStr} · {timeStr}</p>
+          <p className={styles.headerDate}>
+            {dateStr} · {timeStr}
+            {endTime && <span className={styles.headerEndTime}> → {endTime}</span>}
+          </p>
           {session.comments && (
             <p className={styles.headerComments}>{session.comments}</p>
           )}
         </div>
       </div>
       <div className={styles.headerBadges}>
+        {session.server && (
+          <span className={styles.badge} style={{ color: SERVER_COLORS_DETAIL[session.server], borderColor: SERVER_COLORS_DETAIL[session.server] + '55' }}>
+            ● {session.server === 'undercity' ? 'Undercity' : 'Dragonveil'}
+          </span>
+        )}
+        {session.leader_username && (
+          <span className={styles.badge}>👑 {session.leader_username}</span>
+        )}
         <span className={styles.badge}>⚔️ {t('detail.minLevel')} {session.min_level}</span>
         <span className={styles.badge}>👥 {regCount} / {session.max_players} {t('detail.players')}</span>
         <span className={styles.badge}>🎭 {session.max_chars_per_person} {t('session.charsPerPlayer')}</span>
@@ -77,14 +100,6 @@ function CharacterCard({
         <span className={styles.charLevel}>
           Lv.{snap.level}{snap.heroLevel > 0 ? ` · H${snap.heroLevel}` : ''}
         </span>
-        {reg.sp_card_name && (
-          <span className={styles.charSP}>
-            {reg.sp_card_icon && (
-              <img src={reg.sp_card_icon} alt="" className={styles.charSPIcon} />
-            )}
-            {reg.sp_card_name}
-          </span>
-        )}
       </div>
 
       {isLeader && reg.team_name && (
@@ -292,7 +307,57 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
     if (!hasSupabase) { onSuccess(); return }
 
     setSubmitting(true)
-    const { data: profile } = await supabase
+
+    // ── Guard 1 : serveur ─────────────────────────────────────────
+    if (session.server) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, server')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.server) {
+        setSubmitting(false)
+        return setError(t('session.errNoServer'))
+      }
+      if (profile.server !== session.server) {
+        setSubmitting(false)
+        return setError(
+          t('session.errServer').replace('{server}', profile.server === 'undercity' ? 'Undercity' : 'Dragonveil')
+        )
+      }
+    }
+
+    // ── Guard 2 : chevauchement de sessions ───────────────────────
+    if (session.time && session.duration_minutes) {
+      const { data: otherRegs } = await supabase
+        .from('raid_session_registrations')
+        .select('session_id, raid_sessions(date, time, duration_minutes)')
+        .eq('player_id', user.id)
+        .neq('session_id', session.id)
+
+      if (otherRegs?.length) {
+        const [sh, sm]    = session.time.split(':').map(Number)
+        const sessionStart = sh * 60 + sm
+        const sessionEnd   = sessionStart + session.duration_minutes
+
+        const overlap = otherRegs.some(r => {
+          const other = r.raid_sessions
+          if (!other?.date || other.date !== session.date || !other.time || !other.duration_minutes) return false
+          const [oh, om] = other.time.split(':').map(Number)
+          const otherStart = oh * 60 + om
+          const otherEnd   = otherStart + other.duration_minutes
+          return sessionStart < otherEnd && sessionEnd > otherStart
+        })
+        if (overlap) {
+          setSubmitting(false)
+          return setError(t('session.errOverlap'))
+        }
+      }
+    }
+
+    // ── Inscription ────────────────────────────────────────────────
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('username')
       .eq('id', user.id)
@@ -301,7 +366,7 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
     const rows = selected.map(char => ({
       session_id:         session.id,
       player_id:          user.id,
-      player_username:    profile?.username ?? null,
+      player_username:    profileData?.username ?? null,
       character_id:       char.id,
       character_snapshot: {
         name:      char.name,
@@ -478,6 +543,148 @@ function ProfileModal({ reg, onClose, t }) {
   )
 }
 
+// ── MessagesPanel ─────────────────────────────────────────────────────────────
+
+function MessagesPanel({ sessionId, session, regs, isLeader, user, profile, t }) {
+  const [messages,   setMessages]   = useState([])
+  const [text,       setText]       = useState('')
+  const [sending,    setSending]    = useState(false)
+  const [error,      setError]      = useState('')
+  const bottomRef = useRef(null)
+
+  // Chargement initial
+  useEffect(() => {
+    if (!hasSupabase) return
+    supabase
+      .from('raid_session_messages')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setMessages(data ?? []))
+  }, [sessionId])
+
+  // Realtime
+  useEffect(() => {
+    if (!hasSupabase) return
+    const ch = supabase
+      .channel(`session-msgs-${sessionId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'raid_session_messages',
+        filter: `session_id=eq.${sessionId}`,
+      }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setMessages(prev => [...prev, payload.new])
+        } else if (payload.eventType === 'DELETE') {
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+    return () => supabase.removeChannel(ch)
+  }, [sessionId])
+
+  // Scroll auto au dernier message
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const handleSend = async () => {
+    const content = text.trim()
+    if (!content) return setError(t('detail.messageErrEmpty'))
+    setError('')
+    setSending(true)
+
+    const { data: msg, error: msgErr } = await supabase
+      .from('raid_session_messages')
+      .insert({
+        session_id:      sessionId,
+        author_id:       user.id,
+        author_username: profile?.username ?? null,
+        content,
+      })
+      .select()
+      .single()
+
+    if (msgErr) { setSending(false); return setError(t('detail.messageErrSend')) }
+
+    // Notifier tous les joueurs inscrits (sauf le leader lui-même)
+    const targets = [...new Set(regs.map(r => r.player_id))].filter(id => id !== user.id)
+    if (targets.length > 0) {
+      const raidName = session.raid_slug // on passe le slug, la page notif affichera mieux
+      await supabase.from('notifications').insert(
+        targets.map(uid => ({
+          user_id:           uid,
+          type:              'raid_message',
+          session_id:        sessionId,
+          session_raid_name: raidName,
+          content_preview:   content.slice(0, 120),
+        }))
+      )
+    }
+
+    setText('')
+    setSending(false)
+  }
+
+  const handleDelete = async (id) => {
+    setMessages(prev => prev.filter(m => m.id !== id))
+    await supabase.from('raid_session_messages').delete().eq('id', id)
+  }
+
+  return (
+    <div className={styles.messagesPanel}>
+      <h3 className={styles.messagesPanelTitle}>💬 {t('detail.messagesTitle')}</h3>
+
+      <div className={styles.messagesList}>
+        {messages.length === 0 ? (
+          <p className={styles.messagesEmpty}>{t('detail.messagesEmpty')}</p>
+        ) : (
+          messages.map(msg => (
+            <div key={msg.id} className={styles.messageRow}>
+              <div className={styles.messageMeta}>
+                <span className={styles.messageAuthor}>👑 {msg.author_username ?? '?'}</span>
+                <span className={styles.messageTime}>
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {' · '}
+                  {new Date(msg.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+                </span>
+                {isLeader && (
+                  <button
+                    className={styles.messageDeleteBtn}
+                    onClick={() => handleDelete(msg.id)}
+                    title={t('detail.messageDelete')}
+                  >✕</button>
+                )}
+              </div>
+              <p className={styles.messageContent}>{msg.content}</p>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {isLeader && (
+        <div className={styles.messageCompose}>
+          <textarea
+            className={styles.messageInput}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder={t('detail.messagePlaceholder')}
+            rows={3}
+            onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleSend() }}
+          />
+          {error && <p className={styles.messageError}>{error}</p>}
+          <div className={styles.messageActions}>
+            <span className={styles.messageHint}>Ctrl+Entrée pour envoyer</span>
+            <Button variant="solid" size="sm" onClick={handleSend} disabled={sending}>
+              {sending ? t('detail.messageSending') : t('detail.messageSend')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── RaidSessionDetailPage ─────────────────────────────────────────────────────
 
 export default function RaidSessionDetailPage() {
@@ -488,6 +695,7 @@ export default function RaidSessionDetailPage() {
 
   const [session,     setSession]     = useState(null)
   const [regs,        setRegs]        = useState([])
+  const [profile,     setProfile]     = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [showRegister, setShowRegister] = useState(false)
   const [spTarget,    setSPTarget]    = useState(null)   // reg for SP picker
@@ -511,6 +719,13 @@ export default function RaidSessionDetailPage() {
     setRegs(regData ?? [])
     setLoading(false)
   }, [sessionId])
+
+  // Charger le profil du user courant (pour le username dans les messages)
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) return
+    supabase.from('profiles').select('username').eq('id', user.id).single()
+      .then(({ data }) => setProfile(data))
+  }, [user?.id])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -628,6 +843,17 @@ export default function RaidSessionDetailPage() {
           t={t}
         />
       </div>
+
+      {/* ── Messages du chef de raid ── */}
+      <MessagesPanel
+        sessionId={sessionId}
+        session={session}
+        regs={regs}
+        isLeader={isLeader}
+        user={user}
+        profile={profile}
+        t={t}
+      />
 
       {/* ── Modals ── */}
       {showRegister && (

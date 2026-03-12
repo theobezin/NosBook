@@ -34,7 +34,16 @@ create table if not exists public.raid_sessions (
   leader_id            uuid        references auth.users(id) on delete set null,
   -- Snapshot du pseudo au moment de la création (évite un JOIN sur profiles)
   -- ⚠️  Base existante : voir migrations/002_add_leader_username.sql
-  leader_username      text
+  leader_username      text,
+
+  -- Serveur de jeu (undercity | dragonveil)
+  -- Les joueurs ne peuvent rejoindre que les sessions de leur propre serveur.
+  -- ⚠️  Base existante : voir migrations/003_add_server_and_duration.sql
+  server               text        check (server in ('undercity', 'dragonveil')),
+
+  -- Durée estimée en minutes (optionnel). Utilisée pour afficher l'heure de fin
+  -- et pour détecter les chevauchements lors de l'inscription.
+  duration_minutes     smallint    check (duration_minutes > 0)
 );
 
 -- ── Index ────────────────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import RaidSessionsPage      from '@/pages/RaidSessionsPage'
 import RaidSessionDetailPage from '@/pages/RaidSessionDetailPage'
 import AdminRaidsPage        from '@/pages/AdminRaidsPage'
 import MySubmissionsPage    from '@/pages/MySubmissionsPage'
+import NotificationsPage    from '@/pages/NotificationsPage'
 import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/raids/:sessionId" element={withLayout(RaidSessionDetailPage)} />
           <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
           <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
+          <Route path="/notifications"   element={withLayout(NotificationsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
           <Route path="*"                element={withLayout(NotFoundPage)}      />
         </Routes>
