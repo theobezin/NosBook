@@ -27,7 +27,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
   // Current best offer (client-side — used for minimum bid validation)
   const currentBest = useMemo(() => bestOffer(listing.offers ?? []), [listing.offers])
 
-  const basePrice = listing.base_price ?? 0
+  const basePrice = listing.basePrice ?? listing.base_price ?? 0
 
   // Effective minimum = max(base_price, currentBest+1, minPrice+1)
   const effectiveMin = useMemo(() => Math.max(
