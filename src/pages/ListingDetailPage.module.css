@@ -180,6 +180,8 @@
 }
 
 .sellerName { font-size: 1rem; font-weight: 700; color: #c9a84c; margin: 0; }
+.sellerLink { color: #c9a84c; text-decoration: none; font-weight: 700; }
+.sellerLink:hover { text-decoration: underline; }
 .discord    { font-size: 0.78rem; color: #7c83e0; margin: 0; }
 
 .reputation { display: flex; gap: 10px; }
@@ -319,7 +321,9 @@
   flex-wrap: wrap;
 }
 
-.offerUser  { font-size: 0.88rem; font-weight: 700; color: #60a5fa; }
+.offerUser     { font-size: 0.88rem; font-weight: 700; color: #60a5fa; }
+.offerUserLink { font-size: 0.88rem; font-weight: 700; color: #60a5fa; text-decoration: none; }
+.offerUserLink:hover { text-decoration: underline; }
 
 .offerStatusBadge {
   font-size: 0.65rem;

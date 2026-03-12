@@ -111,7 +111,10 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
 
       {/* Offer header: username + status */}
       <div className={styles.offerHeader}>
-        <span className={styles.offerUser}>{username}</span>
+        {offer.profile?.username
+          ? <Link to={`/players/${offer.profile.username}`} className={styles.offerUserLink}>{username}</Link>
+          : <span className={styles.offerUser}>{username}</span>
+        }
         <span className={`${styles.offerStatusBadge} ${OFFER_STATUS_STYLE[offer.status] ?? ''}`}>
           {t(OFFER_STATUS_KEY[offer.status] ?? 'market.offerActive')}
         </span>
@@ -422,7 +425,12 @@ export default function ListingDetailPage() {
           {/* Seller info */}
           <div className={styles.sellerCard}>
             <p className={styles.sidebarTitle}>{t('market.postedBy')}</p>
-            <p className={styles.sellerName}>{listing.profile?.username ?? '—'}</p>
+            <p className={styles.sellerName}>
+              {listing.profile?.username
+                ? <Link to={`/players/${listing.profile.username}`} className={styles.sellerLink}>{listing.profile.username}</Link>
+                : '—'
+              }
+            </p>
             {listing.profile?.discord_handle && (
               <p className={styles.discord}>
                 💬 {listing.profile.discord_handle}

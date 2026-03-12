@@ -391,7 +391,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
           <span className={styles.sellerName}>
             {t('market.postedBy')}{' '}
             {listing.profile?.username ? (
-              <Link to={`/profile/${listing.profile.username}`} className={styles.sellerLink}>
+              <Link to={`/players/${listing.profile.username}`} className={styles.sellerLink}>
                 <strong>{listing.profile.username}</strong>
               </Link>
             ) : (
