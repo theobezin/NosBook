@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
@@ -205,6 +205,15 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     if (!hasSupabase) { setSuccess(true); return }
 
     setSubmitting(true)
+    let leaderUsername = null
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single()
+      leaderUsername = profile?.username ?? null
+    }
     const { error: dbErr } = await supabase.from('raid_sessions').insert({
       raid_slug:            form.raidSlug,
       date:                 form.date,
@@ -215,6 +224,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       comments:             form.comments.trim() || null,
       teams:                form.teams,
       leader_id:            user?.id ?? null,
+      leader_username:      leaderUsername,
     })
     setSubmitting(false)
 
@@ -434,6 +444,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
 // ── SessionCard ───────────────────────────────────────────────────────────────
 
 function SessionCard({ session, lang, t }) {
+  const navigate = useNavigate()
   const raid = RAIDS.find(r => r.slug === session.raid_slug)
   if (!raid) return null
 
@@ -446,7 +457,14 @@ function SessionCard({ session, lang, t }) {
     : t('session.noTime')
 
   return (
-    <div className={styles.sessionCard} style={{ '--raid-color': raid.color }}>
+    <div
+      className={`${styles.sessionCard} ${styles.sessionCardClickable}`}
+      style={{ '--raid-color': raid.color }}
+      onClick={() => navigate(`/raids/${session.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && navigate(`/raids/${session.id}`)}
+    >
       <div className={styles.sessionCardAccent} />
       <img
         src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -461,13 +479,29 @@ function SessionCard({ session, lang, t }) {
         )}
       </div>
       <div className={styles.sessionCardMeta}>
-        <span className={styles.sessionMetaBadge}>
-          👥 {session.max_players} {t('session.players')}
-        </span>
+        {session.leader_username && (
+          <span className={styles.sessionMetaBadge}>
+            👑 {session.leader_username}
+          </span>
+        )}
+        {(() => {
+          const registered = session.raid_session_registrations?.[0]?.count ?? 0
+          const spots = session.max_players - registered
+          return spots <= 0 ? (
+            <span className={`${styles.sessionMetaBadge} ${styles.sessionMetaBadgeFull}`}>
+              {t('session.spotsFull')}
+            </span>
+          ) : (
+            <span className={styles.sessionMetaBadge}>
+              🎫 {spots} {t('session.spotsLeft')}
+            </span>
+          )
+        })()}
         <span className={styles.sessionMetaBadge}>
           ⚔️ {session.max_chars_per_person} {t('session.charsPerPlayer')}
         </span>
       </div>
+      <span className={styles.sessionCardArrow}>›</span>
     </div>
   )
 }
@@ -488,7 +522,7 @@ export default function RaidSessionsPage() {
     const today = new Date().toISOString().slice(0, 10)
     supabase
       .from('raid_sessions')
-      .select('*')
+      .select('*, raid_session_registrations(count)')
       .gte('date', today)
       .order('date', { ascending: true })
       .then(({ data }) => setSessions(data ?? []))

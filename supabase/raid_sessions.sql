@@ -26,7 +26,8 @@ create table if not exists public.raid_sessions (
   comments             text,
 
   -- Leader (peut être null si pas encore authentifié)
-  leader_id            uuid        references auth.users(id) on delete set null
+  leader_id            uuid        references auth.users(id) on delete set null,
+  leader_username      text
 );
 
 -- ── Index ────────────────────────────────────────────────────────────────────
