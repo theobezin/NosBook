@@ -1,6 +1,11 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Table : raid_sessions
 -- Créée pour la fonctionnalité "Organisation de Raids" (côté Leader)
+--
+-- ⚠️  UTILISATION
+--   • Base vierge  → exécuter CE fichier en entier (crée la table + index + RLS)
+--   • Base existante → exécuter UNIQUEMENT les migrations dans supabase/migrations/
+--     dans l'ordre numérique (001, 002, …) pour ne pas écraser les données.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 create table if not exists public.raid_sessions (
@@ -25,8 +30,10 @@ create table if not exists public.raid_sessions (
   -- Informations libres
   comments             text,
 
-  -- Leader (peut être null si pas encore authentifié)
+  -- Leader
   leader_id            uuid        references auth.users(id) on delete set null,
+  -- Snapshot du pseudo au moment de la création (évite un JOIN sur profiles)
+  -- ⚠️  Base existante : voir migrations/002_add_leader_username.sql
   leader_username      text
 );
 
