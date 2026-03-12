@@ -342,22 +342,28 @@ function StatsPanel() {
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', true),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', false).gt('muted_until', now),
     ]).then(([sell, buy, pending, sold, banned, muted]) => {
-      const err = sell.error || buy.error || pending.error || sold.error || banned.error || muted.error
-      if (err) { setError(err.message); setLoading(false); return }
+      // Les requêtes market doivent toutes réussir
+      const criticalErr = sell.error || buy.error || pending.error || sold.error
+      if (criticalErr) {
+        setError(criticalErr.message || criticalErr.code || 'Erreur inconnue')
+        setLoading(false)
+        return
+      }
       setStats({
         activeListingsSell: sell.count ?? 0,
         activeListingsBuy:  buy.count  ?? 0,
         pendingReports:     pending.count ?? 0,
         completedThisMonth: sold.count ?? 0,
-        sanctionedUsers:    (banned.count ?? 0) + (muted.count ?? 0),
+        // Si la requête profiles échoue (RLS), on affiche 0 plutôt que de tout bloquer
+        sanctionedUsers:    (banned.error ? 0 : (banned.count ?? 0)) + (muted.error ? 0 : (muted.count ?? 0)),
       })
       setLoading(false)
-    }).catch(err => { setError(err.message); setLoading(false) })
+    }).catch(err => { setError(err?.message || 'Erreur inconnue'); setLoading(false) })
   }, [])
 
-  if (loading) return <div className={styles.centered}><Spinner size="md" /></div>
-  if (error)   return <p className={styles.errorMsg}>{error}</p>
-  if (!stats)  return null
+  if (loading)      return <div className={styles.centered}><Spinner size="md" /></div>
+  if (error != null && error !== '') return <p className={styles.errorMsg}>{error}</p>
+  if (!stats)       return null
 
   const items = [
     { num: stats.activeListingsSell, label: 'Annonces vente actives' },

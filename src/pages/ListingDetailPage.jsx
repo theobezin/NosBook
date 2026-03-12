@@ -75,7 +75,7 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
       onConfirm: async () => {
         setConfirmState(null)
         setLoading(true)
-        await cancelOffer(offerId)
+        await cancelOffer(offerId, listing.id)
         setLoading(false)
         onRefresh()
       },
@@ -496,7 +496,7 @@ export default function ListingDetailPage() {
                   onConfirm: async () => {
                     setConfirmState(null)
                     setActionLoading(true)
-                    await cancelOffer(myActiveOffer.id)
+                    await cancelOffer(myActiveOffer.id, listing?.id)
                     setActionLoading(false)
                     refetch()
                   },

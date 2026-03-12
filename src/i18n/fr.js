@@ -363,6 +363,11 @@ export default {
     confirmPending:   'Vente en attente de confirmation. Aucune nouvelle offre acceptée.',
     blockedFromListing:  'Tu es bloqué sur cette annonce.',
     offerWasRejected:    'Ton offre a été refusée par le vendeur.',
+    myOfferPending:      '⏳ Ton offre : {price} or',
+    myOfferPendingBuy:   '⏳ Ta réponse est en attente',
+    myOfferAcceptedBadge:'✅ Offre acceptée !',
+    myOfferRejectedBadge:'❌ Offre refusée — tu peux re-enchérir',
+    offerErrMinBase:     'Mise minimum : {base} or',
     // Create listing form
     createSell:       'Nouvelle vente',
     createBuy:        'Nouvelle recherche',

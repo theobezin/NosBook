@@ -329,13 +329,23 @@ export async function createOffer({ listingId, profileId, price, comment, imageU
  * Cancel an offer (by the offer owner).
  * Cancelled offers do NOT reset last_activity_at.
  */
-export async function cancelOffer(offerId) {
+export async function cancelOffer(offerId, listingId = null) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
   const { error } = await supabase
     .from('market_offers')
     .update({ status: OFFER_STATUS.CANCELLED })
     .eq('id', offerId)
-  return { error }
+  if (error) return { error }
+  // Si cet offre était l'offre acceptée (achat immédiat déclenché), réinitialise
+  // la confirmation en attente sur l'annonce
+  if (listingId) {
+    await supabase
+      .from('market_listings')
+      .update({ confirmation_pending: false, accepted_offer_id: null })
+      .eq('id', listingId)
+      .eq('accepted_offer_id', offerId)
+  }
+  return { error: null }
 }
 
 /**

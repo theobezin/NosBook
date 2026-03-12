@@ -186,7 +186,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
       onConfirm: async () => {
         setConfirmState(null)
         setActionLoading(true)
-        await cancelOffer(myOffer.id)
+        await cancelOffer(myOffer.id, listing.id)
         setActionLoading(false)
         onRefresh?.()
       },
@@ -372,15 +372,15 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
         )
         if (myOffer) {
           const label = isSell
-            ? `⏳ Votre offre : ${formatGold(myOffer.price)} or`
-            : '⏳ Votre réponse en attente'
+            ? t('market.myOfferPending').replace('{price}', formatGold(myOffer.price))
+            : t('market.myOfferPendingBuy')
           return <div className={styles.myOfferStatus}>{label}</div>
         }
         if (myAcceptedOffer) {
-          return <div className={`${styles.myOfferStatus} ${styles.myOfferAccepted}`}>✅ Offre acceptée !</div>
+          return <div className={`${styles.myOfferStatus} ${styles.myOfferAccepted}`}>{t('market.myOfferAcceptedBadge')}</div>
         }
         if (myRejectedOfferBadge) {
-          return <div className={`${styles.myOfferStatus} ${styles.myOfferRejected}`}>❌ Offre refusée — vous pouvez re-enchérir</div>
+          return <div className={`${styles.myOfferStatus} ${styles.myOfferRejected}`}>{t('market.myOfferRejectedBadge')}</div>
         }
         return null
       })()}
@@ -446,7 +446,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
             <span className={styles.restrictedMsg}>{restrictionMsg}</span>
           )}
 
-          {/* Offer rejected — cannot re-bid */}
+          {/* Offer rejected — buyer can re-bid above the rejected price */}
           {!isOwner && !isBlocked && !isSold && !viewerRestricted && myRejectedOffer && (
             <span className={styles.restrictedMsg}>{t('market.offerWasRejected')}</span>
           )}

@@ -363,6 +363,11 @@ export default {
     confirmPending:   'Sale pending confirmation. No new offers accepted.',
     blockedFromListing:  'You are blocked from this listing.',
     offerWasRejected:    'Your offer was declined by the seller.',
+    myOfferPending:      '⏳ Your offer: {price} gold',
+    myOfferPendingBuy:   '⏳ Your response is pending',
+    myOfferAcceptedBadge:'✅ Offer accepted!',
+    myOfferRejectedBadge:'❌ Offer declined — you can re-bid',
+    offerErrMinBase:     'Minimum bid: {base} gold',
     // Create listing form
     createSell:       'New Listing',
     createBuy:        'New Wanted',

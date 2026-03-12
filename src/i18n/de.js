@@ -363,6 +363,11 @@ export default {
     confirmPending:   'Verkauf wartet auf Bestätigung. Keine neuen Angebote möglich.',
     blockedFromListing:  'Du bist von dieser Anzeige gesperrt.',
     offerWasRejected:    'Dein Angebot wurde vom Verkäufer abgelehnt.',
+    myOfferPending:      '⏳ Dein Angebot: {price} Gold',
+    myOfferPendingBuy:   '⏳ Deine Antwort wartet',
+    myOfferAcceptedBadge:'✅ Angebot akzeptiert!',
+    myOfferRejectedBadge:'❌ Angebot abgelehnt — du kannst neu bieten',
+    offerErrMinBase:     'Mindestgebot: {base} Gold',
     // Create listing form
     createSell:       'Neues Angebot',
     createBuy:        'Neues Gesuch',

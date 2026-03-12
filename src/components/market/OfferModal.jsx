@@ -69,7 +69,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
       }
       // Must be at least base_price
       if (basePrice > 0 && parsed < basePrice) {
-        setError(`Mise minimum : ${formatGold(basePrice)} or`)
+        setError(t('market.offerErrMinBase').replace('{base}', formatGold(basePrice)))
         return
       }
       // Must strictly exceed previous rejected offer (if any)
