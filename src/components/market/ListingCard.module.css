@@ -1,0 +1,521 @@
+.card {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: #c9a84c55;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.cardPending {
+  border-color: #e6b430aa;
+}
+
+.cardSold {
+  opacity: 0.65;
+  border-color: #3a3d48;
+}
+
+/* ── Header ─────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.typeBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.typeSell { background: rgba(201,168,76,0.15); color: #c9a84c; }
+.typeBuy  { background: rgba(96,165,250,0.15); color: #60a5fa; }
+
+.serverBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--server-color) 15%, transparent);
+  color: var(--server-color);
+  border: 1px solid color-mix(in srgb, var(--server-color) 30%, transparent);
+}
+
+.expiry { display: flex; align-items: center; gap: 6px; }
+
+.expiryText {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.soldBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(107,114,128,0.2);
+  color: #9ca3af;
+}
+
+/* ── Body ───────────────────────────────────────── */
+.body { display: flex; flex-direction: column; gap: 4px; }
+
+.titleLink {
+  text-decoration: none;
+  display: block;
+}
+
+.titleLink:hover .title {
+  color: #c9a84c;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8e8e8;
+  margin: 0;
+  line-height: 1.3;
+  transition: color 0.2s;
+}
+
+.desc {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+/* ── Tags ───────────────────────────────────────── */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagPill {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #252836;
+  color: #9ca3af;
+  border: 1px solid #2e3144;
+  white-space: nowrap;
+}
+
+/* ── Images ─────────────────────────────────────── */
+.images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.thumb {
+  width: 270px;
+  height: 270px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #2a2d38;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.thumb:hover { opacity: 0.85; }
+
+/* ── Pricing ────────────────────────────────────── */
+.pricing {
+  background: #141620;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceLabel { font-size: 0.75rem; color: #6b7280; }
+
+.priceValue { font-size: 0.82rem; color: #9ca3af; font-weight: 500; }
+.buyoutValue { color: #c9a84c; }
+.bestValue  { color: #4ade80; font-weight: 700; }
+.priceRowSold { margin-top: 2px; }
+.soldPriceValue { color: #4ade80; font-weight: 800; font-size: 0.95rem; }
+
+.offerCount {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 2px;
+}
+
+/* ── Pending banner ─────────────────────────────── */
+.pendingBanner {
+  background: rgba(230,180,48,0.08);
+  border: 1px solid rgba(230,180,48,0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pendingBanner p { margin: 0; font-size: 0.8rem; color: #e6b430; }
+
+.pendingActions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btnConfirm {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #22c55e;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.btnConfirm:hover { opacity: 0.85; }
+.btnConfirm:disabled { opacity: 0.5; cursor: default; }
+
+.btnReject {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #ef444488;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnReject:hover { background: rgba(239,68,68,0.1); }
+.btnReject:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Offer list (owner) ─────────────────────────── */
+.offerList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid #2a2d38;
+  padding-top: 8px;
+}
+
+.offerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  background: #141620;
+  padding: 5px 8px;
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.offerProfile { color: #60a5fa; font-weight: 600; flex: 1 0 auto; }
+.offerPrice   { color: #4ade80; font-weight: 700; white-space: nowrap; }
+.offerComment { color: #9ca3af; font-style: italic; font-size: 0.72rem; flex: 2; }
+
+.btnAcceptOffer {
+  background: #22c55e22;
+  border: 1px solid #22c55e66;
+  color: #22c55e;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.btnAcceptOffer:hover { background: #22c55e44; }
+.btnAcceptOffer:disabled { opacity: 0.5; cursor: default; }
+
+.btnRejectOfferMini {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #ef4444;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.btnRejectOfferMini:hover { background: rgba(239,68,68,0.18); }
+.btnRejectOfferMini:disabled { opacity: 0.5; cursor: default; }
+
+.offerRowActions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.btnReportOffer {
+  background: transparent;
+  border: 1px solid #ef444422;
+  color: #ef444499;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btnReportOffer:hover {
+  color: #ef4444;
+  background: rgba(239,68,68,0.1);
+  border-color: #ef444466;
+}
+
+/* ── Footer ─────────────────────────────────────── */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid #2a2d38;
+  padding-top: 10px;
+}
+
+.seller { display: flex; flex-direction: column; gap: 2px; }
+
+.sellerName { font-size: 0.75rem; color: #6b7280; }
+.sellerName strong { color: #c9a84c; }
+
+.discord { font-size: 0.72rem; color: #7c83e0; }
+
+.reputation { font-size: 0.7rem; color: #6b7280; }
+
+.repBadge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: rgba(74,222,128,0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74,222,128,0.25);
+  vertical-align: middle;
+}
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.btnOffer {
+  font-size: 0.78rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #c9a84c, #b8902a);
+  color: #0d0f14;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnOffer:hover { opacity: 0.85; }
+
+.btnArchive {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #3a3d48;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btnArchive:hover { border-color: #6b7280; color: #9ca3af; }
+.btnArchive:disabled { opacity: 0.5; cursor: default; }
+
+.btnFollow {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #2e3144;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.btnFollow:hover {
+  border-color: #c9a84c55;
+  color: #c9a84c;
+}
+
+.btnFollowActive {
+  border-color: #c9a84c88;
+  background: rgba(201,168,76,0.1);
+  color: #c9a84c;
+}
+
+.btnReport {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #ef444455;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnReport:hover { background: rgba(239,68,68,0.08); }
+
+.btnShare {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #2e3144;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btnShare:hover  { border-color: #4b5563; color: #9ca3af; }
+.btnShareCopied  { border-color: #22c55e88 !important; color: #22c55e !important; }
+
+.blockedMsg {
+  font-size: 0.72rem;
+  color: #ef4444;
+  font-style: italic;
+}
+
+.restrictedMsg {
+  font-size: 0.72rem;
+  color: #e6b430;
+  font-style: italic;
+}
+
+.myOfferBadge {
+  font-size: 0.72rem;
+  color: #4ade80;
+  background: rgba(74,222,128,0.08);
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(74,222,128,0.2);
+}
+
+.btnBump {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(201,168,76,0.4);
+  background: transparent;
+  color: #c9a84c;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btnBump:hover { background: rgba(201,168,76,0.1); border-color: #c9a84c; }
+.btnBump:disabled { opacity: 0.5; cursor: default; }
+
+.bumpCooldown {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.bumpBar {
+  font-size: 0.7rem;
+  color: #6b7280;
+  font-style: italic;
+  text-align: right;
+  margin: 0;
+  padding: 0 2px 2px;
+}
+
+.offerIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 0 auto;
+}
+
+.offerDiscord {
+  font-size: 0.68rem;
+  color: #7c83e0;
+}
+
+.btnCancelOffer {
+  font-size: 0.72rem;
+  color: #ef4444;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #ef444455;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btnCancelOffer:hover { background: rgba(239,68,68,0.08); }
+.btnCancelOffer:disabled { opacity: 0.5; cursor: default; }
+
+/* ── My offer status badge ──────────────────────── */
+.myOfferStatus {
+  font-size: 0.72rem;
+  color: #60a5fa;
+  background: rgba(96,165,250,0.08);
+  border: 1px solid rgba(96,165,250,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+
+.myOfferAccepted {
+  color: #4ade80;
+  background: rgba(74,222,128,0.08);
+  border-color: rgba(74,222,128,0.2);
+}
+
+.myOfferRejected {
+  color: #f87171;
+  background: rgba(248,113,113,0.08);
+  border-color: rgba(248,113,113,0.2);
+}
+
+/* ── Seller link ────────────────────────────────── */
+.sellerLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.sellerLink:hover strong {
+  text-decoration: underline;
+  text-decoration-color: #c9a84c88;
+}

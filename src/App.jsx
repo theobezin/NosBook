@@ -1,14 +1,23 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/hooks/useAuth'
 import { LangProvider } from '@/i18n'
-import PageLayout   from '@/components/layout/PageLayout'
+import PageLayout        from '@/components/layout/PageLayout'
 import HubPage           from '@/pages/HubPage'
 import ProfilePage       from '@/pages/ProfilePage'
 import PlayersPage       from '@/pages/PlayersPage'
 import PlayerProfilePage from '@/pages/PlayerProfilePage'
-import AuthPage          from '@/pages/AuthPage'
+import RaidsPage         from '@/pages/RaidsPage'
+import RaidSessionsPage      from '@/pages/RaidSessionsPage'
+import RaidSessionDetailPage from '@/pages/RaidSessionDetailPage'
+import AdminRaidsPage        from '@/pages/AdminRaidsPage'
+import MySubmissionsPage    from '@/pages/MySubmissionsPage'
+import NotificationsPage    from '@/pages/NotificationsPage'
+import AuthPage             from '@/pages/AuthPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
 import PlannerPage       from '@/pages/PlannerPage'
+import MarketPage          from '@/pages/MarketPage'
+import ListingDetailPage  from '@/pages/ListingDetailPage'
+import AdminMarketPage    from '@/pages/AdminMarketPage'
 
 function withLayout(Component) {
   return (
@@ -28,9 +37,18 @@ export default function App() {
           <Route path="/profile"         element={withLayout(ProfilePage)}       />
           <Route path="/players"         element={withLayout(PlayersPage)}       />
           <Route path="/players/:name"   element={withLayout(PlayerProfilePage)} />
+          <Route path="/records"         element={withLayout(RaidsPage)}         />
+          <Route path="/raids"           element={withLayout(RaidSessionsPage)}       />
+          <Route path="/raids/:sessionId" element={withLayout(RaidSessionDetailPage)} />
+          <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
+          <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
+          <Route path="/notifications"   element={withLayout(NotificationsPage)} />
           <Route path="/auth"            element={withLayout(AuthPage)}          />
           <Route path="/planner"         element={<PageLayout fullWidth><PlannerPage /></PageLayout>} />
-          <Route path="*"                element={withLayout(NotFoundPage)}      />
+          <Route path="/market"            element={withLayout(MarketPage)}          />
+          <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
+          <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />
+          <Route path="*"               element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

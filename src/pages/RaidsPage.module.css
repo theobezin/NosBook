@@ -1,0 +1,967 @@
+/* ── Page ──────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem;
+  gap: 0.75rem;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  background: var(--gold-faint);
+  border: 1px solid var(--border);
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+}
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.1;
+}
+
+.sub {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  max-width: 440px;
+  line-height: 1.6;
+}
+
+.heroStats {
+  display: flex;
+  gap: 2.5rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.heroStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.heroStatVal {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+
+.heroStatKey {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+/* ── Controls ──────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Tabs serveur */
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.3rem;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabActive {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Barre de droite : search + bouton */
+.controlsRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.searchWrap:focus-within {
+  border-color: var(--gold-dim);
+}
+
+.searchIcon {
+  opacity: 0.5;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: 'Exo 2', sans-serif;
+  width: 160px;
+}
+
+.searchInput::placeholder {
+  color: var(--text-faint);
+}
+
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.1rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.clearBtn:hover { color: var(--text-dim); }
+
+/* ── Raid list ─────────────────────────────────────────────────── */
+.raidList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Category group ────────────────────────────────────────────── */
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.categoryTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  padding: 0 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.1rem;
+}
+
+/* ── Raid card ─────────────────────────────────────────────────── */
+.raidCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.raidCard:hover {
+  border-color: var(--border-hover);
+}
+
+.raidExpanded {
+  border-color: var(--gold-dim);
+}
+
+.raidEmpty {
+  opacity: 0.55;
+}
+
+.raidHeader {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.raidHeader:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.raidInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.raidName {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.raidBest {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.raidBest strong {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+.raidBestTeam {
+  color: var(--text-faint);
+}
+
+.raidNone {
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.raidChevron {
+  color: var(--text-faint);
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.22s ease;
+}
+
+/* ── Leaderboard ───────────────────────────────────────────────── */
+.lbWrap {
+  border-top: 1px solid var(--border);
+}
+
+.lbEmpty {
+  padding: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  text-align: center;
+  font-style: italic;
+}
+
+.lbRow {
+  display: grid;
+  grid-template-columns: 2.5rem 4.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  font-size: 0.83rem;
+  transition: background 0.15s;
+}
+
+.lbRow:last-child {
+  border-bottom: none;
+}
+
+.lbRow:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.lbRank {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.lbMedal {
+  font-size: 1.05rem;
+}
+
+.lbRankNum {
+  font-size: 0.76rem;
+  font-family: 'Cinzel', serif;
+  color: var(--text-faint);
+}
+
+.lbTime {
+  font-family: 'Cinzel', serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gold-light);
+  white-space: nowrap;
+}
+
+.lbTeam {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.82rem;
+}
+
+.lbRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.lbServerBadge {
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lbProof {
+  font-size: 1rem;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s, transform 0.15s;
+  display: inline-block;
+}
+
+.lbProof:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* ── Skeleton ──────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.raidSkeleton {
+  pointer-events: none;
+  height: 64px;
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--card-bg) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Empty state ───────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+/* ── Modal overlay ─────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.modalClose {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modalClose:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.modalBody {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.modalFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Champs de formulaire ──────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.fieldLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.fieldInput {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.85rem;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.fieldInput:focus {
+  border-color: var(--gold-dim);
+}
+
+.fieldInput::placeholder {
+  color: var(--text-faint);
+}
+
+.fieldSelect {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.85rem;
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.fieldSelect:focus {
+  border-color: var(--gold-dim);
+}
+
+.fieldSelect option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+.fieldError {
+  font-size: 0.82rem;
+  color: var(--hp);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+/* ── Boutons radio ─────────────────────────────────────────────── */
+.radioRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.radioOpt {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+  user-select: none;
+}
+
+.radioOpt:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.radioActive {
+  border-color: var(--rc, var(--gold-dim));
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.radioDot {
+  font-size: 0.65rem;
+}
+
+/* ── Équipe ────────────────────────────────────────────────────── */
+.teamList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.teamRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.removeBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.removeBtn:hover {
+  border-color: var(--hp);
+  color: var(--hp);
+}
+
+.addMemberBtn {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-faint);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.addMemberBtn:hover {
+  border-color: var(--gold-dim);
+  color: var(--text-dim);
+}
+
+/* ── Succès soumission ─────────────────────────────────────────── */
+.successBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.successIcon {
+  font-size: 2.8rem;
+}
+
+.successTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: var(--gold);
+}
+
+.successSub {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+/* ── RaidSelect (custom dropdown avec icônes) ──────────────────── */
+.raidSelect {
+  position: relative;
+  width: 100%;
+}
+
+.raidSelectTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+
+.raidSelectTrigger:hover,
+.raidSelectTrigger:focus {
+  border-color: var(--gold-dim);
+  outline: none;
+}
+
+.raidSelectIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.raidSelectName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raidSelectPlaceholder {
+  flex: 1;
+  color: var(--text-faint);
+}
+
+.raidSelectArrow {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.raidSelectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
+  z-index: 200;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.raidSelectGroupLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold-dim);
+  padding: 0.55rem 0.85rem 0.3rem;
+  border-top: 1px solid var(--border);
+}
+
+.raidSelectGroupLabel:first-child {
+  border-top: none;
+}
+
+.raidSelectOption {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.raidSelectOption:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.raidSelectOptionActive {
+  color: var(--gold-light);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Member autocomplete ────────────────────────────────────────── */
+.memberAutocomplete {
+  position: relative;
+  flex: 1;
+}
+
+.memberSuggestions {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.memberSuggestion {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.memberSuggestion:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+/* ── Lien membre dans leaderboard ──────────────────────────────── */
+.lbTeamLink {
+  color: var(--gold-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.lbTeamLink:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+/* ── Session modal extras ──────────────────────────────────────── */
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.fieldTextarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+/* Saved configs list */
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.configRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.75rem;
+}
+
+.configName {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.configActions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.configLoadBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--gold-dim);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.configLoadBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--gold-dim);
+}
+
+.configDeleteBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 0.65rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.configDeleteBtn:hover {
+  border-color: var(--hp);
+  color: var(--hp);
+}
+
+/* Save config row */
+.saveConfigRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.saveConfigTrigger {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-faint);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.saveConfigTrigger:hover {
+  border-color: var(--gold-dim);
+  color: var(--text-dim);
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controlsRight {
+    margin-left: 0;
+  }
+
+  .searchInput {
+    width: 100%;
+    flex: 1;
+  }
+
+  .lbRow {
+    grid-template-columns: 2rem 3.5rem 1fr auto;
+    gap: 0.45rem;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .lbTeam {
+    font-size: 0.76rem;
+  }
+}

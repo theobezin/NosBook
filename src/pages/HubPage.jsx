@@ -43,7 +43,6 @@ export default function HubPage() {
 
   useEffect(() => {
     setNewsLoading(true)
-    console.log('Fetching news from', feedUrl(lang))
     fetch(feedUrl(lang))
       .then(r => r.text())
       .then(xml => {
@@ -68,12 +67,11 @@ export default function HubPage() {
 
   const HUB_FEATURES = [
     { to: '/profile', icon: '⚔️', key: 'featureProfile', color: '#c9a84c', ready: true  },
-    { to: '/raids',   icon: '🏰', key: 'featureRaids',   color: '#e06c5a', ready: false },
-    { to: '/market',  icon: '💰', key: 'featureMarket',  color: '#4caf9a', ready: false },
+    { to: '/records', icon: '🏆', key: 'featureRanking', color: '#60a5fa', ready: true  },
+    { to: '/market',  icon: '💰', key: 'featureMarket',  color: '#4caf9a', ready: true },
     { to: '/guild',   icon: '🛡️', key: 'featureGuild',   color: '#7c6ce0', ready: false },
-    { to: '/ranking', icon: '🏆', key: 'featureRanking', color: '#60a5fa', ready: false },
+    { to: '/raids',   icon: '🏰', key: 'featureRaids',   color: '#e06c5a', ready: true  },
     { to: '/events',  icon: '🌟', key: 'featureEvents',  color: '#c084fc', ready: false },
-    // Todo : Brian faire fonctionnalité famille
   ]
 
   return (
@@ -114,7 +112,7 @@ export default function HubPage() {
         <div className={styles.featuresGrid}>
           {HUB_FEATURES.map(({ to, icon, key, color, ready }) => (
             <Link
-              key={to}
+              key={key}
               to={ready ? to : '#'}
               className={`${styles.featureCard} ${!ready ? styles.featureSoon : ''}`}
               style={{ '--accent': color }}

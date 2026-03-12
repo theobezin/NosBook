@@ -10,6 +10,7 @@ function fromDB(row) {
   return {
     id:          row.id,
     name:        row.name,
+    server:      row.server      ?? null,
     class:       row.class,
     level:       row.level,
     heroLevel:   row.hero_level,
@@ -27,6 +28,7 @@ function toDB(char, profileId, sortOrder) {
     profile_id:  profileId,
     sort_order:  sortOrder,
     name:        char.name,
+    server:      char.server     ?? null,
     class:       char.class,
     level:       char.level,
     hero_level:  char.heroLevel,
@@ -73,7 +75,7 @@ export function useCharacters() {
   }, [user?.id])
 
   const addCharacter = useCallback(async (char) => {
-    if (!user) return
+    if (!user) return { error: 'not_authenticated' }
 
     if (hasSupabase) {
       const { data, error } = await supabase
@@ -81,11 +83,14 @@ export function useCharacters() {
         .insert(toDB(char, user.id, characters.length))
         .select()
         .single()
-      if (!error && data) setCharacters(prev => [...prev, fromDB(data)])
+      if (error) return { error }
+      setCharacters(prev => [...prev, fromDB(data)])
+      return { error: null }
     } else {
       const next = [...characters, char]
       setCharacters(next)
       localStorage.setItem(lsKey(user.id), JSON.stringify(next))
+      return { error: null }
     }
   }, [user, characters])
 
