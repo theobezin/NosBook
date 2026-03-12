@@ -372,6 +372,7 @@ export default {
     myOfferAcceptedBadge:'✅ Offre acceptée !',
     myOfferRejectedBadge:'❌ Offre refusée — tu peux re-enchérir',
     offerErrMinBase:     'Mise minimum : {base} or',
+    offerCooldown:       'Anti-spam actif. Attends encore {min} min avant de re-enchérir sur cette annonce.',
     // Create listing form
     createSell:       'Nouvelle vente',
     createBuy:        'Nouvelle recherche',

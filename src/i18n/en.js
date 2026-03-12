@@ -372,6 +372,7 @@ export default {
     myOfferAcceptedBadge:'✅ Offer accepted!',
     myOfferRejectedBadge:'❌ Offer declined — you can re-bid',
     offerErrMinBase:     'Minimum bid: {base} gold',
+    offerCooldown:       'Anti-spam active. Wait {min} more min before bidding on this listing again.',
     // Create listing form
     createSell:       'New Listing',
     createBuy:        'New Wanted',

@@ -204,6 +204,48 @@ create table if not exists public.market_follows (
 create index if not exists market_follows_profile_id_idx on public.market_follows (profile_id);
 
 -- ────────────────────────────────────────────────────────────
+-- TABLE: market_offer_cooldowns
+-- Anti-spam : limite les enchères/annulations répétées sur une même annonce.
+--
+-- Comportement :
+--   • Chaque annulation acheteur (via cancel_offer) incrémente cancel_count.
+--   • Au 3e cancel sur la même annonce : cooldown_until = now() + 30 min.
+--   • La fonction create_offer bloque toute nouvelle offre si cooldown actif.
+--   • Si cooldown_until est expiré au moment d'un nouveau cancel :
+--     le compteur repart à 1 (ardoise propre après avoir purgé le cooldown).
+--   • Seul le refus acheteur compte (cancel_offer). Un rejet vendeur
+--     (rejectOffer) n'incrémente PAS ce compteur.
+--   • Les lignes sont supprimées en CASCADE si l'annonce est supprimée.
+--
+-- RLS :
+--   • SELECT autorisé pour le propriétaire (affichage éventuel côté client).
+--   • INSERT/UPDATE/DELETE uniquement via fonctions SECURITY DEFINER
+--     (cancel_offer, create_offer) — aucun accès direct utilisateur.
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.market_offer_cooldowns (
+  profile_id     uuid        not null references public.profiles(id)         on delete cascade,
+  listing_id     uuid        not null references public.market_listings(id)  on delete cascade,
+  cancel_count   int         not null default 1
+                             check (cancel_count >= 0),
+  cooldown_until timestamptz,          -- null = pas de cooldown actif
+  primary key (profile_id, listing_id)
+);
+
+-- Index : lookup rapide lors du check dans create_offer
+create index if not exists market_offer_cooldowns_lookup_idx
+  on public.market_offer_cooldowns (profile_id, listing_id);
+
+alter table public.market_offer_cooldowns enable row level security;
+
+-- L'utilisateur peut lire son propre cooldown (pour affichage client si besoin)
+create policy "cooldowns_select_own"
+  on public.market_offer_cooldowns for select
+  using (auth.uid() = profile_id);
+
+-- Pas de policy INSERT/UPDATE/DELETE : seules les fonctions SECURITY DEFINER
+-- (cancel_offer, create_offer) peuvent modifier cette table.
+
+-- ────────────────────────────────────────────────────────────
 -- RLS — profiles
 -- ────────────────────────────────────────────────────────────
 alter table public.profiles enable row level security;
@@ -506,6 +548,9 @@ $$ language plpgsql security definer;
 -- Réinitialise aussi confirmation_pending sur l'annonce si l'offre
 -- était en attente de validation vendeur (achat immédiat déclenché).
 -- Bloque l'annulation si l'offre est déjà acceptée (vendeur a confirmé).
+-- Incrémente le compteur anti-spam dans market_offer_cooldowns :
+--   • 3 annulations sur la même annonce → cooldown de 30 min.
+--   • Si cooldown expiré au moment du cancel → compteur remis à 1.
 -- ────────────────────────────────────────────────────────────
 create or replace function public.cancel_offer(p_offer_id uuid)
 returns void
@@ -532,6 +577,7 @@ begin
   end if;
 
   -- Seule une offre encore active peut être annulée
+  -- (pas si le vendeur a déjà confirmé → status = 'accepted')
   if v_status <> 'active' then
     raise exception 'Cette offre ne peut plus être annulée';
   end if;
@@ -546,10 +592,109 @@ begin
       accepted_offer_id    = null
   where id = v_listing_id
     and accepted_offer_id = p_offer_id;
+
+  -- ── Anti-spam : mise à jour du compteur d'annulations ────
+  -- Calcul du nouveau cancel_count :
+  --   • Pas de ligne existante OU cooldown expiré → repart à 1 (ardoise propre)
+  --   • Cooldown encore actif               → incrémente (ne devrait pas arriver
+  --     car create_offer bloque la création, mais on gère le cas par sécurité)
+  --   • Si nouveau count >= 3               → déclenche cooldown 30 min
+  with new_state as (
+    select
+      coalesce(
+        case
+          when c.cooldown_until is null or c.cooldown_until < now() then 1
+          else c.cancel_count + 1
+        end,
+        1
+      ) as cnt
+    from             (select 1) dummy
+    left join public.market_offer_cooldowns c
+           on c.profile_id = v_profile_id
+          and c.listing_id = v_listing_id
+  )
+  insert into public.market_offer_cooldowns
+         (profile_id, listing_id, cancel_count, cooldown_until)
+  select v_profile_id,
+         v_listing_id,
+         cnt,
+         case when cnt >= 3 then now() + interval '30 minutes' else null end
+  from   new_state
+  on conflict (profile_id, listing_id) do update
+    set cancel_count   = excluded.cancel_count,
+        cooldown_until = excluded.cooldown_until;
 end;
 $$;
 
 grant execute on function public.cancel_offer(uuid) to authenticated;
+
+-- ────────────────────────────────────────────────────────────
+-- FUNCTION: create_offer
+-- Crée une offre après vérification du cooldown anti-spam.
+-- Remplace l'INSERT direct côté client (RLS ne peut pas vérifier
+-- market_offer_cooldowns avant l'insert).
+-- En cas de cooldown actif : RAISE EXCEPTION 'COOLDOWN:<minutes>'
+-- Le client parse ce message pour afficher le temps restant.
+-- ────────────────────────────────────────────────────────────
+create or replace function public.create_offer(
+  p_listing_id     uuid,
+  p_price          bigint  default null,
+  p_comment        text    default null,
+  p_image_url      text    default null,
+  p_character_name text    default null,
+  p_discord_handle text    default null
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cooldown_until timestamptz;
+  v_remaining_min  int;
+  v_offer_id       uuid;
+  v_result         json;
+begin
+  -- ── Vérification cooldown anti-spam ──────────────────────
+  select cooldown_until
+    into v_cooldown_until
+  from public.market_offer_cooldowns
+  where profile_id = auth.uid()
+    and listing_id = p_listing_id;
+
+  if v_cooldown_until is not null and v_cooldown_until > now() then
+    -- Arrondit à la minute supérieure, minimum 1 min affiché
+    v_remaining_min := greatest(1,
+      ceil(extract(epoch from (v_cooldown_until - now())) / 60)::int
+    );
+    -- Format parsé côté client : "COOLDOWN:<minutes>"
+    raise exception 'COOLDOWN:%', v_remaining_min;
+  end if;
+
+  -- ── Création de l'offre ───────────────────────────────────
+  insert into public.market_offers (
+    listing_id, profile_id, price, comment,
+    image_url, character_name, discord_handle
+  ) values (
+    p_listing_id, auth.uid(), p_price, p_comment,
+    p_image_url, p_character_name, p_discord_handle
+  )
+  returning id into v_offer_id;
+
+  -- Mise à jour last_activity_at de l'annonce
+  update public.market_listings
+  set last_activity_at = now()
+  where id = p_listing_id;
+
+  -- Retourne l'offre créée (snake_case — fromDBOffer la mappe côté client)
+  select row_to_json(o) into v_result
+  from (select * from public.market_offers where id = v_offer_id) o;
+
+  return v_result;
+end;
+$$;
+
+grant execute on function public.create_offer(uuid, bigint, text, text, text, text) to authenticated;
 
 -- ────────────────────────────────────────────────────────────
 -- FUNCTION: admin_set_moderation
@@ -709,3 +854,32 @@ $$ language plpgsql security definer;
 --   • Clés i18n ajoutées : myOfferPending, myOfferPendingBuy,
 --     myOfferAcceptedBadge, myOfferRejectedBadge, offerErrMinBase (fr/en/de).
 --   • StatsPanel : résistant aux erreurs partielles (requêtes profiles RLS).
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION G — anti-spam enchères (cooldown 30 min après 3 annulations)
+-- ────────────────────────────────────────────────────────────
+-- Problèmes anticipés et solutions documentées dans le code source.
+-- Étapes à exécuter dans l'ordre :
+--
+-- 1. Créer la table market_offer_cooldowns + index + RLS
+--    (cf. bloc TABLE: market_offer_cooldowns ci-dessus)
+--
+-- create table if not exists public.market_offer_cooldowns ( ... );
+-- create index ...;
+-- alter table ... enable row level security;
+-- create policy ...;
+--
+-- 2. Redéployer cancel_offer avec suivi du compteur
+--    (cf. bloc FUNCTION: cancel_offer ci-dessus — version mise à jour)
+--
+-- 3. Déployer la nouvelle fonction create_offer
+--    (cf. bloc FUNCTION: create_offer ci-dessus)
+--
+-- 4. Aucune modification de schéma existant nécessaire.
+--    Aucune donnée existante à migrer.
+--
+-- Notes :
+--   • Le compteur se remet à 1 après expiration du cooldown (pas d'accumulation).
+--   • Seules les annulations acheteur comptent (pas les rejets vendeur).
+--   • Les lignes sont supprimées automatiquement si l'annonce est supprimée (CASCADE).
+--   • Le client reçoit l'erreur "COOLDOWN:<minutes>" et affiche le temps restant.

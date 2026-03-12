@@ -89,7 +89,6 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
 
     const { data, error: err } = await createOffer({
       listingId:     listing.id,
-      profileId:     user.id,
       price:         parsedPrice,
       comment:       comment || null,
       imageUrl:      !isSell ? (imageUrl.trim() || null) : null,
@@ -97,7 +96,15 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
       discordHandle: discordHandle.trim() || null,
     })
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      if (err.cooldownMinutes != null) {
+        setError(t('market.offerCooldown').replace('{min}', err.cooldownMinutes))
+      } else {
+        setError(err.message)
+      }
+      setLoading(false)
+      return
+    }
 
     // Auto-trigger confirmation if buyout price is reached
     if (isSell && listing.buyoutPrice != null && parsedPrice >= listing.buyoutPrice) {
@@ -117,14 +124,21 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
 
     const { data, error: err } = await createOffer({
       listingId:     listing.id,
-      profileId:     user.id,
       price:         listing.buyoutPrice,
       comment:       comment || null,
       characterName: characterName.trim(),
       discordHandle: discordHandle.trim() || null,
     })
 
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      if (err.cooldownMinutes != null) {
+        setError(t('market.offerCooldown').replace('{min}', err.cooldownMinutes))
+      } else {
+        setError(err.message)
+      }
+      setLoading(false)
+      return
+    }
 
     await triggerConfirmation(listing.id, data.id)
     setLoading(false)
@@ -204,7 +218,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
         {/* Base price info (sell only, when no best offer yet) */}
         {isSell && basePrice > 0 && currentBest == null && (
           <p className={styles.bestOfferInfo}>
-            Mise de départ : <strong>{formatGold(basePrice)} {t('market.gold')}</strong>
+            {t('market.basePrice')} : <strong>{formatGold(basePrice)} {t('market.gold')}</strong>
           </p>
         )}
 

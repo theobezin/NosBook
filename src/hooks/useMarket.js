@@ -331,35 +331,37 @@ export async function archiveListing(listingId) {
 
 /**
  * Submit an offer (bid or buy response).
- * Also refreshes last_activity_at on the parent listing.
+ * Delegates to the create_offer RPC (SECURITY DEFINER) which :
+ *   1. Checks anti-spam cooldown (market_offer_cooldowns).
+ *      If active → throws 'COOLDOWN:<minutes>' parsed into error.cooldownMinutes.
+ *   2. Inserts the offer and refreshes last_activity_at.
+ * Using an RPC prevents bypassing the cooldown via direct API calls.
  */
-export async function createOffer({ listingId, profileId, price, comment, imageUrl, characterName, discordHandle }) {
+export async function createOffer({ listingId, price, comment, imageUrl, characterName, discordHandle }) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
 
-  const { data, error } = await supabase
-    .from('market_offers')
-    .insert({
-      listing_id:     listingId,
-      profile_id:     profileId,
-      price:          price     ?? null,
-      comment:        comment?.trim()       ?? null,
-      image_url:      imageUrl              ?? null,
-      character_name: characterName?.trim() ?? null,
-      discord_handle: discordHandle?.trim() ?? null,
-    })
-    .select()
-    .single()
+  const { data, error } = await supabase.rpc('create_offer', {
+    p_listing_id:     listingId,
+    p_price:          price                  ?? null,
+    p_comment:        comment?.trim()        ?? null,
+    p_image_url:      imageUrl               ?? null,
+    p_character_name: characterName?.trim()  ?? null,
+    p_discord_handle: discordHandle?.trim()  ?? null,
+  })
 
-  if (!error) {
-    // Update last_activity_at on the listing (non-blocking)
-    supabase
-      .from('market_listings')
-      .update({ last_activity_at: new Date().toISOString() })
-      .eq('id', listingId)
-      .then(() => {})
+  if (error) {
+    // Erreur cooldown anti-spam : format "COOLDOWN:<minutes>"
+    const match = error.message?.match(/COOLDOWN:(\d+)/)
+    if (match) {
+      return {
+        data: null,
+        error: { ...error, cooldownMinutes: parseInt(match[1], 10) },
+      }
+    }
+    return { data: null, error }
   }
 
-  return { data: data ? fromDBOffer(data) : null, error }
+  return { data: data ? fromDBOffer(data) : null, error: null }
 }
 
 /**
