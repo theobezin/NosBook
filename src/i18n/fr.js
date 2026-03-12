@@ -260,7 +260,7 @@ export default {
   session: {
     badge:                 '🏰 Organisation de Raids',
     title:                 'Sessions de Raid',
-    sub:                   'Planifie et rejoins des raids avec ta communauté.',
+    sub:                   'Planifie et rejoins des raids avec la communauté.',
     empty:                 'Aucune session à venir pour le moment.',
     players:               'joueurs max',
     charsPerPlayer:        'perso max/joueur',
@@ -271,6 +271,9 @@ export default {
     formDuration:          'Durée estimée',
     durationH:             'h',
     durationMin:           'min',
+    tabAll:                'Sessions globales',
+    tabMine:               'Mes sessions',
+    emptyMine:             'Tu n\'as pas encore de session créée ou rejointe.',
     filterAll:             'Tous',
     filterByAct:           'Acte',
     filterByDate:          'Date',

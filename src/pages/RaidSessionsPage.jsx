@@ -638,17 +638,32 @@ function SessionCard({ session, lang, t }) {
 // ── RaidSessionsPage ──────────────────────────────────────────────────────────
 
 export default function RaidSessionsPage() {
-  const { isAuthenticated } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const { t, lang } = useLang()
 
   const [sessions,    setSessions]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [showCreate,  setShowCreate]  = useState(false)
 
+  // Onglets
+  const [tab, setTab] = useState('all')   // 'all' | 'mine'
+
+  // IDs des sessions auxquelles l'utilisateur est inscrit
+  const [myRegIds, setMyRegIds] = useState(new Set())
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || !hasSupabase) return
+    supabase
+      .from('raid_session_registrations')
+      .select('session_id')
+      .eq('player_id', user.id)
+      .then(({ data }) => setMyRegIds(new Set((data ?? []).map(r => r.session_id))))
+  }, [user?.id, isAuthenticated])
+
   // Filtres
-  const [filterServer, setFilterServer] = useState('')      // '' = tous
-  const [filterAct,    setFilterAct]    = useState('')      // act key ou ''
-  const [filterDate,   setFilterDate]   = useState('')      // date ISO ou ''
+  const [filterServer, setFilterServer] = useState('')
+  const [filterAct,    setFilterAct]    = useState('')
+  const [filterDate,   setFilterDate]   = useState('')
 
   const loadSessions = () => {
     if (!hasSupabase) { setLoading(false); return }
@@ -665,28 +680,33 @@ export default function RaidSessionsPage() {
 
   useEffect(() => { loadSessions() }, [])
 
-  // Filtrage côté client (sans requête supplémentaire)
+  // Filtrage côté client
   const actSlugs = filterAct
     ? new Set(RAIDS.filter(r => r.act === filterAct).map(r => r.slug))
     : null
 
-  const nowMs  = Date.now()
-  const today  = new Date().toISOString().slice(0, 10)
+  const today = new Date().toISOString().slice(0, 10)
 
-  const filtered = sessions.filter(s => {
-    // Masquer les sessions dont l'heure de fin est dépassée
+  const applyFilters = (list) => list.filter(s => {
     if (s.date === today && s.time) {
-      const [h, m]    = s.time.split(':').map(Number)
-      const endMinutes = h * 60 + m + (s.duration_minutes ?? 0)
-      const now        = new Date()
-      const nowMinutes = now.getHours() * 60 + now.getMinutes()
+      const [h, m]     = s.time.split(':').map(Number)
+      const endMinutes  = h * 60 + m + (s.duration_minutes ?? 0)
+      const now         = new Date()
+      const nowMinutes  = now.getHours() * 60 + now.getMinutes()
       if (nowMinutes > endMinutes) return false
     }
     if (filterServer && s.server !== filterServer) return false
-    if (actSlugs    && !actSlugs.has(s.raid_slug)) return false
-    if (filterDate  && s.date !== filterDate)       return false
+    if (actSlugs     && !actSlugs.has(s.raid_slug)) return false
+    if (filterDate   && s.date !== filterDate)       return false
     return true
   })
+
+  const filtered = applyFilters(sessions)
+  const mine     = applyFilters(
+    sessions.filter(s => s.leader_id === user?.id || myRegIds.has(s.id))
+  )
+
+  const displayed = tab === 'mine' ? mine : filtered
 
   return (
     <div className={styles.page}>
@@ -697,6 +717,23 @@ export default function RaidSessionsPage() {
         <h1 className={styles.title}>{t('session.title')}</h1>
         <p className={styles.sub}>{t('session.sub')}</p>
       </section>
+
+      {/* ── Onglets ── */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tabBtn} ${tab === 'all' ? styles.tabActive : ''}`}
+          onClick={() => setTab('all')}
+        >{t('session.tabAll')}</button>
+        {isAuthenticated && (
+          <button
+            className={`${styles.tabBtn} ${tab === 'mine' ? styles.tabActive : ''}`}
+            onClick={() => setTab('mine')}
+          >
+            {t('session.tabMine')}
+            {mine.length > 0 && <span className={styles.tabCount}>{mine.length}</span>}
+          </button>
+        )}
+      </div>
 
       {/* ── Contrôles + Filtres ── */}
       <div className={styles.controls}>
@@ -766,18 +803,23 @@ export default function RaidSessionsPage() {
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={`${styles.sessionCard} ${styles.sessionSkeleton}`} />
           ))
+        ) : tab === 'mine' && mine.length === 0 ? (
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}>🏰</span>
+            <span>{t('session.emptyMine')}</span>
+          </div>
         ) : sessions.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🏰</span>
             <span>{t('session.empty')}</span>
           </div>
-        ) : filtered.length === 0 && (filterServer || filterAct || filterDate) ? (
+        ) : displayed.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🔍</span>
             <span>{t('raids.noResults')}</span>
           </div>
         ) : (
-          filtered.map(s => (
+          displayed.map(s => (
             <SessionCard key={s.id} session={s} lang={lang} t={t} />
           ))
         )}
