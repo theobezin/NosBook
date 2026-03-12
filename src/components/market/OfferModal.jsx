@@ -27,6 +27,16 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
   // Current best offer (client-side — used for minimum bid validation)
   const currentBest = useMemo(() => bestOffer(listing.offers ?? []), [listing.offers])
 
+  const basePrice = listing.base_price ?? 0
+
+  // Effective minimum = max(base_price, currentBest+1, minPrice+1)
+  const effectiveMin = useMemo(() => Math.max(
+    basePrice,
+    currentBest != null ? currentBest.price + 1 : 0,
+    minPrice    != null ? minPrice + 1           : 0,
+    1,
+  ), [basePrice, currentBest, minPrice])
+
   const [characterName, setCharacterName] = useState('')
   const [discordHandle, setDiscordHandle] = useState(userProfile?.discord_handle ?? '')
   const [price,         setPrice]         = useState('')
@@ -55,6 +65,11 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
       const parsed = parseGold(price)
       if (parsed === null || parsed <= 0) {
         setError(t('market.offerErrPrice'))
+        return
+      }
+      // Must be at least base_price
+      if (basePrice > 0 && parsed < basePrice) {
+        setError(`Mise minimum : ${formatGold(basePrice)} or`)
         return
       }
       // Must strictly exceed previous rejected offer (if any)
@@ -186,10 +201,20 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
           </p>
         )}
 
+        {/* Base price info (sell only, when no best offer yet) */}
+        {isSell && basePrice > 0 && currentBest == null && (
+          <p className={styles.bestOfferInfo}>
+            Mise de départ : <strong>{formatGold(basePrice)} {t('market.gold')}</strong>
+          </p>
+        )}
+
         {/* Current best offer info (sell only) */}
         {isSell && currentBest != null && (
           <p className={styles.bestOfferInfo}>
             {t('market.offerCurrentBest')} : <strong>{formatGold(currentBest.price)} {t('market.gold')}</strong>
+            {basePrice > 0 && currentBest.price < basePrice && (
+              <span> (min. {formatGold(basePrice)})</span>
+            )}
           </p>
         )}
 
@@ -201,12 +226,12 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
               <input
                 className={styles.input}
                 type="number"
-                min={1}
+                min={effectiveMin}
                 max={MAX_GOLD}
                 value={price}
                 onChange={e => setPrice(e.target.value)}
                 required
-                placeholder={currentBest ? String(currentBest.price + 1) : '1'}
+                placeholder={String(effectiveMin)}
               />
             </label>
           )}
