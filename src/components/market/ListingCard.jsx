@@ -227,7 +227,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               ⏳ {daysLeft(listing.lastActivityAt)}{t('market.days')}
             </span>
           )}
-          {isSold && <span className={styles.soldBadge}>{t('market.sold')}</span>}
+          {isSold && <span className={styles.soldBadge}>{isSell ? t('market.sold') : t('market.soldBuy')}</span>}
         </div>
       </div>
 

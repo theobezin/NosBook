@@ -498,9 +498,9 @@ begin
      and id <> v_offer_id
      and status = 'active';
 
-  -- Clôturer l'annonce
+  -- Clôturer l'annonce + démarrer le timer 30j d'affichage (auto-archive client-side)
   update public.market_listings
-     set status = 'sold', confirmation_pending = false
+     set status = 'sold', confirmation_pending = false, last_activity_at = now()
    where id = p_listing_id;
 
   -- Incrémenter le compteur de transactions

@@ -402,7 +402,7 @@ export default function ListingDetailPage() {
             <span className={styles.serverBadge} style={{ '--server-color': serverColor }}>
               {SERVER_LABEL[listing.server]}
             </span>
-            {isSold && <span className={styles.soldBadge}>{t('market.sold')}</span>}
+            {isSold && <span className={styles.soldBadge}>{isSell ? t('market.sold') : t('market.soldBuy')}</span>}
             {isArchived && <span className={styles.archivedBadge}>{t('market.archived')}</span>}
             {isPending && <span className={styles.pendingBadge}>{t('market.pending')}</span>}
             <button
@@ -555,8 +555,8 @@ export default function ListingDetailPage() {
               </button>
             )}
 
-            {/* Buyer: cancel active offer */}
-            {myActiveOffer && (
+            {/* Buyer: cancel active offer (impossible sur une vente conclue) */}
+            {myActiveOffer && !isSold && (
               <button
                 className={styles.btnCancelOffer}
                 onClick={() => setConfirmState({
@@ -592,6 +592,13 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Sold notice ── */}
+      {isSold && (
+        <div className={styles.soldNotice}>
+          {isSell ? t('market.soldNoticeSell') : t('market.soldNoticeBuy')}
+        </div>
+      )}
 
       {/* ── Offers section ── */}
       <div className={styles.offersSection}>

@@ -98,7 +98,7 @@ export function useMarketListings(filters = {}) {
         profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
         market_offers!listing_id ( id, profile_id, price, comment, character_name, discord_handle, status, created_at, profiles!profile_id ( id, username ) )
       `)
-      .eq('status', LISTING_STATUS.ACTIVE)
+      .in('status', [LISTING_STATUS.ACTIVE, LISTING_STATUS.SOLD])
       .order('last_activity_at', { ascending: false })
     if (filters.type)         q = q.eq('type', filters.type)
     if (filters.server)       q = q.eq('server', filters.server)
@@ -122,9 +122,9 @@ export function useMarketListings(filters = {}) {
       const { data, error: err } = await buildQuery().range(from, to)
       if (err) throw err
 
-      // Filtre côté client les annonces expirées
-      const active  = (data ?? []).filter(r => !isExpired(r.last_activity_at))
-      const mapped  = active.map(fromDBListing)
+      // Filtre côté client les annonces expirées (actives ET vendues >30j)
+      const visible = (data ?? []).filter(r => !isExpired(r.last_activity_at))
+      const mapped  = visible.map(fromDBListing)
 
       if (replace) setListings(mapped)
       else         setListings(prev => [...prev, ...mapped])
