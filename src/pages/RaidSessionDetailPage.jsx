@@ -76,7 +76,9 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
         {session.leader_username && (
           <span className={styles.badge}>👑 {session.leader_username}</span>
         )}
-        <span className={styles.badge}>⚔️ {t('detail.minLevel')} {session.min_level}</span>
+        {session.min_level > 0 && (
+          <span className={styles.badge}>⚔️ {t('detail.minLevel')} H{session.min_level}</span>
+        )}
         <span className={styles.badge}>👥 {regCount} / {session.max_players} {t('detail.players')}</span>
         <span className={styles.badge}>🎭 {session.max_chars_per_person} {t('session.charsPerPlayer')}</span>
         {session.teams?.length > 1 && (
@@ -317,6 +319,12 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
     if (!selected.length) return setError(t('detail.errNoChar'))
     if (!hasSupabase) { onSuccess(); return }
 
+    // ── Guard 0 : niveau héroïque ─────────────────────────────────
+    if (minHero > 0) {
+      const failing = selected.find(c => (c.heroLevel ?? 0) < minHero)
+      if (failing) return setError(t('detail.errHeroLevel').replace('{min}', minHero))
+    }
+
     setSubmitting(true)
 
     // ── Guard 1 : serveur ─────────────────────────────────────────
@@ -396,7 +404,12 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
     onSuccess()
   }
 
+  const minHero   = session.min_level ?? 0
   const available = userChars.filter(c => !alreadyNames.includes(c.name))
+
+  // ── Guard 0 : niveau héroïque ─────────────────────────────
+  // Vérifié côté client avant submit pour bloquer les persos insuffisants
+  const heroInsufficient = (char) => minHero > 0 && (char.heroLevel ?? 0) < minHero
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -414,19 +427,24 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
           ) : (
             <div className={styles.charPickList}>
               {available.map(char => {
-                const cls = CLASSES[char.class]
-                const checked = !!selected.find(c => c.id === char.id)
-                const disabled = !checked && selected.length >= max
+                const cls        = CLASSES[char.class]
+                const checked    = !!selected.find(c => c.id === char.id)
+                const tooLow     = heroInsufficient(char)
+                const disabled   = tooLow || (!checked && selected.length >= max)
                 return (
                   <button
                     key={char.id}
                     className={`${styles.charPickItem} ${checked ? styles.charPickItemSelected : ''} ${disabled ? styles.charPickItemDisabled : ''}`}
                     onClick={() => !disabled && toggle(char)}
+                    title={tooLow ? t('detail.errHeroLevel').replace('{min}', minHero) : undefined}
                   >
                     <span style={{ color: cls?.color }}>{cls?.icon}</span>
                     <div>
                       <span className={styles.charName}>{char.name}</span>
-                      <span className={styles.charLevel}>Lv.{char.level}{char.heroLevel > 0 ? ` · H${char.heroLevel}` : ''}</span>
+                      <span className={styles.charLevel}>
+                        Lv.{char.level}{char.heroLevel > 0 ? ` · H${char.heroLevel}` : ''}
+                        {tooLow && <span style={{ color: '#e74c3c', marginLeft: 4 }}>✕ H{minHero}</span>}
+                      </span>
                     </div>
                     {checked && <span className={styles.checkMark}>✓</span>}
                   </button>

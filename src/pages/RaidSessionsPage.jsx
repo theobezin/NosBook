@@ -147,7 +147,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
     raidSlug:          '',
     date:              today,
     time:              '',
-    minLevel:          1,
+    minLevel:          0,
     maxPlayers:        '',
     maxCharsPerPerson: 1,
     durationMinutes:   60,
@@ -183,7 +183,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       ...f,
       raidSlug:   slug,
       maxPlayers: raid?.maxPlayers ?? 15,
-      minLevel:   raid?.minLevel   ?? 1,
+      minLevel:   0,
     }))
   }
 
@@ -230,7 +230,7 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
       ...f,
       raidSlug:          config.raidSlug,
       maxPlayers:        raid?.maxPlayers ?? 15,
-      minLevel:          config.minLevel ?? raid?.minLevel ?? 1,
+      minLevel:          config.minLevel ?? 0,
       maxCharsPerPerson: config.maxCharsPerPerson,
       durationMinutes:   config.durationMinutes ?? 60,
       comments:          config.comments,
@@ -442,8 +442,8 @@ function CreateSessionModal({ onClose, t, lang, onCreated }) {
                 type="number"
                 className={styles.fieldInput}
                 value={form.minLevel}
-                min={1}
-                max={99}
+                min={0}
+                max={200}
                 onChange={e => setField('minLevel', e.target.value)}
               />
             </div>

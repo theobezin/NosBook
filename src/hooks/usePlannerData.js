@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase, hasSupabase } from '@/lib/supabase'
+import { RAIDS } from '@/lib/raids'
 
 // ── Clé localStorage ───────────────────────────────────────────────────────
 // Isolée par userId pour éviter tout partage de données entre comptes.
@@ -196,4 +197,133 @@ export function usePlannerData(defaultCharName) {
     setTheme, setChars, setActiveChar,
     setBlocks, setChecks, setRaids, setGoals, setNotes,
   }
+}
+
+// ── useSessionBlocks ─────────────────────────────────────────────────────────
+//
+// Récupère les sessions de raid auxquelles l'utilisateur courant est inscrit
+// (comme leader ou membre) et les convertit en "blocs virtuels" au format
+// identique aux blocs du planner — mais en lecture seule (_isSession: true).
+//
+// Sync unidirectionnelle : raid_sessions / raid_session_registrations → planner
+// Les blocs session ne sont JAMAIS écrits dans planner_data.
+//
+// Temps réel :
+//   - raid_session_registrations : déjà dans supabase_realtime (join/leave)
+//   - raid_sessions               : ajouter si besoin de refléter les changements
+//     d'horaire en live →  ALTER PUBLICATION supabase_realtime
+//                          ADD TABLE public.raid_sessions;
+//
+export function useSessionBlocks(uid, lang = 'fr') {
+  const [sessionBlocks, setSessionBlocks]     = useState([])
+  const [sessionBlocksLoading, setLoading]    = useState(false)
+
+  // Construit les blocs à partir des lignes de registrations + session jointes
+  const buildBlocks = useCallback((rows, currentLang) => {
+    return rows.flatMap(reg => {
+      const session = reg.raid_sessions
+      if (!session?.date) return []
+
+      const raid = RAIDS.find(r => r.slug === session.raid_slug)
+      if (!raid) return []
+
+      const charName = reg.character_snapshot?.name
+      if (!charName) return []
+
+      // Convertit l'heure HH:MM[:SS] en décimal (ex: 14:30 → 14.5)
+      let startHour = 0
+      if (session.time) {
+        const [h, m] = session.time.split(':').map(Number)
+        startHour = h + m / 60
+      }
+      const durationH = session.duration_minutes ? session.duration_minutes / 60 : 1
+      const endHour   = Math.min(startHour + durationH, 24)
+
+      return [{
+        // Préfixe "session_" sur l'ID pour garantir l'unicité avec les blocs perso
+        id:          `session_${reg.id}`,
+        char:        charName,
+        type:        'raid',
+        label:       raid[currentLang] ?? raid.fr,
+        icon:        raid.icon,
+        raidId:      null,
+        startHour,
+        endHour,
+        day:         session.date,   // 'YYYY-MM-DD'
+        repeat:      false,
+        repeatDays:  [],
+        reminder:    { enabled: false },
+        // ── Marqueurs lecture seule ──────────────────────────────────────────
+        _isSession:     true,
+        _sessionId:     session.id,
+        _raidColor:     raid.color,
+        _sessionLeader: session.leader_username ?? null,
+      }]
+    })
+  }, [])
+
+  const load = useCallback(async () => {
+    if (!uid || !hasSupabase) { setSessionBlocks([]); return }
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('raid_session_registrations')
+        .select(`
+          id,
+          character_snapshot,
+          session_id,
+          raid_sessions (
+            id,
+            raid_slug,
+            date,
+            time,
+            duration_minutes,
+            leader_username
+          )
+        `)
+        .eq('player_id', uid)
+
+      if (error) {
+        console.warn('useSessionBlocks: fetch failed', error)
+        return
+      }
+      setSessionBlocks(buildBlocks(data ?? [], lang))
+    } catch (e) {
+      console.warn('useSessionBlocks: exception', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [uid, lang, buildBlocks])
+
+  // Chargement initial + rechargement si uid ou langue change
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // Abonnement Realtime :
+  //   • raid_session_registrations → capte join/leave de l'utilisateur
+  //   • raid_sessions               → capte les changements d'horaire du leader
+  //     (requiert ALTER PUBLICATION supabase_realtime ADD TABLE public.raid_sessions)
+  useEffect(() => {
+    if (!uid || !hasSupabase) return
+
+    const channel = supabase
+      .channel(`session-blocks-${uid}`)
+      .on('postgres_changes', {
+        event:  '*',
+        schema: 'public',
+        table:  'raid_session_registrations',
+        filter: `player_id=eq.${uid}`,
+      }, load)
+      .on('postgres_changes', {
+        event:  '*',   // UPDATE (horaire) + DELETE (suppression session)
+        schema: 'public',
+        table:  'raid_sessions',
+      }, load)
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [uid, load])
+
+  return { sessionBlocks, sessionBlocksLoading }
 }

@@ -5,10 +5,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLang }        from '@/i18n'
 import { useAuth }        from '@/hooks/useAuth'
-import { usePlannerData } from '@/hooks/usePlannerData'
+import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
+import { fmtThousands } from '@/lib/utils'
 
 // ── Theme NosBook (fixe, cohérent avec le reste de l'app) ─────────────────
 const NOSBOOK_THEME = {
@@ -137,17 +138,38 @@ function TimerOverlay({ timer, setTimer, th, i18n }) {
   )
 }
 
+// Formate un nombre en notation courte : 1 500 000 → 1.5M, 30 000 000 000 → 30G
+function fmtNum(n) {
+  if (!isFinite(n)) return '0'
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'G'
+  if (n >= 1_000_000)     return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (n >= 1_000)         return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
+  return String(n)
+}
+
 function FarmTracker({ goals, setGoals, th, i18n }) {
-  const [showAdd,setShowAdd]=useState(false)
-  const [newName,setNewName]=useState('')
-  const [newTarget,setNewTarget]=useState(100)
-  const [newUnit,setNewUnit]=useState('pcs')
-  function addGoal(){
-    if(!newName.trim()) return
-    setGoals(g=>[...g,{id:Math.random().toString(36).slice(2),name:newName.trim(),target:+newTarget,unit:newUnit,current:0}])
-    setNewName('');setNewTarget(100);setShowAdd(false)
+  const [showAdd,  setShowAdd]  = useState(false)
+  const [newName,  setNewName]  = useState('')
+  const [newTarget,setNewTarget]= useState('')
+  const [newUnit,  setNewUnit]  = useState('')
+  // Saisie libre du montant par objectif : { [goalId]: string }
+  const [steps, setSteps] = useState({})
+
+  function addGoal() {
+    if (!newName.trim() || !newTarget) return
+    const target = parseFloat(String(newTarget).replace(/\s/g,'').replace(',','.'))
+    if (!isFinite(target) || target <= 0) return
+    setGoals(g=>[...g,{id:Math.random().toString(36).slice(2),name:newName.trim(),target,unit:newUnit.trim()||'pcs',current:0}])
+    setNewName(''); setNewTarget(''); setNewUnit(''); setShowAdd(false)
   }
-  function increment(id,delta){setGoals(g=>g.map(goal=>goal.id===id?{...goal,current:Math.max(0,Math.min(goal.target,goal.current+delta))}:goal))}
+
+  function applyStep(id, sign) {
+    const raw = steps[id] ?? ''
+    const delta = parseFloat(String(raw).replace(/\s/g,'').replace(',','.'))
+    if (!isFinite(delta) || delta <= 0) return
+    setGoals(g=>g.map(goal=>goal.id===id?{...goal,current:Math.max(0, goal.current + sign * delta)}:goal))
+  }
+
   const inp={background:th.input,border:`1px solid ${th.inputBorder}`,borderRadius:8,padding:'9px 12px',color:th.text,fontFamily:'Crimson Pro',fontSize:15,outline:'none'}
   return(
     <div>
@@ -160,8 +182,8 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
       {showAdd&&(
         <div style={{background:th.surface,border:`1px solid ${th.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
-            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder={i18n.namePlaceholder} style={{...inp,flex:2,minWidth:140}}/>
-            <input type="number" value={newTarget} onChange={e=>setNewTarget(e.target.value)} style={{...inp,width:80}} min={1}/>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder={i18n.namePlaceholder} style={{...inp,flex:2,minWidth:140}} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
+            <input type="text" inputMode="numeric" value={newTarget} onChange={e=>setNewTarget(fmtThousands(e.target.value))} placeholder={i18n.targetPlaceholder} style={{...inp,width:130}}/>
             <input value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder={i18n.unitPlaceholder} style={{...inp,width:70}}/>
           </div>
           <button onClick={addGoal} style={{padding:'8px 20px',borderRadius:20,background:th.gold+'20',border:`1px solid ${th.gold}`,color:th.gold,fontFamily:'Cinzel',fontSize:11,cursor:'pointer'}}>{i18n.createBtn}</button>
@@ -170,23 +192,46 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
       {goals.length===0&&!showAdd&&<div style={{textAlign:'center',padding:'44px 20px',color:th.textSub,fontStyle:'italic',fontSize:16,fontFamily:'Crimson Pro'}}>{i18n.empty}</div>}
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
         {goals.map(goal=>{
-          const pct=Math.round((goal.current/goal.target)*100),done=goal.current>=goal.target
+          const pct  = Math.min(100, Math.round((goal.current/goal.target)*100))
+          const done = goal.current >= goal.target
+          const step = steps[goal.id] ?? ''
           return(
             <div key={goal.id} style={{background:done?th.gold+'0a':th.surface,border:`1px solid ${done?th.gold+'44':th.border}`,borderRadius:12,padding:'14px 16px'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                 <div style={{fontSize:15,fontFamily:'Crimson Pro',color:done?th.gold:th.text}}>💰 {goal.name} {done&&'✦'}</div>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{fontFamily:'Cinzel',fontSize:12,color:done?th.gold:th.textSub}}>{goal.current}/{goal.target} {goal.unit}</span>
+                  <span style={{fontFamily:'Cinzel',fontSize:12,color:done?th.gold:th.textSub}}>
+                    {fmtNum(goal.current)} / {fmtNum(goal.target)} {goal.unit}
+                  </span>
                   <button onClick={()=>setGoals(g=>g.filter(x=>x.id!==goal.id))} style={{background:'transparent',border:'none',color:th.textSub,cursor:'pointer',fontSize:14}}>✕</button>
                 </div>
               </div>
               <div style={{height:6,borderRadius:3,background:th.border,overflow:'hidden',marginBottom:10}}>
                 <div style={{height:'100%',borderRadius:3,background:done?`linear-gradient(90deg,${th.gold}88,${th.gold})`:'linear-gradient(90deg,#27ae6088,#27ae60)',width:`${pct}%`,transition:'width .4s'}}/>
               </div>
-              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                {[1,5,10,25,50,100].map(n=><button key={n} onClick={()=>increment(goal.id,n)} style={{padding:'5px 12px',borderRadius:20,background:th.surfaceHov,border:`1px solid ${th.border}`,color:th.textSub,fontFamily:'Cinzel',fontSize:11,cursor:'pointer'}}>+{n}</button>)}
-                <button onClick={()=>increment(goal.id,-1)} style={{padding:'5px 12px',borderRadius:20,background:th.surfaceHov,border:`1px solid ${th.border}`,color:th.textSub,fontFamily:'Cinzel',fontSize:11,cursor:'pointer'}}>−1</button>
-                <button onClick={()=>setGoals(g=>g.map(x=>x.id===goal.id?{...x,current:0}:x))} style={{padding:'5px 10px',borderRadius:20,background:'transparent',border:`1px solid ${th.border}`,color:th.textSub,fontSize:11,cursor:'pointer'}}>{i18n.resetBtn}</button>
+              {/* Contrôles : [−] [montant libre] [+] [reset] */}
+              <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+                <button
+                  onClick={()=>applyStep(goal.id,-1)}
+                  style={{padding:'5px 14px',borderRadius:20,background:th.surfaceHov,border:`1px solid ${th.border}`,color:th.textSub,fontFamily:'Cinzel',fontSize:16,lineHeight:1,cursor:'pointer'}}
+                >−</button>
+                <input
+                  type="number"
+                  value={step}
+                  min={0}
+                  onChange={e=>setSteps(s=>({...s,[goal.id]:fmtThousands(e.target.value)}))}
+                  onKeyDown={e=>e.key==='Enter'&&applyStep(goal.id,+1)}
+                  placeholder={i18n.amountPlaceholder}
+                  style={{...inp,width:120,padding:'5px 10px',fontSize:13,textAlign:'center'}}
+                />
+                <button
+                  onClick={()=>applyStep(goal.id,+1)}
+                  style={{padding:'5px 14px',borderRadius:20,background:th.surfaceHov,border:`1px solid ${th.border}`,color:th.textSub,fontFamily:'Cinzel',fontSize:16,lineHeight:1,cursor:'pointer'}}
+                >+</button>
+                <button
+                  onClick={()=>setGoals(g=>g.map(x=>x.id===goal.id?{...x,current:0}:x))}
+                  style={{padding:'5px 10px',borderRadius:20,background:'transparent',border:`1px solid ${th.border}`,color:th.textSub,fontSize:11,cursor:'pointer',marginLeft:4}}
+                >{i18n.resetBtn}</button>
               </div>
             </div>
           )
@@ -375,13 +420,20 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {dailies.map(b=>{
-          const key=`${today}__${char}__${b.id}`,isDone=!!checks[key],color=ACTIVITY_COLORS[b.type],atype=actTypes.find(a=>a.id===b.type)
+          const key=`${today}__${char}__${b.id}`,isDone=!!checks[key]
+          // Les blocs session utilisent leur couleur de raid spécifique
+          const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
+          const atype=actTypes.find(a=>a.id===b.type)
+          // Bordure distincte pour les blocs session (non-cochés)
+          const borderColor=isDone?th.border:b._isSession?(color+'66'):th.borderSoft
           return(
-            <div key={b.id} onClick={()=>setChecks(p=>({...p,[key]:!p[key]}))} style={{display:'flex',alignItems:'center',gap:13,padding:'13px 16px',borderRadius:10,cursor:'pointer',background:isDone?th.surface:th.surfaceHov,border:`1px solid ${isDone?th.border:th.borderSoft}`,transition:'all .2s'}}>
+            <div key={b.id} onClick={()=>setChecks(p=>({...p,[key]:!p[key]}))} style={{display:'flex',alignItems:'center',gap:13,padding:'13px 16px',borderRadius:10,cursor:'pointer',background:isDone?th.surface:th.surfaceHov,border:`1px solid ${borderColor}`,transition:'all .2s',opacity:b._isSession&&isDone?.7:1}}>
               <div style={{width:20,height:20,borderRadius:4,flexShrink:0,background:isDone?'#2980b9':'transparent',border:`2px solid ${isDone?'#2980b9':th.textMuted}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#fff'}}>{isDone?'✓':''}</div>
               <div style={{flex:1,fontSize:16,fontFamily:'Crimson Pro',color:isDone?th.textSub:th.text,textDecoration:isDone?'line-through':'none',display:'flex',alignItems:'center',gap:7}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={18}/> {b.label}</div>
               {b.reminder?.enabled&&<span style={{fontSize:15}}>🔔</span>}
               {b.repeat&&<div style={{fontSize:10,padding:'2px 7px',borderRadius:20,background:th.gold+'12',color:th.gold+'88',border:`1px solid ${th.gold}22`,fontFamily:'Cinzel'}}>{i18n.dailyBadge}</div>}
+              {/* Badge SESSION — distingue visuellement les blocs de sessions organisées */}
+              {b._isSession&&<div style={{fontSize:9,padding:'2px 7px',borderRadius:20,background:color+'18',color,border:`1px solid ${color}44`,fontFamily:'Cinzel',letterSpacing:.5,flexShrink:0}}>{i18n.sessionBadge??'SESSION'}</div>}
               <div style={{fontSize:11,padding:'3px 9px',borderRadius:20,background:color+'18',color:color+'cc',border:`1px solid ${color}30`,fontFamily:'Cinzel'}}>{atype?.label||b.type}</div>
               <div style={{fontSize:12,color:th.textSub,fontFamily:'Cinzel'}}>{fmtHour(b.startHour)}</div>
             </div>
@@ -392,7 +444,7 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
   )
 }
 
-function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, days, months }) {
+function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, onSessionClick, days, months }) {
   const[weekOf,setWeekOf]=useState(()=>weekStart(new Date()))
   const[selectedDay,setSelectedDay]=useState(()=>new Date())
   const[viewMode,setViewMode]=useState('week')
@@ -447,16 +499,28 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
           })}
           <div style={{position:'absolute',top:0,left:48,right:0,bottom:0,pointerEvents:'none'}}>
             {dayBlocks.map((b,i)=>{
-              const color=ACTIVITY_COLORS[b.type]||ACTIVITY_COLORS.custom
+              // Les blocs session utilisent leur couleur de raid spécifique
+              const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
               const start=Math.max(b.startHour||0,0),end=Math.min(b.endHour||start+1,24)
               const top=start*HH,height=Math.max((end-start)*HH-4,24)
               const overlap=dayBlocks.slice(0,i).filter(x=>(x.startHour||0)<(b.endHour||0)&&(x.endHour||0)>(b.startHour||0)).length
               const lp=overlap*6,wp=100-lp-2
+              // Clic : session → navigation vers la page de session ; bloc perso → modal édition
+              const handleClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
               return(
-                <div key={b.id} style={{position:'absolute',top,left:`${lp}%`,width:`${wp}%`,height,background:`linear-gradient(135deg,${color}28,${color}18)`,border:`1px solid ${color}66`,borderLeft:`3px solid ${color}`,borderRadius:6,padding:'4px 8px',overflow:'hidden',pointerEvents:'all',cursor:'pointer',zIndex:1+overlap,boxShadow:`0 2px 8px ${color}22`,transition:'opacity .15s'}} onClick={()=>setEditBlock(b)}>
-                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={13}/><span style={{fontFamily:'Crimson Pro',fontSize:12,color,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span></div>
+                <div key={b.id} style={{position:'absolute',top,left:`${lp}%`,width:`${wp}%`,height,background:`linear-gradient(135deg,${color}28,${color}18)`,border:`1px solid ${b._isSession?color+'88':color+'66'}`,borderLeft:`3px solid ${color}`,borderRadius:6,padding:'4px 8px',overflow:'hidden',pointerEvents:'all',cursor:'pointer',zIndex:1+overlap,boxShadow:`0 2px 8px ${color}22`,transition:'opacity .15s'}} onClick={handleClick}>
+                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                    <NosIcon iconId={b.icon||ACTIVITY_ICONS[b.type]||'4519'} size={13}/>
+                    <span style={{fontFamily:'Crimson Pro',fontSize:12,color,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span>
+                    {/* Indicateur session en haut à droite */}
+                    {b._isSession&&<span style={{marginLeft:'auto',fontSize:8,fontFamily:'Cinzel',color,opacity:.8,flexShrink:0}}>⚔</span>}
+                  </div>
                   {height>36&&<div style={{fontSize:10,color:th.textSub,fontFamily:'Cinzel',letterSpacing:.3}}>{fmtHour(b.startHour||0)} — {fmtHour(b.endHour||0)}{b.repeat&&<span style={{marginLeft:6,color:th.gold}}>↻</span>}</div>}
-                  {height>56&&<div style={{marginTop:4,display:'flex',gap:6}}><button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:color+'30',border:`1px solid ${color}`,color,borderRadius:4,padding:'2px 6px',fontFamily:'Cinzel',fontSize:9,cursor:'pointer'}}>⏱</button>{!b.repeat&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'#e74c3c18',border:'1px solid #e74c3c44',color:'#e74c3c',borderRadius:4,padding:'2px 6px',fontSize:9,cursor:'pointer'}}>✕</button>}</div>}
+                  {height>56&&<div style={{marginTop:4,display:'flex',gap:6}}>
+                    <button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:color+'30',border:`1px solid ${color}`,color,borderRadius:4,padding:'2px 6px',fontFamily:'Cinzel',fontSize:9,cursor:'pointer'}}>⏱</button>
+                    {/* Bouton suppression uniquement pour les blocs perso non-récurrents */}
+                    {!b.repeat&&!b._isSession&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'#e74c3c18',border:'1px solid #e74c3c44',color:'#e74c3c',borderRadius:4,padding:'2px 6px',fontSize:9,cursor:'pointer'}}>✕</button>}
+                  </div>}
                 </div>
               )
             })}
@@ -487,16 +551,24 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:8}}>
                   {[...dayBlocks].sort((a,b)=>(a.startHour||0)-(b.startHour||0)).map(b=>{
-                    const color=ACTIVITY_COLORS[b.type]||ACTIVITY_COLORS.custom
+                    const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
+                    // Clic : session → navigation ; bloc perso → modal édition
+                    const handleBlockClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
                     return(
-                      <div key={b.id} style={{background:color+'1e',border:`1px solid ${color}55`,borderRadius:6,padding:'5px 7px'}}>
-                        <div style={{fontSize:11,color,fontFamily:'Crimson Pro',lineHeight:1.3,display:'flex',alignItems:'center',gap:4}}><NosIcon iconId={ACTIVITY_ICONS[b.type]||'4519'} size={14}/><span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span></div>
+                      <div key={b.id} onClick={handleBlockClick} style={{background:color+'1e',border:`1px solid ${b._isSession?color+'66':color+'55'}`,borderRadius:6,padding:'5px 7px',cursor:'pointer',borderLeft:b._isSession?`2px solid ${color}`:''}}>
+                        <div style={{fontSize:11,color,fontFamily:'Crimson Pro',lineHeight:1.3,display:'flex',alignItems:'center',gap:4}}>
+                          <NosIcon iconId={b.icon||ACTIVITY_ICONS[b.type]||'4519'} size={14}/>
+                          <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}</span>
+                          {/* Icône ⚔ pour les blocs session */}
+                          {b._isSession&&<span style={{fontSize:9,flexShrink:0,opacity:.8}}>⚔</span>}
+                        </div>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:4}}>
                           <span style={{fontSize:9,color:th.textSub,fontFamily:'Cinzel'}}>{fmtHour(b.startHour||0)}</span>
                           <div style={{display:'flex',gap:4}}>
-                            <button onClick={()=>onStartTimer(b)} style={{background:'transparent',border:'none',color,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>⏱</button>
-                            <button onClick={()=>setEditBlock(b)} style={{background:'transparent',border:'none',color:th.textSub,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✏️</button>
-                            {!b.repeat&&<button onClick={()=>handleDelete(b.id)} style={{background:'transparent',border:'none',color:'#e74c3c88',cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✕</button>}
+                            <button onClick={e=>{e.stopPropagation();onStartTimer(b)}} style={{background:'transparent',border:'none',color,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>⏱</button>
+                            {/* Boutons édition et suppression uniquement pour les blocs perso */}
+                            {!b._isSession&&<button onClick={e=>{e.stopPropagation();setEditBlock(b)}} style={{background:'transparent',border:'none',color:th.textSub,cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✏️</button>}
+                            {!b.repeat&&!b._isSession&&<button onClick={e=>{e.stopPropagation();handleDelete(b.id)}} style={{background:'transparent',border:'none',color:'#e74c3c88',cursor:'pointer',fontSize:12,padding:'1px 3px',lineHeight:1}}>✕</button>}
                           </div>
                         </div>
                       </div>
@@ -711,7 +783,7 @@ function NotesBar({notes,setNotes,th,i18n}){
 
 // ── Main PlannerPage ───────────────────────────────────────────────────────
 export default function PlannerPage() {
-  const { t }    = useLang()
+  const { t, lang } = useLang()
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const p        = t('planner')
@@ -719,6 +791,12 @@ export default function PlannerPage() {
   const plannerData = usePlannerData(p.defaultChar)
   const { loaded, syncing, syncErr, chars, setChars, activeChar, setActiveChar, blocks, setBlocks, checks, setChecks, raids, setRaids, goals, setGoals, notes, setNotes } = plannerData
   const { characters: profileChars } = useCharacters()
+
+  // Blocs provenant des sessions de raid (lecture seule, non stockés dans planner_data)
+  const { sessionBlocks } = useSessionBlocks(user?.id, lang)
+  // Fusion pour l'affichage : blocs perso + blocs session
+  // Les blocs session sont reconnaissables par _isSession:true et ne sont jamais écrits
+  const allBlocks = [...blocks, ...sessionBlocks]
 
   const [activeTab,   setTab]   = useState('planning')
   const [timer,       setTimer] = useState(null)
@@ -749,7 +827,7 @@ export default function PlannerPage() {
   const addChar=()=>{const n=newCharName.trim();if(!n||chars.includes(n))return;setChars(prev=>[...prev,n]);setActiveChar(n);setNCN('');setAC(false)}
 
   const todayKey=isoDay(new Date()),todayDow=new Date().getDay()
-  const todayBlocks=blocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
+  const todayBlocks=allBlocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
   const doneDailies=todayBlocks.filter(b=>checks[`${todayKey}__${activeChar}__${b.id}`]).length
   const readyRaids=RAIDS.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
 
@@ -824,11 +902,11 @@ export default function PlannerPage() {
             {TABS.map(tab=><button key={tab.id} onClick={()=>setTab(tab.id)} style={{padding:'11px 22px',background:'transparent',border:'none',borderBottom:`2px solid ${activeTab===tab.id?th.gold:'transparent'}`,color:activeTab===tab.id?th.gold:th.tabInact,fontFamily:'Cinzel',fontSize:12,letterSpacing:1,cursor:'pointer',transition:'all .2s'}}>{tab.label}</button>)}
           </div>
 
-          {activeTab==='planning'&&<WeeklyPlanning blocks={blocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} i18nModal={{...p.modal,activityTypes:p.activityTypes,reminder:p.reminder}} onStartTimer={setTimer} days={p.days} months={p.months}/>}
+          {activeTab==='planning'&&<WeeklyPlanning blocks={allBlocks} setBlocks={setBlocks} char={activeChar} th={th} i18n={p.planning} i18nModal={{...p.modal,activityTypes:p.activityTypes,reminder:p.reminder}} onStartTimer={setTimer} onSessionClick={sid=>navigate(`/raid-sessions/${sid}`)} days={p.days} months={p.months}/>}
           {activeTab==='dailies'&&(
             <div>
               <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.dailies.title} {activeChar?.toUpperCase()}</div>
-              <DailyChecklist blocks={blocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
+              <DailyChecklist blocks={allBlocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
             </div>
           )}
           {activeTab==='raids'&&(
