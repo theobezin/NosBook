@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { MARKET_TAGS, parseGold, MAX_GOLD, LISTING_TYPES } from '@/lib/market'
+import { fmtThousands } from '@/lib/utils'
 import { createListing, isBanned, isMuted } from '@/hooks/useMarket'
 import { supabase } from '@/lib/supabase'
 import styles from './CreateListingModal.module.css'
@@ -155,11 +156,10 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
                 {t('market.formBasePrice')} <span className={styles.optional}>({t('market.formOptional')})</span>
                 <input
                   className={styles.input}
-                  type="number"
-                  min={0}
-                  max={MAX_GOLD}
+                  type="text"
+                  inputMode="numeric"
                   value={basePrice}
-                  onChange={e => setBasePrice(e.target.value)}
+                  onChange={e => setBasePrice(fmtThousands(e.target.value))}
                   placeholder="0"
                 />
               </label>
@@ -167,11 +167,10 @@ export default function CreateListingModal({ type = LISTING_TYPES.SELL, userServ
                 {t('market.formBuyoutPrice')} <span className={styles.optional}>({t('market.formOptional')})</span>
                 <input
                   className={styles.input}
-                  type="number"
-                  min={0}
-                  max={MAX_GOLD}
+                  type="text"
+                  inputMode="numeric"
                   value={buyoutPrice}
-                  onChange={e => setBuyoutPrice(e.target.value)}
+                  onChange={e => setBuyoutPrice(fmtThousands(e.target.value))}
                   placeholder="0"
                 />
               </label>

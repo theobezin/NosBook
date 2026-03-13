@@ -316,7 +316,7 @@ export function useSessionBlocks(uid, lang = 'fr') {
         filter: `player_id=eq.${uid}`,
       }, load)
       .on('postgres_changes', {
-        event:  'UPDATE',
+        event:  '*',   // UPDATE (horaire) + DELETE (suppression session)
         schema: 'public',
         table:  'raid_sessions',
       }, load)

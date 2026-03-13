@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { useLang } from '@/i18n'
 import { MARKET_TAGS, parseGold, MAX_GOLD, LISTING_TYPES } from '@/lib/market'
+import { fmtThousands } from '@/lib/utils'
 import { updateListing } from '@/hooks/useMarket'
 import styles from './CreateListingModal.module.css'
 
@@ -21,10 +22,10 @@ export default function EditListingModal({ listing, onClose, onSuccess }) {
     listing.imageUrls?.length ? listing.imageUrls : ['']
   )
   const [basePrice,   setBasePrice]   = useState(
-    listing.basePrice != null ? String(listing.basePrice) : ''
+    listing.basePrice != null ? fmtThousands(listing.basePrice) : ''
   )
   const [buyoutPrice, setBuyoutPrice] = useState(
-    listing.buyoutPrice != null ? String(listing.buyoutPrice) : ''
+    listing.buyoutPrice != null ? fmtThousands(listing.buyoutPrice) : ''
   )
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState(null)
@@ -138,11 +139,10 @@ export default function EditListingModal({ listing, onClose, onSuccess }) {
                 {t('market.formBasePrice')} <span className={styles.optional}>({t('market.formOptional')})</span>
                 <input
                   className={styles.input}
-                  type="number"
-                  min={0}
-                  max={MAX_GOLD}
+                  type="text"
+                  inputMode="numeric"
                   value={basePrice}
-                  onChange={e => setBasePrice(e.target.value)}
+                  onChange={e => setBasePrice(fmtThousands(e.target.value))}
                   placeholder="0"
                 />
               </label>
@@ -150,11 +150,10 @@ export default function EditListingModal({ listing, onClose, onSuccess }) {
                 {t('market.formBuyoutPrice')} <span className={styles.optional}>({t('market.formOptional')})</span>
                 <input
                   className={styles.input}
-                  type="number"
-                  min={0}
-                  max={MAX_GOLD}
+                  type="text"
+                  inputMode="numeric"
                   value={buyoutPrice}
-                  onChange={e => setBuyoutPrice(e.target.value)}
+                  onChange={e => setBuyoutPrice(fmtThousands(e.target.value))}
                   placeholder="0"
                 />
               </label>

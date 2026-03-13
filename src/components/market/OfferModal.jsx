@@ -8,6 +8,7 @@ import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useCharacters } from '@/hooks/useCharacters'
 import { parseGold, formatGold, MAX_GOLD, bestOffer } from '@/lib/market'
+import { fmtThousands } from '@/lib/utils'
 import { createOffer, triggerConfirmation } from '@/hooks/useMarket'
 import styles from './OfferModal.module.css'
 
@@ -239,13 +240,12 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
               <span className={styles.labelText}>{t('market.offerPrice')}</span>
               <input
                 className={styles.input}
-                type="number"
-                min={effectiveMin}
-                max={MAX_GOLD}
+                type="text"
+                inputMode="numeric"
                 value={price}
-                onChange={e => setPrice(e.target.value)}
+                onChange={e => setPrice(fmtThousands(e.target.value))}
                 required
-                placeholder={String(effectiveMin)}
+                placeholder={fmtThousands(effectiveMin)}
               />
             </label>
           )}
