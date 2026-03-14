@@ -9,11 +9,14 @@ import styles from './HubPage.module.css'
 
 // ── RSS helpers ────────────────────────────────────────────────────────────
 // Fetched via allorigins.win to bypass browser CORS restrictions.
-const STEAM_LANG = { en: 'en', fr: 'fr', de: 'german' }
+const STEAM_LANG = { 
+  en: {cc:'EN', l:'english'}, 
+  fr: {cc:'FR', l:'french'}, 
+  de: {cc:'DE', l:'german'} }
 
 function feedUrl(lang) {
   const l = STEAM_LANG[lang] ?? 'en'
-  return `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://store.steampowered.com/feeds/news/app/550470/?l=${l}`)}`
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://store.steampowered.com/feeds/news/app/550470/?cc=${l.cc}&l=${l.l}`)}`
 }
 
 function getText(item, tag) {
