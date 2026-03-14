@@ -760,7 +760,6 @@ function NotesBar({notes,setNotes,th,i18n}){
 // ── Main PlannerPage ───────────────────────────────────────────────────────
 export default function PlannerPage() {
   const { t, lang } = useLang()
-  const { t, lang } = useLang()
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const p        = t('planner')
