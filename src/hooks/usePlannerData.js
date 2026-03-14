@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase, hasSupabase } from '@/lib/supabase'
+import { RAIDS } from '@/lib/raids'
 
 // ── Clé localStorage ───────────────────────────────────────────────────────
 // Isolée par userId pour éviter tout partage de données entre comptes.
@@ -196,4 +197,79 @@ export function usePlannerData(defaultCharName) {
     setTheme, setChars, setActiveChar,
     setBlocks, setChecks, setRaids, setGoals, setNotes,
   }
+}
+
+// ── useSessionBlocks ──────────────────────────────────────────────────────────
+// Synchro unidirectionnelle : sessions de raid → blocs planner (lecture seule).
+// Seules les sessions auxquelles le personnage est inscrit apparaissent.
+//
+export function useSessionBlocks(uid, lang) {
+  const [sessionBlocks, setSessionBlocks] = useState([])
+
+  useEffect(() => {
+    if (!hasSupabase || !uid) { setSessionBlocks([]); return }
+    let cancelled = false
+
+    async function load() {
+      const { data, error } = await supabase
+        .from('raid_session_registrations')
+        .select('id, session_id, character_snapshot, raid_sessions(id, raid_slug, date, time, duration_minutes, min_level, server)')
+        .eq('player_id', uid)
+
+      if (error || !data || cancelled) return
+
+      const blocks = data
+        .filter(reg => reg.raid_sessions)
+        .map(reg => {
+          const session = reg.raid_sessions
+          const raid    = RAIDS.find(r => r.slug === session.raid_slug)
+          const [hStr, mStr] = (session.time ?? '00:00').split(':')
+          const startHour = parseInt(hStr, 10) + parseInt(mStr, 10) / 60
+          const endHour   = startHour + (session.duration_minutes ?? 60) / 60
+          return {
+            id:           `session_${reg.id}`,
+            _isSession:   true,
+            _sessionId:   session.id,
+            _raidColor:   raid?.color ?? '#c9a96e',
+            char:         reg.character_snapshot?.name ?? null,
+            label:        raid ? (raid[lang] ?? raid.fr) : session.raid_slug,
+            icon:         raid?.icon ?? '4519',
+            type:         'session',
+            day:          session.date,
+            startHour,
+            endHour,
+            repeat:       false,
+          }
+        })
+
+      if (!cancelled) setSessionBlocks(blocks)
+    }
+
+    load()
+
+    // Realtime : inscription / désinscription du joueur
+    const ch1 = supabase
+      .channel(`session-blocks-regs-${uid}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'raid_session_registrations',
+        filter: `player_id=eq.${uid}`,
+      }, () => load())
+      .subscribe()
+
+    // Realtime : modification de la session (heure, suppression…)
+    const ch2 = supabase
+      .channel(`session-blocks-sess-${uid}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'raid_sessions',
+      }, () => load())
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(ch1)
+      supabase.removeChannel(ch2)
+    }
+  }, [uid, lang])
+
+  return sessionBlocks
 }
