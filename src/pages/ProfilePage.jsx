@@ -149,7 +149,7 @@ function CreateModal({ onClose, onCreate, server }) {
 // ── WeaponModal ────────────────────────────────────────────────────────────
 
 function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, equippedWeapon }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [query, setQuery] = useState('')
 
   const allWeapons = Array.isArray(weaponsSource) ? weaponsSource : (weaponsSource[char.class] ?? [])
@@ -160,7 +160,7 @@ function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, 
   })
 
   const filtered = available.filter(w =>
-    w.name.toLowerCase().includes(query.toLowerCase())
+    (w[lang] ?? w.fr).toLowerCase().includes(query.toLowerCase())
   )
 
   const equipped = equippedWeapon
@@ -186,16 +186,16 @@ function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, 
         ) : (
           <div className={styles.weaponList}>
             {filtered.map(w => {
-              const isEquipped = equipped?.name === w.name
+              const isEquipped = equipped?.key === w.key || equipped?.fr === w.fr
               return (
                 <button
-                  key={`${w.name}-${w.minLevel ?? w.minHero}`}
+                  key={w.key}
                   type="button"
                   className={`${styles.weaponItem} ${isEquipped ? styles.weaponItemActive : ''}`}
-                  onClick={() => { onSelect({ name: w.name, icon: w.icon }); onClose() }}
+                  onClick={() => { onSelect({ key: w.key, fr: w.fr, icon: w.icon }); onClose() }}
                 >
                   <img src={w.icon} alt="" className={styles.weaponItemIcon} />
-                  <span className={styles.weaponItemName}>{w.name}</span>
+                  <span className={styles.weaponItemName}>{w[lang] ?? w.fr}</span>
                   <span className={styles.weaponItemLevel}>
                     {w.minHero !== null
                       ? `${t('weapon.heroReq')} ${w.minHero}`
@@ -259,7 +259,7 @@ function WeaponEnhanceModal({ weapon, onClose, onSave }) {
                 onClick={() => setRarity(r.key)}
               >
                 <span className={styles.rarityBtnRank}>{r.rank}</span>
-                <span className={styles.rarityBtnLabel}>{r.label || '—'}</span>
+                <span className={styles.rarityBtnLabel}>{r.fr || '—'}</span>
               </button>
             ))}
           </div>
@@ -307,6 +307,7 @@ const RUNIC_MAX   = 9
 const SHELL_RANK_ORDER = { C: 0, B: 1, A: 2, S: 3 }
 
 function EffectSelect({ effects, value, onChange }) {
+  const { lang } = useLang()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const selected = effects.find(e => e.key === value) ?? effects[0]
@@ -321,7 +322,7 @@ function EffectSelect({ effects, value, onChange }) {
   return (
     <div className={styles.shellEffectSelect} ref={ref}>
       <button type="button" className={styles.shellEffectSelectTrigger} onClick={() => setOpen(o => !o)}>
-        <span className={styles.shellEffectSelectName}>{selected?.label}</span>
+        <span className={styles.shellEffectSelectName}>{selected ? (selected[lang] ?? selected.fr ?? selected.label) : ''}</span>
         <span className={styles.spSelectArrow}>▾</span>
       </button>
       {open && (
@@ -333,7 +334,7 @@ function EffectSelect({ effects, value, onChange }) {
               className={`${styles.shellEffectSelectOption} ${value === e.key ? styles.shellEffectSelectOptionActive : ''}`}
               onClick={() => { onChange(e.key); setOpen(false) }}
             >
-              {e.label}
+              {e[lang] ?? e.fr ?? e.label}
             </button>
           ))}
         </div>
@@ -390,7 +391,7 @@ function WeaponShellModal({ weapon, onClose, onSave }) {
             return (
               <div key={idx} className={styles.shellEffectRow} style={{ color }}>
                 <span className={styles.shellEffectRank}>{eff.rank}</span>
-                <span className={styles.shellEffectLabel}>{def?.label ?? eff.key}</span>
+                <span className={styles.shellEffectLabel}>{def?.fr ?? eff.key}</span>
                 <span className={styles.shellEffectValue}>{eff.value}</span>
                 <button className={styles.shellDeleteBtn} onClick={() => handleDelete(eff)}>✕</button>
               </div>
@@ -489,7 +490,7 @@ function WeaponRunicModal({ weapon, onClose, onSave }) {
             const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
             return (
               <div key={idx} className={styles.shellEffectRow} style={{ color: RUNIC_COLOR }}>
-                <span className={styles.shellEffectLabel}>{def?.label ?? eff.key}</span>
+                <span className={styles.shellEffectLabel}>{def?.fr ?? eff.key}</span>
                 <span className={styles.shellEffectValue}>{eff.value}</span>
                 <button className={styles.shellDeleteBtn} onClick={() => handleDelete(eff)}>✕</button>
               </div>
@@ -533,7 +534,7 @@ function WeaponRunicModal({ weapon, onClose, onSave }) {
 // ── MultiSelectModal ──────────────────────────────────────────────────────
 
 function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [selected, setSelected] = useState(equipped ?? [])
   const [query, setQuery] = useState('')
 
@@ -543,13 +544,13 @@ function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
   })
 
   const filtered = available.filter(h =>
-    h.name.toLowerCase().includes(query.toLowerCase())
+    (h[lang] ?? h.fr).toLowerCase().includes(query.toLowerCase())
   )
 
   const toggle = (hat) => {
-    const idx = selected.findIndex(s => s.name === hat.name)
+    const idx = selected.findIndex(s => s.key === hat.key || s.fr === hat.fr)
     if (idx >= 0) setSelected(prev => prev.filter((_, i) => i !== idx))
-    else setSelected(prev => [...prev, { name: hat.name, icon: hat.icon }])
+    else setSelected(prev => [...prev, { key: hat.key, fr: hat.fr, icon: hat.icon }])
   }
 
   return (
@@ -571,7 +572,7 @@ function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
         {selected.length > 0 && (
           <div className={styles.hatSelectedRow}>
             {selected.map(h => (
-              <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatSelectedIcon} />
+              <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatSelectedIcon} />
             ))}
           </div>
         )}
@@ -581,16 +582,17 @@ function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
         ) : (
           <div className={styles.hatGrid}>
             {filtered.map(h => {
-              const isSelected = selected.some(s => s.name === h.name)
+              const isSelected = selected.some(s => s.key === h.key || s.fr === h.fr)
+              const displayName = h[lang] ?? h.fr
               return (
                 <button
-                  key={h.name}
+                  key={h.key}
                   type="button"
                   className={`${styles.hatItem} ${isSelected ? styles.hatItemSelected : ''}`}
                   onClick={() => toggle(h)}
-                  title={`${h.name} — ${h.minHero !== null ? `${t('weapon.heroReq')} ${h.minHero}` : `${t('weapon.lvReq')} ${h.minLevel}`}`}
+                  title={`${displayName} — ${h.minHero !== null ? `${t('weapon.heroReq')} ${h.minHero}` : `${t('weapon.lvReq')} ${h.minLevel}`}`}
                 >
-                  <img src={h.icon} alt={h.name} />
+                  <img src={h.icon} alt={displayName} />
                 </button>
               )
             })}
@@ -615,12 +617,14 @@ function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
 // Helper to build the display text for a weapon-like slot
-function weaponDisplayInfo(w, rarities) {
+function weaponDisplayInfo(w, rarities, lang = 'fr') {
   if (!w) return { text: null, rarity: null }
   const rarity  = w.rarity ? rarities.find(r => r.key === w.rarity) : null
   const suffix  = (w.improvement ?? 0) > 0 ? ` +${w.improvement}` : ''
-  const prefix  = rarity?.label ? `${rarity.label} : ` : ''
-  return { text: `${prefix}${w.name}${suffix}`, rarity }
+  const rarityLabel = rarity ? (rarity[lang] ?? rarity.fr) : ''
+  const prefix  = rarityLabel ? `${rarityLabel} : ` : ''
+  const itemName = w.fr ?? w.name ?? ''
+  return { text: `${prefix}${itemName}${suffix}`, rarity }
 }
 
 // Reusable weapon card display (shell + runic effects)
@@ -635,7 +639,7 @@ function WeaponCard({ w }) {
           const color = SHELL_RANK_COLORS[eff.rank]
           return (
             <div key={`s${idx}`} className={styles.shellCardLine} style={{ color }}>
-              {eff.rank}-{def?.label ?? eff.key} : {eff.value}
+              {eff.rank}-{def?.fr ?? eff.key} : {eff.value}
             </div>
           )
         })}
@@ -644,7 +648,7 @@ function WeaponCard({ w }) {
         const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
         return (
           <div key={`r${idx}`} className={styles.shellCardLine} style={{ color: RUNIC_COLOR }}>
-            ✦ {def?.label ?? eff.key} : {eff.value}
+            ✦ {def?.fr ?? eff.key} : {eff.value}
           </div>
         )
       })}
@@ -653,7 +657,7 @@ function WeaponCard({ w }) {
 }
 
 function EquipmentTab({ char, onUpdate }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [showWeapon,         setShowWeapon]         = useState(false)
   const [showEnhance,        setShowEnhance]        = useState(false)
   const [showShell,          setShowShell]          = useState(false)
@@ -704,11 +708,11 @@ function EquipmentTab({ char, onUpdate }) {
   const costumeBottom  = Array.isArray(char.equipment.costumeBottom)  ? char.equipment.costumeBottom  : []
   const costumeWeapon  = Array.isArray(char.equipment.costumeWeapon)  ? char.equipment.costumeWeapon  : []
 
-  const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
-  const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
-  const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES)
-  const { text: glovesText,  rarity: glovesRarity  } = weaponDisplayInfo(gloves,  WEAPON_RARITIES)
-  const { text: shoesText,   rarity: shoesRarity   } = weaponDisplayInfo(shoes,   WEAPON_RARITIES)
+  const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES, lang)
+  const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES, lang)
+  const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES, lang)
+  const { text: glovesText,  rarity: glovesRarity  } = weaponDisplayInfo(gloves,  WEAPON_RARITIES, lang)
+  const { text: shoesText,   rarity: shoesRarity   } = weaponDisplayInfo(shoes,   WEAPON_RARITIES, lang)
 
   return (
     <div className={styles.equipTabList}>
@@ -822,7 +826,7 @@ function EquipmentTab({ char, onUpdate }) {
           {hats.length > 0 ? (
             <div className={styles.hatIconRow}>
               {hats.map(h => (
-                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatRowIcon} />
               ))}
             </div>
           ) : (
@@ -886,7 +890,7 @@ function EquipmentTab({ char, onUpdate }) {
           {necklace ? (
             <span className={styles.equipTabFilled}>
               <img src={necklace.icon} alt="" className={styles.equipTabIcon} />
-              {necklace.name}
+              {necklace.fr ?? necklace.name}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
@@ -907,7 +911,7 @@ function EquipmentTab({ char, onUpdate }) {
           {ring ? (
             <span className={styles.equipTabFilled}>
               <img src={ring.icon} alt="" className={styles.equipTabIcon} />
-              {ring.name}
+              {ring.fr ?? ring.name}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
@@ -928,7 +932,7 @@ function EquipmentTab({ char, onUpdate }) {
           {bracelet ? (
             <span className={styles.equipTabFilled}>
               <img src={bracelet.icon} alt="" className={styles.equipTabIcon} />
-              {bracelet.name}
+              {bracelet.fr ?? bracelet.name}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
@@ -949,7 +953,7 @@ function EquipmentTab({ char, onUpdate }) {
           {costumeWings.length > 0 ? (
             <div className={styles.hatIconRow}>
               {costumeWings.map(h => (
-                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatRowIcon} />
               ))}
             </div>
           ) : (
@@ -971,7 +975,7 @@ function EquipmentTab({ char, onUpdate }) {
           {costumeTop.length > 0 ? (
             <div className={styles.hatIconRow}>
               {costumeTop.map(h => (
-                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatRowIcon} />
               ))}
             </div>
           ) : (
@@ -993,7 +997,7 @@ function EquipmentTab({ char, onUpdate }) {
           {costumeBottom.length > 0 ? (
             <div className={styles.hatIconRow}>
               {costumeBottom.map(h => (
-                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatRowIcon} />
               ))}
             </div>
           ) : (
@@ -1015,7 +1019,7 @@ function EquipmentTab({ char, onUpdate }) {
           {costumeWeapon.length > 0 ? (
             <div className={styles.hatIconRow}>
               {costumeWeapon.map(h => (
-                <img key={h.name} src={h.icon} alt={h.name} title={h.name} className={styles.hatRowIcon} />
+                <img key={h.key ?? h.fr} src={h.icon} alt={h[lang] ?? h.fr} title={h[lang] ?? h.fr} className={styles.hatRowIcon} />
               ))}
             </div>
           ) : (
@@ -1064,9 +1068,10 @@ function EquipmentTab({ char, onUpdate }) {
 // ── SPSelect ────────────────────────────────────────────────────────────────
 
 function SPSelect({ spList, value, onChange }) {
+  const { lang } = useLang()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  const selected = spList.find(sp => sp.name === value) ?? spList[0]
+  const selected = spList.find(sp => sp.key === value) ?? spList[0]
 
   useEffect(() => {
     if (!open) return
@@ -1079,20 +1084,20 @@ function SPSelect({ spList, value, onChange }) {
     <div className={styles.spSelect} ref={ref}>
       <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
         {selected?.icon && <img src={selected.icon} alt="" className={styles.spSelectIcon} />}
-        <span className={styles.spSelectName}>{selected?.name}</span>
+        <span className={styles.spSelectName}>{selected ? (selected[lang] ?? selected.fr) : ''}</span>
         <span className={styles.spSelectArrow}>▾</span>
       </button>
       {open && (
         <div className={styles.spSelectDropdown}>
           {spList.map(sp => (
             <button
-              key={sp.name}
+              key={sp.key}
               type="button"
-              className={`${styles.spSelectOption} ${value === sp.name ? styles.spSelectOptionActive : ''}`}
-              onClick={() => { onChange(sp.name); setOpen(false) }}
+              className={`${styles.spSelectOption} ${value === sp.key ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange(sp.key); setOpen(false) }}
             >
               <img src={sp.icon} alt="" className={styles.spSelectIcon} />
-              <span>{sp.name}</span>
+              <span>{sp[lang] ?? sp.fr}</span>
             </button>
           ))}
         </div>
@@ -1104,7 +1109,7 @@ function SPSelect({ spList, value, onChange }) {
 // ── WingsSelect ────────────────────────────────────────────────────────────
 
 function WingsSelect({ value, onChange }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -1115,11 +1120,14 @@ function WingsSelect({ value, onChange }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // value is stored as { key, icon } or legacy { name, icon }
+  const resolvedWing = value ? (SP_WINGS.find(w => w.key === value.key) ?? SP_WINGS.find(w => w.fr === value.name)) : null
+
   return (
     <div className={styles.spSelect} ref={ref}>
       <button type="button" className={styles.spSelectTrigger} onClick={() => setOpen(o => !o)}>
-        {value
-          ? <><img src={value.icon} alt="" className={styles.spSelectIcon} /><span className={styles.spSelectName}>{value.name}</span></>
+        {resolvedWing
+          ? <><img src={resolvedWing.icon} alt="" className={styles.spSelectIcon} /><span className={styles.spSelectName}>{resolvedWing[lang] ?? resolvedWing.fr}</span></>
           : <span className={styles.spSelectName}>{t('sp.wingsNone')}</span>
         }
         <span className={styles.spSelectArrow}>▾</span>
@@ -1128,20 +1136,20 @@ function WingsSelect({ value, onChange }) {
         <div className={styles.spSelectDropdown}>
           <button
             type="button"
-            className={`${styles.spSelectOption} ${!value ? styles.spSelectOptionActive : ''}`}
+            className={`${styles.spSelectOption} ${!resolvedWing ? styles.spSelectOptionActive : ''}`}
             onClick={() => { onChange(null); setOpen(false) }}
           >
             <span>{t('sp.wingsNone')}</span>
           </button>
           {SP_WINGS.map(w => (
             <button
-              key={w.name}
+              key={w.key}
               type="button"
-              className={`${styles.spSelectOption} ${value?.name === w.name ? styles.spSelectOptionActive : ''}`}
-              onClick={() => { onChange(w); setOpen(false) }}
+              className={`${styles.spSelectOption} ${resolvedWing?.key === w.key ? styles.spSelectOptionActive : ''}`}
+              onClick={() => { onChange({ key: w.key, icon: w.icon }); setOpen(false) }}
             >
               <img src={w.icon} alt="" className={styles.spSelectIcon} />
-              <span>{w.name}</span>
+              <span>{w[lang] ?? w.fr}</span>
             </button>
           ))}
         </div>
@@ -1156,7 +1164,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
   const { t } = useLang()
   const spList = SPECIALISTS[charClass] ?? []
 
-  const [name,        setName]        = useState(spList[0]?.name ?? '')
+  const [spKey,       setSpKey]       = useState(spList[0]?.key ?? '')
   const [improvement, setImprovement] = useState(0)
   const [perfection,  setPerfection]  = useState(0)
   const [statAtk,     setStatAtk]     = useState(0)
@@ -1166,11 +1174,12 @@ function AddSPModal({ charClass, onClose, onAdd }) {
   const [wings,       setWings]       = useState(null)
 
   const handleAdd = () => {
-    if (!name) return
-    const spData = spList.find(sp => sp.name === name)
+    if (!spKey) return
+    const spData = spList.find(sp => sp.key === spKey)
     onAdd({
       id:          `sp-${Date.now()}`,
-      name,
+      key:         spKey,
+      fr:          spData?.fr ?? spKey,
       icon:        spData?.icon ?? null,
       improvement: Math.max(0, Math.min(20,  parseInt(improvement) || 0)),
       perfection:  Math.max(0, Math.min(100, parseInt(perfection)  || 0)),
@@ -1193,7 +1202,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
 
         <div className={styles.modalField}>
           <label className={styles.modalLabel}>{t('sp.spLabel')}</label>
-          <SPSelect spList={spList} value={name} onChange={setName} />
+          <SPSelect spList={spList} value={spKey} onChange={setSpKey} />
         </div>
 
         <div className={styles.modalRow}>
@@ -1249,7 +1258,7 @@ function AddSPModal({ charClass, onClose, onAdd }) {
 
         <div className={styles.modalActions}>
           <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
-          <Button variant="solid" size="md" onClick={handleAdd} disabled={!name}>
+          <Button variant="solid" size="md" onClick={handleAdd} disabled={!spKey}>
             {t('sp.addBtn')}
           </Button>
         </div>
@@ -1265,7 +1274,9 @@ function EditSPModal({ charClass, sp, onClose, onSave }) {
   const { t } = useLang()
   const spList = SPECIALISTS[charClass] ?? []
 
-  const [name,        setName]        = useState(sp.name)
+  // support legacy records stored with `name` instead of `key`
+  const initialKey = sp.key ?? spList.find(s => s.fr === sp.name)?.key ?? spList[0]?.key ?? ''
+  const [spKey,       setSpKey]       = useState(initialKey)
   const [improvement, setImprovement] = useState(String(sp.improvement))
   const [perfection,  setPerfection]  = useState(String(sp.perfection))
   const [statAtk,     setStatAtk]     = useState(String(sp.stats.attack))
@@ -1275,11 +1286,12 @@ function EditSPModal({ charClass, sp, onClose, onSave }) {
   const [wings,       setWings]       = useState(sp.wings ?? null)
 
   const handleSave = () => {
-    if (!name) return
-    const spData = spList.find(s => s.name === name)
+    if (!spKey) return
+    const spData = spList.find(s => s.key === spKey)
     onSave({
       ...sp,
-      name,
+      key:         spKey,
+      fr:          spData?.fr ?? sp.fr ?? spKey,
       icon:        spData?.icon ?? sp.icon,
       improvement: Math.max(0, Math.min(20,  parseInt(improvement) || 0)),
       perfection:  Math.max(0, Math.min(100, parseInt(perfection)  || 0)),
@@ -1302,7 +1314,7 @@ function EditSPModal({ charClass, sp, onClose, onSave }) {
 
         <div className={styles.modalField}>
           <label className={styles.modalLabel}>{t('sp.spLabel')}</label>
-          <SPSelect spList={spList} value={name} onChange={setName} />
+          <SPSelect spList={spList} value={spKey} onChange={setSpKey} />
         </div>
 
         <div className={styles.modalRow}>
@@ -1358,7 +1370,7 @@ function EditSPModal({ charClass, sp, onClose, onSave }) {
 
         <div className={styles.modalActions}>
           <Button variant="ghost" size="md" onClick={onClose}>{t('create.cancel')}</Button>
-          <Button variant="solid" size="md" onClick={handleSave} disabled={!name}>
+          <Button variant="solid" size="md" onClick={handleSave} disabled={!spKey}>
             {t('sp.saveBtn')}
           </Button>
         </div>
@@ -1371,7 +1383,7 @@ function EditSPModal({ charClass, sp, onClose, onSave }) {
 // ── SpecialistsTab ─────────────────────────────────────────────────────────
 
 function SpecialistsTab({ char, onUpdate }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [showAdd,    setShowAdd]    = useState(false)
   const [editingSp,  setEditingSp]  = useState(null)
 
@@ -1410,11 +1422,16 @@ function SpecialistsTab({ char, onUpdate }) {
         <div className={styles.spEmpty}>{t('sp.empty')}</div>
       ) : (
         <div className={styles.spGrid}>
-          {specialists.map(sp => (
+          {specialists.map(sp => {
+            const spDef = Object.values(SPECIALISTS).flat().find(s => s.key === sp.key) ?? Object.values(SPECIALISTS).flat().find(s => s.fr === sp.name)
+            const spName = spDef ? (spDef[lang] ?? spDef.fr) : (sp.fr ?? sp.name ?? sp.key ?? '')
+            const wingsDef = sp.wings ? (SP_WINGS.find(w => w.key === sp.wings.key) ?? SP_WINGS.find(w => w.fr === sp.wings.name)) : null
+            const wingsName = wingsDef ? (wingsDef[lang] ?? wingsDef.fr) : null
+            return (
             <div key={sp.id} className={styles.spCard}>
               <div className={styles.spCardTop}>
                 {sp.icon && <img src={sp.icon} alt="" className={styles.spCardIcon} />}
-                <span className={styles.spCardName}>{sp.name}</span>
+                <span className={styles.spCardName}>{spName}</span>
                 <div className={styles.spCardActions}>
                   <button
                     className={styles.spCardEdit}
@@ -1431,10 +1448,10 @@ function SpecialistsTab({ char, onUpdate }) {
               <div className={styles.spCardBadges}>
                 <span className={`${styles.spBadge} ${styles.spBadgeImprove}`}>+{sp.improvement}</span>
                 <span className={`${styles.spBadge} ${styles.spBadgePerf}`}>{sp.perfection}%</span>
-                {sp.wings && (
+                {wingsDef && wingsName && (
                   <span className={`${styles.spBadge} ${styles.spBadgeWings}`}>
-                    <img src={sp.wings.icon} alt="" className={styles.spWingsIcon} />
-                    {sp.wings.name}
+                    <img src={wingsDef.icon} alt="" className={styles.spWingsIcon} />
+                    {wingsName}
                   </span>
                 )}
               </div>
@@ -1452,7 +1469,8 @@ function SpecialistsTab({ char, onUpdate }) {
                 ))}
               </div>
             </div>
-          ))}
+          )
+          })}
         </div>
       )}
 
@@ -1753,11 +1771,11 @@ function FairiesTab({ char, onUpdate }) {
 const MAX_TATTOOS = 2
 
 function TattooPickerModal({ onClose, onAdd, existing }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [query, setQuery] = useState('')
 
-  const filtered = TATTOOS.filter(t =>
-    t.name.toLowerCase().includes(query.toLowerCase())
+  const filtered = TATTOOS.filter(tattooItem =>
+    (tattooItem[lang] ?? tattooItem.fr).toLowerCase().includes(query.toLowerCase())
   )
 
   return (
@@ -1778,18 +1796,19 @@ function TattooPickerModal({ onClose, onAdd, existing }) {
         ) : (
           <div className={styles.tattooGrid}>
             {filtered.map(tattoo => {
-              const isEquipped = existing.some(e => e.name === tattoo.name)
+              const isEquipped = existing.some(e => e.key === tattoo.key || e.fr === tattoo.fr)
+              const displayName = tattoo[lang] ?? tattoo.fr
               return (
                 <button
-                  key={tattoo.name}
+                  key={tattoo.key}
                   type="button"
                   className={`${styles.tattooItem} ${isEquipped ? styles.tattooItemEquipped : ''}`}
                   disabled={isEquipped}
-                  onClick={() => { onAdd({ name: tattoo.name, icon: tattoo.icon, improvement: 0 }); onClose() }}
-                  title={tattoo.name}
+                  onClick={() => { onAdd({ key: tattoo.key, fr: tattoo.fr, icon: tattoo.icon, improvement: 0 }); onClose() }}
+                  title={displayName}
                 >
-                  <img src={tattoo.icon} alt={tattoo.name} />
-                  <span className={styles.tattooItemName}>{tattoo.name}</span>
+                  <img src={tattoo.icon} alt={displayName} />
+                  <span className={styles.tattooItemName}>{displayName}</span>
                 </button>
               )
             })}
@@ -1804,7 +1823,7 @@ function TattooPickerModal({ onClose, onAdd, existing }) {
 }
 
 function TattoosTab({ char, onUpdate }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [showPicker, setShowPicker] = useState(false)
 
   const tattoos = Array.isArray(char.equipment.tattoos) ? char.equipment.tattoos : []
@@ -1838,11 +1857,13 @@ function TattoosTab({ char, onUpdate }) {
         <div className={styles.spEmpty}>{t('tattoo.empty')}</div>
       ) : (
         <div className={styles.tattooCards}>
-          {tattoos.map((tattoo, idx) => (
+          {tattoos.map((tattoo, idx) => {
+            const tattooName = tattoo[lang] ?? tattoo.fr ?? tattoo.name
+            return (
             <div key={idx} className={styles.tattooCard}>
               <div className={styles.tattooCardLeft}>
-                <img src={tattoo.icon} alt={tattoo.name} className={styles.tattooCardIcon} />
-                <span className={styles.tattooCardName}>{tattoo.name}</span>
+                <img src={tattoo.icon} alt={tattooName} className={styles.tattooCardIcon} />
+                <span className={styles.tattooCardName}>{tattooName}</span>
               </div>
               <div className={styles.tattooCardRight}>
                 <div className={styles.tattooImprovRow}>
@@ -1858,7 +1879,8 @@ function TattoosTab({ char, onUpdate }) {
                 <button className={styles.spCardDelete} onClick={() => handleDelete(idx)}>✕</button>
               </div>
             </div>
-          ))}
+          )
+          })}
         </div>
       )}
 
