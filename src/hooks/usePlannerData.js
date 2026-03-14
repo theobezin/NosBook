@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS } from '@/lib/raids'
-import { RAIDS } from '@/lib/raids'
 
 // ── Clé localStorage ───────────────────────────────────────────────────────
 // Isolée par userId pour éviter tout partage de données entre comptes.

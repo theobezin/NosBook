@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useLang }        from '@/i18n'
 import { useAuth }        from '@/hooks/useAuth'
 import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
-import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
@@ -501,8 +500,6 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
               const top=start*HH,height=Math.max((end-start)*HH-4,24)
               const overlap=dayBlocks.slice(0,i).filter(x=>(x.startHour||0)<(b.endHour||0)&&(x.endHour||0)>(b.startHour||0)).length
               const lp=overlap*6,wp=100-lp-2
-              // Clic : session → navigation vers la page de session ; bloc perso → modal édition
-              const handleClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
               return(
                 <div key={b.id} style={{position:'absolute',top,left:`${lp}%`,width:`${wp}%`,height,background:`linear-gradient(135deg,${color}28,${color}18)`,border:`1px solid ${color}66`,borderLeft:`3px solid ${color}`,borderRadius:6,padding:'4px 8px',overflow:'hidden',pointerEvents:'all',cursor:'pointer',zIndex:1+overlap,boxShadow:`0 2px 8px ${color}22`,transition:'opacity .15s'}} onClick={()=>b._isSession?navigate(`/raids/${b._sessionId}`):setEditBlock(b)}>
                   <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}><NosIcon iconId={b.icon||ACTIVITY_ICONS[b.type]||'4519'} size={13}/><span style={{fontFamily:'Crimson Pro',fontSize:12,color,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}{b._isSession&&<span style={{marginLeft:5,fontSize:9,opacity:.7}}>⚔</span>}</span></div>
@@ -539,8 +536,6 @@ function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartT
                 <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:8}}>
                   {[...dayBlocks].sort((a,b)=>(a.startHour||0)-(b.startHour||0)).map(b=>{
                     const color=b._isSession?(b._raidColor??ACTIVITY_COLORS.raid):(ACTIVITY_COLORS[b.type]??ACTIVITY_COLORS.custom)
-                    // Clic : session → navigation ; bloc perso → modal édition
-                    const handleBlockClick=()=>{ if(b._isSession&&onSessionClick) onSessionClick(b._sessionId); else setEditBlock(b) }
                     return(
                       <div key={b.id} style={{background:color+'1e',border:`1px solid ${color}55`,borderRadius:6,padding:'5px 7px',cursor:b._isSession?'pointer':'default'}} onClick={b._isSession?()=>navigate(`/raids/${b._sessionId}`):undefined}>
                         <div style={{fontSize:11,color,fontFamily:'Crimson Pro',lineHeight:1.3,display:'flex',alignItems:'center',gap:4}}><NosIcon iconId={b.icon||ACTIVITY_ICONS[b.type]||'4519'} size={14}/><span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.label}{b._isSession&&<span style={{marginLeft:4,fontSize:9,opacity:.7}}>⚔</span>}</span></div>
@@ -806,7 +801,6 @@ export default function PlannerPage() {
 
   const todayKey=isoDay(new Date()),todayDow=new Date().getDay()
   const todayBlocks=allBlocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
-  const todayBlocks=allBlocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
   const doneDailies=todayBlocks.filter(b=>checks[`${todayKey}__${activeChar}__${b.id}`]).length
   const readyRaids=RAIDS.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
 
@@ -885,7 +879,6 @@ export default function PlannerPage() {
           {activeTab==='dailies'&&(
             <div>
               <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.dailies.title} {activeChar?.toUpperCase()}</div>
-              <DailyChecklist blocks={allBlocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
               <DailyChecklist blocks={allBlocks} checks={checks} setChecks={setChecks} char={activeChar} th={th} i18n={p.dailies} actTypes={p.activityTypes}/>
             </div>
           )}
