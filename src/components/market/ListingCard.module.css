@@ -9,6 +9,10 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.cardClickable {
+  cursor: pointer;
+}
+
 .card:hover {
   border-color: #c9a84c55;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);

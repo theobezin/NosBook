@@ -4,7 +4,7 @@
 // expiry countdown, and action buttons based on context.
 // ============================================================
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
@@ -54,6 +54,7 @@ function TagPill({ slug, t }) {
 export default function ListingCard({ listing, onRefresh, userProfile, userCharServers = [], isFollowed = false, onToggleFollow }) {
   const { t } = useLang()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [showOfferModal,       setShowOfferModal]       = useState(false)
   const [showReportModal,      setShowReportModal]      = useState(false)
@@ -212,7 +213,10 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <div className={`${styles.card} ${isPending ? styles.cardPending : ''} ${isSold ? styles.cardSold : ''}`}>
+    <div
+      className={`${styles.card} ${isPending ? styles.cardPending : ''} ${isSold ? styles.cardSold : ''} ${styles.cardClickable}`}
+      onClick={() => navigate(`/market/${listing.id}`)}
+    >
 
       {/* Header */}
       <div className={styles.header}>
@@ -234,9 +238,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
       {/* Title + description */}
       <div className={styles.body}>
-        <Link to={`/market/${listing.id}`} className={styles.titleLink}>
-          <h3 className={styles.title}>{listing.title}</h3>
-        </Link>
+        <h3 className={styles.title}>{listing.title}</h3>
         {listing.description && (
           <p className={styles.desc}>{listing.description}</p>
         )}
@@ -253,7 +255,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
       {/* Images */}
       {listing.imageUrls.length > 0 && (
-        <div className={styles.images}>
+        <div className={styles.images} onClick={e => e.stopPropagation()}>
           {listing.imageUrls.map((url, i) => (
             <a key={i} href={url} target="_blank" rel="noopener noreferrer">
               <img src={url} alt="" className={styles.thumb} onError={e => { e.target.style.display = 'none' }} />
@@ -302,7 +304,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
       {/* Confirmation pending banner */}
       {isPending && isOwner && (
-        <div className={styles.pendingBanner}>
+        <div className={styles.pendingBanner} onClick={e => e.stopPropagation()}>
           <p>{t('market.confirmPending')}</p>
           <div className={styles.pendingActions}>
             <button
@@ -325,7 +327,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
 
       {/* Offer list (owner view) — visible both when pending and when active */}
       {isOwner && isSell && activeOffers.length > 0 && (
-        <div className={styles.offerList}>
+        <div className={styles.offerList} onClick={e => e.stopPropagation()}>
           {activeOffers
             .sort((a, b) => ((b.price ?? b.price) ?? 0) - ((a.price ?? a.price) ?? 0))
             .map(offer => {
@@ -407,7 +409,7 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
       })()}
 
       {/* Seller info */}
-      <div className={styles.footer}>
+      <div className={styles.footer} onClick={e => e.stopPropagation()}>
         <div className={styles.seller}>
           <span className={styles.sellerName}>
             {t('market.postedBy')}{' '}
