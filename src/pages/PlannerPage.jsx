@@ -9,7 +9,7 @@ import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
 import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
-import { fmtThousands } from '@/lib/utils'
+import { fmtThousands, fmtShorthand, parseShorthand } from '@/lib/utils'
 
 // ── Theme NosBook (fixe, cohérent avec le reste de l'app) ─────────────────
 const NOSBOOK_THEME = {
@@ -157,7 +157,7 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
 
   function addGoal() {
     if (!newName.trim() || !newTarget) return
-    const target = parseFloat(String(newTarget).replace(/\s/g,'').replace(',','.'))
+    const target = parseShorthand(newTarget)
     if (!isFinite(target) || target <= 0) return
     setGoals(g=>[...g,{id:Math.random().toString(36).slice(2),name:newName.trim(),target,unit:newUnit.trim()||'pcs',current:0}])
     setNewName(''); setNewTarget(''); setNewUnit(''); setShowAdd(false)
@@ -165,7 +165,7 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
 
   function applyStep(id, sign) {
     const raw = steps[id] ?? ''
-    const delta = parseFloat(String(raw).replace(/\s/g,'').replace(',','.'))
+    const delta = parseShorthand(raw)
     if (!isFinite(delta) || delta <= 0) return
     setGoals(g=>g.map(goal=>goal.id===id?{...goal,current:Math.max(0, goal.current + sign * delta)}:goal))
   }
@@ -183,7 +183,7 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
         <div style={{background:th.surface,border:`1px solid ${th.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
             <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder={i18n.namePlaceholder} style={{...inp,flex:2,minWidth:140}} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
-            <input type="text" inputMode="numeric" value={newTarget} onChange={e=>setNewTarget(fmtThousands(e.target.value))} placeholder={i18n.targetPlaceholder} style={{...inp,width:130}}/>
+            <input type="text" inputMode="numeric" value={newTarget} onChange={e=>setNewTarget(fmtShorthand(e.target.value))} placeholder={i18n.targetPlaceholder} style={{...inp,width:175}}/>
             <input value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder={i18n.unitPlaceholder} style={{...inp,width:70}}/>
           </div>
           <button onClick={addGoal} style={{padding:'8px 20px',borderRadius:20,background:th.gold+'20',border:`1px solid ${th.gold}`,color:th.gold,fontFamily:'Cinzel',fontSize:11,cursor:'pointer'}}>{i18n.createBtn}</button>
@@ -216,13 +216,13 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
                   style={{padding:'5px 14px',borderRadius:20,background:th.surfaceHov,border:`1px solid ${th.border}`,color:th.textSub,fontFamily:'Cinzel',fontSize:16,lineHeight:1,cursor:'pointer'}}
                 >−</button>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={step}
-                  min={0}
-                  onChange={e=>setSteps(s=>({...s,[goal.id]:fmtThousands(e.target.value)}))}
+                  onChange={e=>setSteps(s=>({...s,[goal.id]:fmtShorthand(e.target.value)}))}
                   onKeyDown={e=>e.key==='Enter'&&applyStep(goal.id,+1)}
                   placeholder={i18n.amountPlaceholder}
-                  style={{...inp,width:120,padding:'5px 10px',fontSize:13,textAlign:'center'}}
+                  style={{...inp,width:165,padding:'5px 10px',fontSize:13,textAlign:'center'}}
                 />
                 <button
                   onClick={()=>applyStep(goal.id,+1)}
