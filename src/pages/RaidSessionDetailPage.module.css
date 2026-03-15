@@ -205,6 +205,11 @@
 .teamSlot[draggable="true"] { cursor: grab; }
 .teamSlot[draggable="true"]:active { cursor: grabbing; }
 .teamSlot:hover { border-color: var(--border-hover); }
+.teamSlot.charCardClickable:hover {
+  border-color: var(--gold-dim);
+  background: rgba(201, 168, 76, 0.04);
+  cursor: pointer;
+}
 
 .teamSlotSPIcon {
   width: 24px;
@@ -276,6 +281,14 @@
 
 .charCardOwn {
   border-color: rgba(201, 168, 76, 0.25);
+}
+
+.charCardClickable {
+  cursor: pointer;
+}
+.charCardClickable:hover {
+  border-color: var(--gold-dim);
+  background: rgba(201, 168, 76, 0.04);
 }
 
 .charClass {
@@ -455,6 +468,255 @@
 }
 
 .profileModal { max-width: 360px; }
+
+.charDetailModal { max-width: 520px; }
+
+/* ── CharacterDetail modal content ────────────────────────────── */
+.charDetailHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.charDetailSub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-top: 0.1rem;
+}
+
+.charDetailProfileLink {
+  color: var(--gold-dim);
+  text-decoration: none;
+}
+.charDetailProfileLink:hover { text-decoration: underline; }
+
+.charDetailLoading {
+  text-align: center;
+  color: var(--text-faint);
+  padding: 2rem 0;
+}
+
+.charDetailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.charDetailSectionTitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.15rem;
+}
+
+/* ── Tab bar ───────────────────────────────────────────────────── */
+.charDetailTabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.charDetailTab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.6rem 1rem;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.charDetailTab:hover { color: var(--text-dim); }
+
+.charDetailTabActive {
+  color: var(--gold-dim);
+  border-bottom-color: var(--gold-dim);
+}
+
+.charDetailTabCount {
+  font-size: 0.65rem;
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--gold-dim);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 99px;
+  padding: 0.05rem 0.4rem;
+}
+
+/* ── Equipment slot ────────────────────────────────────────────── */
+.equipSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.equipSlotLabel {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.equipSlotContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.equipSlotName {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.equipSlotIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.equipSlotEmpty {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ── Shell / runic block ───────────────────────────────────────── */
+.shellBlock {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.shellLine {
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.shellDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.15rem 0;
+}
+
+/* ── SP detail list ────────────────────────────────────────────── */
+.spDetailList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.spDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+.spDetailTop {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.spDetailIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.spDetailName {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spDetailBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  background: rgba(201, 168, 76, 0.1);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  flex-shrink: 0;
+}
+
+.spDetailBadgePerf {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7ec8e3;
+  background: rgba(126, 200, 227, 0.1);
+  border: 1px solid rgba(126, 200, 227, 0.2);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  flex-shrink: 0;
+}
+
+.spDetailStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+}
+
+.spDetailStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.25rem;
+}
+
+.spDetailStatLabel {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.spDetailStatVal {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1;
+}
 
 .modalHead {
   display: flex;
