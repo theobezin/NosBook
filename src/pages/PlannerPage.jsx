@@ -248,7 +248,16 @@ function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
   const filterIdx=i18n.raidTypes.indexOf(filter)
   const filterKey=ACT_KEYS[filterIdx>=0?filterIdx:0]
   const now=Date.now()
-  const getStatus=raid=>{const done=raids[raid.id];if(!done)return null;const rem=raid.cooldown-(now-done)/3600000;if(rem<=0)return{ready:true};return{ready:false,label:`${pad(Math.floor(rem))}h${pad(Math.floor((rem%1)*60))}`}}
+  // Multiples de 24h → reset minuit ; autres (6h, 8h…) → cooldown fixe depuis le moment du raid
+  function nextReset(doneTs, cooldownH) {
+    if (cooldownH % 24 === 0) {
+      const m = new Date(doneTs); m.setHours(0,0,0,0)
+      m.setDate(m.getDate() + cooldownH / 24)
+      return m.getTime()
+    }
+    return doneTs + cooldownH * 3600000
+  }
+  const getStatus=raid=>{const done=raids[raid.id];if(!done)return null;const avail=nextReset(done,raid.cooldown);if(avail<=now)return{ready:true};const remMs=avail-now;const remH=Math.floor(remMs/3600000);const remM=Math.floor((remMs%3600000)/60000);return{ready:false,label:`${pad(remH)}h${pad(remM)}`}}
   const filtered=filterKey==='all'?RAIDS:RAIDS.filter(r=>r.act===filterKey)
   return(
     <div>
@@ -804,7 +813,15 @@ export default function PlannerPage() {
   const todayKey=isoDay(new Date()),todayDow=new Date().getDay()
   const todayBlocks=allBlocks.filter(b=>{if(!b||b.char!==activeChar)return false;if(!b.repeat)return b.day===todayKey;if(b.repeatUntil&&todayKey>b.repeatUntil)return false;return(b.repeatDays||[0,1,2,3,4,5,6]).includes(todayDow)})
   const doneDailies=todayBlocks.filter(b=>checks[`${todayKey}__${activeChar}__${b.id}`]).length
-  const readyRaids=RAIDS.filter(r=>!raids[r.id]||(Date.now()-raids[r.id])/3600000>=r.cooldown).length
+  function nextRaidReset(doneTs, cooldownH) {
+    if (cooldownH % 24 === 0) {
+      const m = new Date(doneTs); m.setHours(0,0,0,0)
+      m.setDate(m.getDate() + cooldownH / 24)
+      return m.getTime()
+    }
+    return doneTs + cooldownH * 3600000
+  }
+  const readyRaids=RAIDS.filter(r=>!raids[r.id]||nextRaidReset(raids[r.id],r.cooldown)<=Date.now()).length
 
   const chipBtn=active=>({padding:'8px 18px',borderRadius:20,background:active?th.gold+'1a':'transparent',border:`1px solid ${active?th.gold+'66':th.border}`,color:active?th.gold:th.textSub,fontFamily:'Cinzel',fontSize:11,letterSpacing:1,cursor:'pointer',transition:'all .2s'})
   const TABS=[{id:'planning',label:p.tabs.planning},{id:'dailies',label:p.tabs.dailies},{id:'raids',label:p.tabs.raids},{id:'farm',label:p.tabs.farm}]
