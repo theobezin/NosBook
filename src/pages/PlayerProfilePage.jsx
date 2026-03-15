@@ -378,7 +378,7 @@ function BooksTab({ char }) {
 
 export default function PlayerProfilePage() {
   const { name: usernameParam } = useParams()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { t, lang } = useLang()
 
   const [username,   setUsername]   = useState(null)
@@ -386,6 +386,11 @@ export default function PlayerProfilePage() {
   const [characters, setCharacters] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [notFound,   setNotFound]   = useState(false)
+
+  // Friend system
+  const [friendStatus,    setFriendStatus]    = useState(null) // null | 'pending_sent' | 'pending_received' | 'accepted'
+  const [friendId,        setFriendId]        = useState(null) // friendship row id
+  const [friendLoading,   setFriendLoading]   = useState(false)
 
   const [selectedIdx,    setSelectedIdx]    = useState(0)
   const [activeTab,      setActiveTab]      = useState('equipment')
@@ -450,6 +455,63 @@ export default function PlayerProfilePage() {
       .then(({ data }) => setMarketListings(data ?? []))
       .finally(() => setMarketListingsLoading(false))
   }, [profileId])
+
+  // Load friendship status between current user and this profile
+  useEffect(() => {
+    if (!hasSupabase || !user?.id || !profileId || user.id === profileId) {
+      setFriendStatus(null); setFriendId(null); return
+    }
+    supabase
+      .from('friendships')
+      .select('id, requester_id, status')
+      .or(`and(requester_id.eq.${user.id},addressee_id.eq.${profileId}),and(requester_id.eq.${profileId},addressee_id.eq.${user.id})`)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) { setFriendStatus(null); setFriendId(null); return }
+        setFriendId(data.id)
+        if (data.status === 'accepted') setFriendStatus('accepted')
+        else if (data.status === 'pending' && data.requester_id === user.id) setFriendStatus('pending_sent')
+        else if (data.status === 'pending' && data.requester_id === profileId) setFriendStatus('pending_received')
+        else { setFriendStatus(null); setFriendId(null) }
+      })
+  }, [user?.id, profileId])
+
+  const handleFriendAction = async () => {
+    if (!user?.id || !profileId || friendLoading) return
+    setFriendLoading(true)
+    try {
+      if (friendStatus === null) {
+        // Send friend request
+        const { data: inserted } = await supabase
+          .from('friendships')
+          .insert({ requester_id: user.id, addressee_id: profileId, status: 'pending' })
+          .select('id')
+          .single()
+        if (inserted) {
+          setFriendId(inserted.id)
+          setFriendStatus('pending_sent')
+          // Send notification to the target user
+          const myUsername = user?.user_metadata?.username || user?.email?.split('@')[0]
+          await supabase.from('notifications').insert({
+            user_id: profileId,
+            type: 'friend_request',
+            content_preview: myUsername,
+            related_user_id: user.id,
+          })
+        }
+      } else if (friendStatus === 'pending_sent') {
+        // Cancel friend request
+        await supabase.from('friendships').delete().eq('id', friendId)
+        setFriendStatus(null); setFriendId(null)
+      } else if (friendStatus === 'accepted') {
+        // Remove friend
+        await supabase.from('friendships').delete().eq('id', friendId)
+        setFriendStatus(null); setFriendId(null)
+      }
+    } finally {
+      setFriendLoading(false)
+    }
+  }
 
   const TABS = [
     { key: 'equipment',   label: t('tabs.equipment')   },
@@ -593,10 +655,26 @@ export default function PlayerProfilePage() {
             </div>
 
             <div className={styles.actions}>
-              {isAuthenticated
-                ? <Button variant="ghost" size="md">{t('profile.addFriend')}</Button>
-                : <Link to="/auth?mode=login"><Button variant="solid" size="md">{t('profile.signIn')}</Button></Link>
-              }
+              {isAuthenticated && user?.id !== profileId ? (
+                <Button
+                  variant={friendStatus === 'accepted' ? 'solid' : 'ghost'}
+                  size="md"
+                  onClick={handleFriendAction}
+                  disabled={friendLoading || friendStatus === 'pending_received'}
+                >
+                  {friendLoading
+                    ? '…'
+                    : friendStatus === 'accepted'
+                    ? t('profile.removeFriend')
+                    : friendStatus === 'pending_sent'
+                    ? t('profile.friendPending')
+                    : friendStatus === 'pending_received'
+                    ? t('profile.friendReceived')
+                    : t('profile.addFriend')}
+                </Button>
+              ) : !isAuthenticated ? (
+                <Link to="/auth?mode=login"><Button variant="solid" size="md">{t('profile.signIn')}</Button></Link>
+              ) : null}
             </div>
           </div>
 

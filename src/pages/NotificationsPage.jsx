@@ -51,6 +51,20 @@ export default function NotificationsPage() {
     await supabase.from('notifications').delete().eq('id', id)
   }
 
+  const handleFriendRequest = async (n, accept) => {
+    if (!n.related_user_id) return
+    // Update the friendship status
+    await supabase
+      .from('friendships')
+      .update({ status: accept ? 'accepted' : 'rejected', updated_at: new Date().toISOString() })
+      .eq('requester_id', n.related_user_id)
+      .eq('addressee_id', user.id)
+      .eq('status', 'pending')
+    // Remove the notification
+    setNotifs(prev => prev.filter(notif => notif.id !== n.id))
+    await supabase.from('notifications').delete().eq('id', n.id)
+  }
+
   if (!isAuthenticated) {
     return (
       <div className={styles.page}>
@@ -92,14 +106,19 @@ export default function NotificationsPage() {
         <div className={styles.list}>
           {notifs.map(n => {
             const raid = RAID_MAP[n.session_raid_name]
+            const isFriendRequest = n.type === 'friend_request'
             return (
               <div
                 key={n.id}
                 className={`${styles.notifCard} ${!n.read ? styles.notifUnread : ''}`}
               >
                 <div className={styles.notifIcon}>
-                  {n.type === 'session_cancelled' ? (
+                  {isFriendRequest ? (
+                    <span className={styles.cancelledIcon}>👥</span>
+                  ) : n.type === 'session_cancelled' ? (
                     <span className={styles.cancelledIcon}>🚫</span>
+                  ) : n.type === 'session_invite' ? (
+                    <span className={styles.cancelledIcon}>📨</span>
                   ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -110,14 +129,34 @@ export default function NotificationsPage() {
                 </div>
                 <div className={styles.notifBody}>
                   <p className={styles.notifType}>
-                    {n.type === 'session_cancelled'
+                    {isFriendRequest
+                      ? t('notif.friendRequest')
+                      : n.type === 'session_cancelled'
                       ? t('notif.sessionCancelled')
+                      : n.type === 'session_invite'
+                      ? t('notif.sessionInvite')
                       : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
                     )}
                   </p>
-                  {n.content_preview && (
+                  {isFriendRequest && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      <Link to={`/players/${n.content_preview}`} className={styles.friendLink}>
+                        {n.content_preview}
+                      </Link>
+                      {' '}{t('notif.friendRequestSub')}
+                    </p>
+                  )}
+                  {n.type === 'session_invite' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      <Link to={`/players/${n.content_preview}`} className={styles.friendLink}>
+                        {n.content_preview}
+                      </Link>
+                      {' '}{t('notif.sessionInviteSub')}
+                    </p>
+                  )}
+                  {!isFriendRequest && n.type !== 'session_invite' && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>
                   )}
                   <p className={styles.notifTime}>
@@ -128,20 +167,41 @@ export default function NotificationsPage() {
                   </p>
                 </div>
                 <div className={styles.notifActions}>
-                  {n.session_id && n.type !== 'session_cancelled' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/raids/${n.session_id}`)}
-                    >
-                      {t('notif.viewSession')} →
-                    </Button>
+                  {isFriendRequest ? (
+                    <>
+                      <Button
+                        variant="solid"
+                        size="sm"
+                        onClick={() => handleFriendRequest(n, true)}
+                      >
+                        {t('notif.friendAccept')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFriendRequest(n, false)}
+                      >
+                        {t('notif.friendDecline')}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {n.session_id && n.type !== 'session_cancelled' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/raids/${n.session_id}`)}
+                        >
+                          {t('notif.viewSession')} →
+                        </Button>
+                      )}
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(n.id)}
+                        title="Supprimer"
+                      >✕</button>
+                    </>
                   )}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => handleDelete(n.id)}
-                    title="Supprimer"
-                  >✕</button>
                 </div>
               </div>
             )

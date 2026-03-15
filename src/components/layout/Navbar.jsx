@@ -209,6 +209,13 @@ export default function Navbar() {
                           </span>
                         )}
                       </Link>
+                      <Link
+                        to="/friends"
+                        className={styles.userMenuItem}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        👥 {t('friends.title')}
+                      </Link>
                     </div>
                   )}
                 </div>
