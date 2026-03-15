@@ -160,7 +160,7 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
   const isRejected = offer.status === OFFER_STATUS.REJECTED
 
   return (
-    <div className={`${styles.offerRow} ${isAccepted ? styles.offerAccepted : ''} ${isRejected ? styles.offerRejectedRow : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
+    <div className={`${styles.offerRow} ${isMyOffer ? styles.offerMine : ''} ${isAccepted ? styles.offerAccepted : ''} ${isRejected ? styles.offerRejectedRow : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
 
       {/* Offer header: username + status */}
       <div className={styles.offerHeader}>

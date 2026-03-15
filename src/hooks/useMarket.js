@@ -337,7 +337,7 @@ export async function archiveListing(listingId) {
  *   2. Inserts the offer and refreshes last_activity_at.
  * Using an RPC prevents bypassing the cooldown via direct API calls.
  */
-export async function createOffer({ listingId, price, comment, imageUrl, characterName, discordHandle }) {
+export async function createOffer({ listingId, price, comment, imageUrl, characterName, discordHandle, notifyOutbid = true }) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
 
   const { data, error } = await supabase.rpc('create_offer', {
@@ -347,6 +347,7 @@ export async function createOffer({ listingId, price, comment, imageUrl, charact
     p_image_url:      imageUrl               ?? null,
     p_character_name: characterName?.trim()  ?? null,
     p_discord_handle: discordHandle?.trim()  ?? null,
+    p_notify_outbid:  notifyOutbid ?? true,
   })
 
   if (error) {
@@ -383,11 +384,7 @@ export async function cancelOffer(offerId) {
  */
 export async function rejectOffer(offerId) {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
-  const { error } = await supabase
-    .from('market_offers')
-    .update({ status: 'rejected' })
-    .eq('id', offerId)
-    .eq('status', 'active')
+  const { error } = await supabase.rpc('reject_offer', { p_offer_id: offerId })
   return { error }
 }
 

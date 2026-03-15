@@ -58,7 +58,7 @@ export default function ReportModal({
   }
 
   return (
-    <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className={styles.overlay} onClick={e => { e.stopPropagation(); if (e.target === e.currentTarget) onClose() }}>
       <div className={styles.modal}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 

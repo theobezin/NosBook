@@ -537,6 +537,13 @@ export default {
     friendDecline:         'Ablehnen',
     sessionInvite:         'Session-Einladung',
     sessionInviteSub:      'hat dich zu dieser Session eingeladen.',
+    marketOutbid:          '⚡ Du wurdest überboten',
+    marketOutbidSub:       'Ein höheres Gebot wurde platziert auf',
+    marketOfferAccepted:    '✅ Angebot akzeptiert!',
+    marketOfferAcceptedSub: 'Der Verkäufer hat dein Angebot für akzeptiert',
+    marketOfferRejected:    '❌ Angebot abgelehnt',
+    marketOfferRejectedSub: 'Der Verkäufer hat dein Angebot für abgelehnt',
+    viewListing:           'Anzeige ansehen',
   },
   friends: {
     title:       'Freunde',
@@ -746,6 +753,7 @@ export default {
     offerErrCharName:        'Charaktername ist erforderlich.',
     offerErrMustExceed:      'Dein Angebot muss mehr als {best} Gold betragen.',
     offerScreenshot:         'Screenshot (externer Link)',
+    notifyOutbid:            'Benachrichtigen, wenn überboten',
     // Report form
     reportTitle:      'Käufer melden',
     reportReason:     'Grund',
