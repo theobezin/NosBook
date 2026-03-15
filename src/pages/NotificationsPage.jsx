@@ -119,6 +119,12 @@ export default function NotificationsPage() {
                     <span className={styles.cancelledIcon}>🚫</span>
                   ) : n.type === 'session_invite' ? (
                     <span className={styles.cancelledIcon}>📨</span>
+                  ) : n.type === 'market_outbid' ? (
+                    <span className={styles.cancelledIcon}>⚡</span>
+                  ) : n.type === 'market_offer_accepted' ? (
+                    <span className={styles.cancelledIcon}>✅</span>
+                  ) : n.type === 'market_offer_rejected' ? (
+                    <span className={styles.cancelledIcon}>❌</span>
                   ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -135,6 +141,12 @@ export default function NotificationsPage() {
                       ? t('notif.sessionCancelled')
                       : n.type === 'session_invite'
                       ? t('notif.sessionInvite')
+                      : n.type === 'market_outbid'
+                      ? t('notif.marketOutbid')
+                      : n.type === 'market_offer_accepted'
+                      ? t('notif.marketOfferAccepted')
+                      : n.type === 'market_offer_rejected'
+                      ? t('notif.marketOfferRejected')
                       : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
@@ -156,7 +168,22 @@ export default function NotificationsPage() {
                       {' '}{t('notif.sessionInviteSub')}
                     </p>
                   )}
-                  {!isFriendRequest && n.type !== 'session_invite' && n.content_preview && (
+                  {n.type === 'market_outbid' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      {t('notif.marketOutbidSub')} <strong>"{n.content_preview}"</strong>
+                    </p>
+                  )}
+                  {n.type === 'market_offer_accepted' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      {t('notif.marketOfferAcceptedSub')} <strong>"{n.content_preview}"</strong>
+                    </p>
+                  )}
+                  {n.type === 'market_offer_rejected' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      {t('notif.marketOfferRejectedSub')} <strong>"{n.content_preview}"</strong>
+                    </p>
+                  )}
+                  {!isFriendRequest && n.type !== 'session_invite' && n.type !== 'market_outbid' && n.type !== 'market_offer_accepted' && n.type !== 'market_offer_rejected' && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>
                   )}
                   <p className={styles.notifTime}>
@@ -193,6 +220,24 @@ export default function NotificationsPage() {
                           onClick={() => navigate(`/raids/${n.session_id}`)}
                         >
                           {t('notif.viewSession')} →
+                        </Button>
+                      )}
+                      {n.type === 'market_outbid' && n.listing_id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/market/${n.listing_id}`)}
+                        >
+                          {t('notif.viewListing')} →
+                        </Button>
+                      )}
+                      {(n.type === 'market_offer_accepted' || n.type === 'market_offer_rejected') && n.listing_id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/market/${n.listing_id}`)}
+                        >
+                          {t('notif.viewListing')} →
                         </Button>
                       )}
                       <button

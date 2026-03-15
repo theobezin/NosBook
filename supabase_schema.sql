@@ -162,6 +162,7 @@ create table if not exists public.market_offers (
   -- active → accepted | rejected | cancelled | blocked
   status         text not null default 'active'
                       check (status in ('active', 'cancelled', 'accepted', 'rejected', 'blocked')),
+  notify_outbid  boolean not null default true,
   created_at     timestamptz default now()
 );
 
@@ -496,6 +497,22 @@ begin
   select profile_id into v_buyer_id
     from public.market_offers where id = v_offer_id;
 
+  -- Notifier l'acheteur : offre acceptée
+  insert into public.notifications (user_id, type, content_preview, listing_id, read)
+  select v_buyer_id, 'market_offer_accepted',
+    ml.title, p_listing_id, false
+  from public.market_listings ml where ml.id = p_listing_id;
+
+  -- Notifier les autres enchérisseurs actifs : offre refusée
+  insert into public.notifications (user_id, type, content_preview, listing_id, read)
+  select mo.profile_id, 'market_offer_rejected',
+    ml.title, p_listing_id, false
+  from public.market_offers mo
+  join public.market_listings ml on ml.id = p_listing_id
+  where mo.listing_id = p_listing_id
+    and mo.id        <> v_offer_id
+    and mo.status     = 'active';
+
   -- Accepter l'offre choisie
   update public.market_offers set status = 'accepted' where id = v_offer_id;
 
@@ -529,8 +546,12 @@ create or replace function public.reject_offer(
 returns void as $$
 declare
   v_listing_owner uuid;
+  v_offer_owner   uuid;
+  v_listing_id    uuid;
+  v_listing_title text;
 begin
-  select ml.profile_id into v_listing_owner
+  select ml.profile_id, mo.profile_id, mo.listing_id, ml.title
+    into v_listing_owner, v_offer_owner, v_listing_id, v_listing_title
     from public.market_offers mo
     join public.market_listings ml on ml.id = mo.listing_id
    where mo.id = p_offer_id
@@ -547,8 +568,14 @@ begin
   update public.market_offers
      set status = 'rejected'
    where id = p_offer_id;
+
+  -- Notifier l'auteur de l'offre refusée
+  insert into public.notifications (user_id, type, content_preview, listing_id, read)
+  values (v_offer_owner, 'market_offer_rejected', v_listing_title, v_listing_id, false);
 end;
 $$ language plpgsql security definer;
+
+grant execute on function public.reject_offer(uuid) to authenticated;
 
 -- ────────────────────────────────────────────────────────────
 -- FUNCTION: cancel_offer
@@ -652,7 +679,8 @@ create or replace function public.create_offer(
   p_comment        text    default null,
   p_image_url      text    default null,
   p_character_name text    default null,
-  p_discord_handle text    default null
+  p_discord_handle text    default null,
+  p_notify_outbid  boolean default true
 )
 returns json
 language plpgsql
@@ -684,10 +712,10 @@ begin
   -- ── Création de l'offre ───────────────────────────────────
   insert into public.market_offers (
     listing_id, profile_id, price, comment,
-    image_url, character_name, discord_handle
+    image_url, character_name, discord_handle, notify_outbid
   ) values (
     p_listing_id, auth.uid(), p_price, p_comment,
-    p_image_url, p_character_name, p_discord_handle
+    p_image_url, p_character_name, p_discord_handle, p_notify_outbid
   )
   returning id into v_offer_id;
 
@@ -695,6 +723,30 @@ begin
   update public.market_listings
   set last_activity_at = now()
   where id = p_listing_id;
+
+  -- Auto-follow : ajouter l'annonce aux suivis de l'enchérisseur
+  insert into public.market_follows (profile_id, listing_id)
+  values (auth.uid(), p_listing_id)
+  on conflict (profile_id, listing_id) do nothing;
+
+  -- Notifier les utilisateurs dont l'offre active vient d'être surenchérie
+  if p_price is not null then
+    insert into public.notifications (user_id, type, content_preview, listing_id, read)
+    select
+      mo.profile_id,
+      'market_outbid',
+      ml.title,
+      p_listing_id,
+      false
+    from public.market_offers mo
+    join public.market_listings ml on ml.id = p_listing_id
+    where mo.listing_id  = p_listing_id
+      and mo.profile_id <> auth.uid()
+      and mo.status      = 'active'
+      and mo.price       is not null
+      and mo.price        < p_price
+      and mo.notify_outbid = true;
+  end if;
 
   -- Retourne l'offre créée (snake_case — fromDBOffer la mappe côté client)
   select row_to_json(o) into v_result
@@ -705,6 +757,7 @@ end;
 $$;
 
 grant execute on function public.create_offer(uuid, bigint, text, text, text, text) to authenticated;
+grant execute on function public.create_offer(uuid, bigint, text, text, text, text, boolean) to authenticated;
 
 -- ────────────────────────────────────────────────────────────
 -- FUNCTION: admin_set_moderation
@@ -948,3 +1001,40 @@ create policy "admin_manage_sessions"
 --   • Seules les annulations acheteur comptent (pas les rejets vendeur).
 --   • Les lignes sont supprimées automatiquement si l'annonce est supprimée (CASCADE).
 --   • Le client reçoit l'erreur "COOLDOWN:<minutes>" et affiche le temps restant.
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION H — colonne listing_id sur notifications
+--               + notifications surenchère (market_outbid)
+-- ────────────────────────────────────────────────────────────
+-- 1. Ajouter la colonne listing_id à la table notifications
+-- alter table public.notifications
+--   add column if not exists listing_id uuid references public.market_listings(id) on delete cascade;
+--
+-- 2. Redéployer la fonction create_offer (cf. bloc FUNCTION ci-dessus)
+--    Elle insère désormais une notification 'market_outbid' pour chaque
+--    utilisateur dont l'offre active est inférieure à la nouvelle enchère.
+--
+-- 3. RLS notifications (si pas encore en place) :
+-- alter table public.notifications enable row level security;
+-- create policy "notifs_select_own" on public.notifications
+--   for select to authenticated using (user_id = auth.uid());
+-- create policy "notifs_update_own" on public.notifications
+--   for update to authenticated using (user_id = auth.uid());
+-- create policy "notifs_delete_own" on public.notifications
+--   for delete to authenticated using (user_id = auth.uid());
+-- -- INSERT autorisé uniquement via les fonctions SECURITY DEFINER (create_offer, etc.)
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION I — notify_outbid sur market_offers
+--               + notifications offre acceptée/refusée
+-- ────────────────────────────────────────────────────────────
+-- 1. Ajouter notify_outbid à market_offers
+-- alter table public.market_offers
+--   add column if not exists notify_outbid boolean not null default true;
+--
+-- 2. Redéployer create_offer (nouveau param p_notify_outbid)
+-- 3. Redéployer reject_offer (insère notif market_offer_rejected)
+-- 4. Redéployer confirm_market_sale (insère notifs accepted + rejected)
+-- 5. grant execute on function public.reject_offer(uuid) to authenticated;
+--
+-- 6. Auto-follow lors d'une enchère (inclus dans create_offer — redéployer suffit)

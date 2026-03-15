@@ -43,6 +43,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
   const [price,         setPrice]         = useState('')
   const [imageUrl,      setImageUrl]      = useState('')
   const [comment,       setComment]       = useState('')
+  const [notifyOutbid,  setNotifyOutbid]  = useState(true)
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState(null)
 
@@ -95,6 +96,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
       imageUrl:      !isSell ? (imageUrl.trim() || null) : null,
       characterName: characterName.trim(),
       discordHandle: discordHandle.trim() || null,
+      notifyOutbid:  isSell ? notifyOutbid : false,
     })
 
     if (err) {
@@ -129,6 +131,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
       comment:       comment || null,
       characterName: characterName.trim(),
       discordHandle: discordHandle.trim() || null,
+      notifyOutbid:  true,
     })
 
     if (err) {
@@ -147,7 +150,7 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
   }
 
   return (
-    <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className={styles.overlay} onClick={e => { e.stopPropagation(); if (e.target === e.currentTarget) onClose() }}>
       <div className={styles.modal}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
         <h2 className={styles.title}>
@@ -281,6 +284,19 @@ export default function OfferModal({ listing, onClose, onSuccess, userProfile, m
               rows={2}
             />
           </label>
+
+          {/* Notify if outbid (sell only) */}
+          {isSell && (
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={notifyOutbid}
+                onChange={e => setNotifyOutbid(e.target.checked)}
+                className={styles.checkbox}
+              />
+              <span>{t('market.notifyOutbid')}</span>
+            </label>
+          )}
 
           {error && <p className={styles.error}>{error}</p>}
 

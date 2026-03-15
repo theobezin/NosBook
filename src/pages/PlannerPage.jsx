@@ -438,7 +438,7 @@ function DailyChecklist({ blocks, checks, setChecks, char, th, i18n, actTypes })
   )
 }
 
-function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, onSessionClick, days, months }) {
+function WeeklyPlanning({ blocks, setBlocks, char, th, i18n, i18nModal, onStartTimer, days, months }) {
   const[weekOf,setWeekOf]=useState(()=>weekStart(new Date()))
   const[selectedDay,setSelectedDay]=useState(()=>new Date())
   const[viewMode,setViewMode]=useState('week')
@@ -778,6 +778,9 @@ export default function PlannerPage() {
   const th = NOSBOOK_THEME
 
   useEffect(()=>{ const i=setInterval(()=>setNow(new Date()),30000); return()=>clearInterval(i) },[])
+
+  // Auto-sélection du premier personnage au chargement
+  useEffect(()=>{ if(loaded && !activeChar && chars.length>0) setActiveChar(chars[0]) },[loaded, chars, activeChar, setActiveChar])
 
   useEffect(()=>{
     if(!('Notification' in window)) return

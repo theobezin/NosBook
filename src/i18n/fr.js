@@ -537,6 +537,13 @@ export default {
     friendDecline:         'Refuser',
     sessionInvite:         'Invitation à une session',
     sessionInviteSub:      't\'invite à rejoindre cette session.',
+    marketOutbid:          '⚡ Tu as été surenchéri',
+    marketOutbidSub:       'Une offre plus haute a été placée sur',
+    marketOfferAccepted:    '✅ Offre acceptée !',
+    marketOfferAcceptedSub: 'Le vendeur a accepté ton offre pour',
+    marketOfferRejected:    '❌ Offre refusée',
+    marketOfferRejectedSub: 'Le vendeur a refusé ton offre pour',
+    viewListing:           'Voir l\'annonce',
   },
   friends: {
     title:       'Amis',
@@ -746,6 +753,7 @@ export default {
     offerErrCharName:        'Le nom de personnage est obligatoire.',
     offerErrMustExceed:      'Ton offre doit être supérieure à {best} or.',
     offerScreenshot:         'Screenshot (lien externe)',
+    notifyOutbid:            'Me notifier si je suis surenchéri',
     // Report form
     reportTitle:      'Signaler un acheteur',
     reportReason:     'Raison',

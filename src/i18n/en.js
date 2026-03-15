@@ -537,6 +537,13 @@ export default {
     friendDecline:         'Decline',
     sessionInvite:         'Session invite',
     sessionInviteSub:      'invited you to join this session.',
+    marketOutbid:          '⚡ You\'ve been outbid',
+    marketOutbidSub:       'A higher bid was placed on',
+    marketOfferAccepted:    '✅ Offer accepted!',
+    marketOfferAcceptedSub: 'The seller accepted your offer for',
+    marketOfferRejected:    '❌ Offer declined',
+    marketOfferRejectedSub: 'The seller declined your offer for',
+    viewListing:           'View listing',
   },
   friends: {
     title:       'Friends',
@@ -746,6 +753,7 @@ export default {
     offerErrCharName:        'Character name is required.',
     offerErrMustExceed:      'Your offer must exceed {best} gold.',
     offerScreenshot:         'Screenshot (external link)',
+    notifyOutbid:            'Notify me if outbid',
     // Report form
     reportTitle:      'Report a buyer',
     reportReason:     'Reason',
