@@ -339,7 +339,11 @@ alter table public.market_offers enable row level security;
 create policy "market_offers_select"
   on public.market_offers for select
   using (
-    auth.uid() = profile_id
+    exists (
+      select 1 from public.market_listings ml
+      where ml.id = listing_id and ml.status in ('active', 'sold')
+    )
+    or auth.uid() = profile_id
     or exists (
       select 1 from public.market_listings ml
       where ml.id = listing_id and ml.profile_id = auth.uid()
