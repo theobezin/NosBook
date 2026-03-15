@@ -34,8 +34,12 @@ export default function PlayersPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = query.trim()
-    ? accounts.filter(a => a.username.toLowerCase().includes(query.toLowerCase()))
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? accounts.filter(a =>
+        a.username.toLowerCase().includes(q) ||
+        a.characters.some(c => c.name.toLowerCase().includes(q))
+      )
     : accounts
 
   return (
