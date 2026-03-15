@@ -117,6 +117,8 @@ export default function NotificationsPage() {
                     <span className={styles.cancelledIcon}>👥</span>
                   ) : n.type === 'session_cancelled' ? (
                     <span className={styles.cancelledIcon}>🚫</span>
+                  ) : n.type === 'session_invite' ? (
+                    <span className={styles.cancelledIcon}>📨</span>
                   ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -131,6 +133,8 @@ export default function NotificationsPage() {
                       ? t('notif.friendRequest')
                       : n.type === 'session_cancelled'
                       ? t('notif.sessionCancelled')
+                      : n.type === 'session_invite'
+                      ? t('notif.sessionInvite')
                       : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
@@ -144,7 +148,15 @@ export default function NotificationsPage() {
                       {' '}{t('notif.friendRequestSub')}
                     </p>
                   )}
-                  {!isFriendRequest && n.content_preview && (
+                  {n.type === 'session_invite' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      <Link to={`/players/${n.content_preview}`} className={styles.friendLink}>
+                        {n.content_preview}
+                      </Link>
+                      {' '}{t('notif.sessionInviteSub')}
+                    </p>
+                  )}
+                  {!isFriendRequest && n.type !== 'session_invite' && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>
                   )}
                   <p className={styles.notifTime}>

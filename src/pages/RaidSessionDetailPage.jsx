@@ -230,7 +230,7 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
 
 function BenchPanel({
   members, isLeader, isAuthenticated, myRegistrations, maxChars,
-  onRegister, onUnregister, onDragStart, onViewProfile, session, t,
+  onRegister, onUnregister, onDragStart, onViewProfile, onInviteFriends, session, t,
 }) {
   const canRegister  = isAuthenticated && myRegistrations.length < maxChars
   const alreadyInAll = isAuthenticated && myRegistrations.length >= maxChars
@@ -274,13 +274,23 @@ function BenchPanel({
       </div>
 
       {isAuthenticated ? (
-        canRegister ? (
-          <Button variant="solid" size="sm" onClick={onRegister} style={{ marginTop: '0.75rem' }}>
-            + {t('detail.registerBtn')}
+        <>
+          {canRegister ? (
+            <Button variant="solid" size="sm" onClick={onRegister} style={{ marginTop: '0.75rem' }}>
+              + {t('detail.registerBtn')}
+            </Button>
+          ) : alreadyInAll ? (
+            <p className={styles.benchInfo}>{t('detail.alreadyRegistered')}</p>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onInviteFriends}
+            style={{ marginTop: '0.5rem', width: '100%' }}
+          >
+            👥 {t('detail.inviteFriendsBtn')}
           </Button>
-        ) : alreadyInAll ? (
-          <p className={styles.benchInfo}>{t('detail.alreadyRegistered')}</p>
-        ) : null
+        </>
       ) : (
         <Link to="/auth?mode=login">
           <Button variant="ghost" size="sm" style={{ marginTop: '0.75rem', width: '100%' }}>
@@ -518,6 +528,128 @@ function SPPickerModal({ reg, onClose, onAssign, t }) {
   )
 }
 
+// ── InviteFriendsModal ────────────────────────────────────────────────────────
+
+function InviteFriendsModal({ session, user, regs, onClose, t }) {
+  const [friends,    setFriends]    = useState([])
+  const [selected,   setSelected]   = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [sending,    setSending]    = useState(false)
+  const [done,       setDone]       = useState(false)
+
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) { setLoading(false); return }
+    supabase
+      .from('friendships')
+      .select('requester_id, addressee_id')
+      .eq('status', 'accepted')
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .then(async ({ data: rows }) => {
+        if (!rows?.length) { setLoading(false); return }
+        const friendIds = rows.map(r =>
+          r.requester_id === user.id ? r.addressee_id : r.requester_id
+        )
+        // Exclude already-registered players
+        const registeredIds = new Set(regs.map(r => r.player_id))
+        const eligible = friendIds.filter(id => !registeredIds.has(id))
+        if (!eligible.length) { setLoading(false); return }
+
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', eligible)
+        setFriends(profiles ?? [])
+        setLoading(false)
+      })
+  }, [user?.id])
+
+  const toggle = (id) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const handleSend = async () => {
+    if (!selected.length) return
+    setSending(true)
+    const myUsername = user?.user_metadata?.username || user?.email?.split('@')[0]
+    await supabase.from('notifications').insert(
+      selected.map(uid => ({
+        user_id:           uid,
+        type:              'session_invite',
+        session_id:        session.id,
+        session_raid_name: session.raid_slug,
+        content_preview:   myUsername,
+        related_user_id:   user.id,
+      }))
+    )
+    setSending(false)
+    setDone(true)
+  }
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHead}>
+          <h3 className={styles.modalTitle}>👥 {t('detail.inviteFriendsTitle')}</h3>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {done ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-dim)', padding: '1rem 0' }}>
+              ✅ {t('detail.inviteSent')}
+            </p>
+          ) : loading ? (
+            <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '1rem 0' }}>…</p>
+          ) : friends.length === 0 ? (
+            <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '1rem 0' }}>
+              {t('detail.inviteNoFriends')}
+            </p>
+          ) : (
+            <div className={styles.charPickList}>
+              {friends.map(f => {
+                const checked = selected.includes(f.id)
+                return (
+                  <button
+                    key={f.id}
+                    className={`${styles.charPickItem} ${checked ? styles.charPickItemSelected : ''}`}
+                    onClick={() => toggle(f.id)}
+                  >
+                    <span>👤</span>
+                    <span className={styles.charName}>{f.username}</span>
+                    {checked && <span className={styles.checkMark}>✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+        {!done && (
+          <div className={styles.modalFoot}>
+            <Button variant="ghost" onClick={onClose}>{t('session.cancel')}</Button>
+            <Button
+              variant="solid"
+              onClick={handleSend}
+              disabled={sending || !selected.length || loading}
+            >
+              {sending ? '…' : t('detail.inviteConfirm')}
+            </Button>
+          </div>
+        )}
+        {done && (
+          <div className={styles.modalFoot}>
+            <Button variant="solid" onClick={onClose}>{t('session.close')}</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── ProfileModal ──────────────────────────────────────────────────────────────
 
 function ProfileModal({ reg, onClose, t }) {
@@ -730,6 +862,7 @@ export default function RaidSessionDetailPage() {
   const [profile,       setProfile]       = useState(null)
   const [loading,       setLoading]       = useState(true)
   const [showRegister,  setShowRegister]  = useState(false)
+  const [showInvite,    setShowInvite]    = useState(false)
   const [showCancel,    setShowCancel]    = useState(false)
   const [cancelling,    setCancelling]    = useState(false)
   const [spTarget,      setSPTarget]      = useState(null)
@@ -901,6 +1034,7 @@ export default function RaidSessionDetailPage() {
           onUnregister={handleUnregister}
           onDragStart={handleDragStart}
           onViewProfile={setProfileTarget}
+          onInviteFriends={() => setShowInvite(true)}
           session={session}
           t={t}
         />
@@ -925,6 +1059,15 @@ export default function RaidSessionDetailPage() {
           alreadyNames={alreadyNames}
           onClose={() => setShowRegister(false)}
           onSuccess={() => { setShowRegister(false); loadData() }}
+          t={t}
+        />
+      )}
+      {showInvite && (
+        <InviteFriendsModal
+          session={session}
+          user={user}
+          regs={regs}
+          onClose={() => setShowInvite(false)}
           t={t}
         />
       )}
