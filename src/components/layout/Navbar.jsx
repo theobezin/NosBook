@@ -184,7 +184,7 @@ export default function Navbar() {
                   {menuOpen && (
                     <div className={styles.userMenu}>
                       <Link
-                        to={`/players/${username}`}
+                        to='/profile'
                         className={styles.userMenuItem}
                         onClick={() => setMenuOpen(false)}
                       >
