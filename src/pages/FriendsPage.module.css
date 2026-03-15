@@ -25,12 +25,12 @@
   margin: 0;
 }
 
-.unreadBadge {
+.count {
   font-size: 0.72rem;
   font-weight: 600;
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(255, 200, 50, 0.12);
+  color: var(--gold-dim);
+  border: 1px solid rgba(255, 200, 50, 0.25);
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
 }
@@ -49,96 +49,76 @@
   gap: 0.5rem;
 }
 
-.notifCard {
+.card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.85rem;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 1rem;
   transition: border-color 0.15s;
 }
 
-.notifUnread {
-  border-left: 3px solid var(--gold-dim);
-  background: rgba(255, 200, 50, 0.03);
+.card:hover {
+  border-color: var(--border-hover, rgba(255,255,255,0.15));
 }
 
-.cancelledIcon {
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.notifIcon {
-  width: 36px;
-  height: 36px;
+.avatar {
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--card-bg-2, rgba(255,255,255,0.05));
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  overflow: hidden;
 }
 
-.raidIcon {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.notifBody {
+.avatarFallback {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.1rem;
 }
 
-.notifType {
-  margin: 0;
-  font-size: 0.82rem;
+.username {
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
-}
-
-.raidName {
-  color: var(--gold-dim);
-}
-
-.notifPreview {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  font-style: italic;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.friendLink {
-  color: var(--gold-dim);
-  text-decoration: none;
-  font-weight: 600;
-  font-style: normal;
-}
-.friendLink:hover {
-  text-decoration: underline;
-}
-
-.notifTime {
-  margin: 0;
+.server {
   font-size: 0.72rem;
   color: var(--text-faint);
+  text-transform: capitalize;
 }
 
-.notifActions {
+.actions {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
 }
 
-.deleteBtn {
+.removeBtn {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -149,7 +129,8 @@
   transition: color 0.15s, background 0.15s;
   line-height: 1;
 }
-.deleteBtn:hover {
+
+.removeBtn:hover {
   color: var(--hp, #e55);
   background: rgba(220, 50, 50, 0.08);
 }
@@ -161,7 +142,7 @@
 }
 
 .skeleton {
-  height: 72px;
+  height: 64px;
   background: linear-gradient(
     90deg,
     var(--card-bg) 25%,
