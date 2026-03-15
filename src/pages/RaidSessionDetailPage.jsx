@@ -5,7 +5,7 @@ import { useCharacters } from '@/hooks/useCharacters'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS } from '@/lib/raids'
-import { CLASSES } from '@/lib/mockData'
+import { CLASSES, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './RaidSessionDetailPage.module.css'
 
@@ -93,7 +93,7 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
 
 function CharacterCard({
   reg, isLeader, isOwn,
-  onAssignSP, onRemoveFromTeam, onViewProfile,
+  onAssignSP, onRemoveFromTeam, onClick,
   draggable, onDragStart,
 }) {
   const snap = reg.character_snapshot ?? {}
@@ -101,9 +101,10 @@ function CharacterCard({
 
   return (
     <div
-      className={`${styles.charCard} ${isOwn ? styles.charCardOwn : ''}`}
+      className={`${styles.charCard} ${isOwn ? styles.charCardOwn : ''} ${onClick ? styles.charCardClickable : ''}`}
       draggable={draggable}
       onDragStart={draggable ? (e) => onDragStart(e, reg.id) : undefined}
+      onClick={onClick ? () => onClick(reg) : undefined}
     >
       <span className={styles.charClass} style={{ color: cls?.color }}>
         {cls?.icon ?? '?'}
@@ -118,25 +119,16 @@ function CharacterCard({
       {isLeader && reg.team_name && (
         <button
           className={styles.charBtn}
-          onClick={() => onAssignSP(reg)}
+          onClick={e => { e.stopPropagation(); onAssignSP(reg) }}
           title="Attribuer une carte SP"
         >
           🎴
         </button>
       )}
-      {(isLeader || isOwn) && reg.player_username && (
-        <button
-          className={styles.charBtn}
-          onClick={() => onViewProfile(reg)}
-          title="Voir le profil"
-        >
-          👤
-        </button>
-      )}
       {isLeader && reg.team_name && (
         <button
           className={`${styles.charBtn} ${styles.charBtnRemove}`}
-          onClick={() => onRemoveFromTeam(reg.id)}
+          onClick={e => { e.stopPropagation(); onRemoveFromTeam(reg.id) }}
           title="Retirer de l'équipe"
         >
           ✕
@@ -148,15 +140,16 @@ function CharacterCard({
 
 // ── TeamSlot ──────────────────────────────────────────────────────────────────
 
-function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart }) {
+function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart, onClick }) {
   const snap = reg.character_snapshot ?? {}
   const cls  = CLASSES[snap.class]
 
   return (
     <div
-      className={styles.teamSlot}
+      className={`${styles.teamSlot} ${onClick ? styles.charCardClickable : ''}`}
       draggable={isLeader}
       onDragStart={isLeader ? (e) => onDragStart(e, reg.id) : undefined}
+      onClick={onClick ? () => onClick(reg) : undefined}
     >
       {reg.sp_card_icon ? (
         <img src={reg.sp_card_icon} alt="" className={styles.teamSlotSPIcon} />
@@ -175,12 +168,12 @@ function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart }) 
         <>
           <button
             className={styles.charBtn}
-            onClick={() => onAssignSP(reg)}
+            onClick={e => { e.stopPropagation(); onAssignSP(reg) }}
             title="Attribuer une carte SP"
           >🎴</button>
           <button
             className={`${styles.charBtn} ${styles.charBtnRemove}`}
-            onClick={() => onRemoveFromTeam(reg.id)}
+            onClick={e => { e.stopPropagation(); onRemoveFromTeam(reg.id) }}
             title="Retirer de l'équipe"
           >✕</button>
         </>
@@ -191,7 +184,7 @@ function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart }) 
 
 // ── TeamCard ──────────────────────────────────────────────────────────────────
 
-function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTeam, onDragStart, t }) {
+function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTeam, onDragStart, onViewChar, t }) {
   const [dragOver, setDragOver] = useState(false)
 
   return (
@@ -214,6 +207,7 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
             onDragStart={onDragStart}
             onAssignSP={onAssignSP}
             onRemoveFromTeam={onRemoveFromTeam}
+            onClick={onViewChar}
           />
         ))}
         {members.length === 0 && (
@@ -230,7 +224,7 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
 
 function BenchPanel({
   members, isLeader, isAuthenticated, myRegistrations, maxChars,
-  onRegister, onUnregister, onDragStart, onViewProfile, onInviteFriends, session, t,
+  onRegister, onUnregister, onDragStart, onViewChar, onInviteFriends, session, t,
 }) {
   const canRegister  = isAuthenticated && myRegistrations.length < maxChars
   const alreadyInAll = isAuthenticated && myRegistrations.length >= maxChars
@@ -257,7 +251,7 @@ function BenchPanel({
                 isOwn={myRegistrations.some(r => r.id === reg.id)}
                 draggable={isLeader}
                 onDragStart={onDragStart}
-                onViewProfile={onViewProfile}
+                onClick={onViewChar}
                 onAssignSP={() => {}}
                 onRemoveFromTeam={() => {}}
               />
@@ -650,55 +644,161 @@ function InviteFriendsModal({ session, user, regs, onClose, t }) {
   )
 }
 
-// ── ProfileModal ──────────────────────────────────────────────────────────────
+// ── CharacterDetailModal ──────────────────────────────────────────────────────
 
-function ProfileModal({ reg, onClose, t }) {
+const RANK_ORDER = { C: 0, B: 1, A: 2, S: 3 }
+
+function EquipSlot({ label, w, t }) {
+  if (!w) return (
+    <div className={styles.equipSlot}>
+      <span className={styles.equipSlotLabel}>{label}</span>
+      <span className={styles.equipSlotEmpty}>{t('equipKeys.empty')}</span>
+    </div>
+  )
+  const rarity = w.rarity ? WEAPON_RARITIES.find(r => r.key === w.rarity) : null
+  const suffix = (w.improvement ?? 0) > 0 ? ` +${w.improvement}` : ''
+  const prefix = rarity?.label ? `${rarity.label} : ` : ''
+  return (
+    <div className={styles.equipSlot}>
+      <span className={styles.equipSlotLabel}>{label}</span>
+      <div className={styles.equipSlotContent}>
+        <span className={styles.equipSlotName} style={rarity ? { color: rarity.color } : {}}>
+          {w.icon && <img src={w.icon} alt="" className={styles.equipSlotIcon} />}
+          {prefix}{w.name}{suffix}
+        </span>
+        {(w.shell?.length > 0 || w.runic?.length > 0) && (
+          <div className={styles.shellBlock}>
+            {[...w.shell ?? []].sort((a, b) => (RANK_ORDER[a.rank] ?? 0) - (RANK_ORDER[b.rank] ?? 0)).map((eff, i) => {
+              const def   = SHELL_EFFECTS.find(e => e.key === eff.key)
+              const color = SHELL_RANK_COLORS[eff.rank]
+              return (
+                <div key={`s${i}`} className={styles.shellLine} style={{ color }}>
+                  {eff.rank}-{def?.label ?? eff.key} : {eff.value}
+                </div>
+              )
+            })}
+            {w.shell?.length > 0 && w.runic?.length > 0 && <div className={styles.shellDivider} />}
+            {(w.runic ?? []).map((eff, i) => {
+              const def = RUNIC_EFFECTS.find(e => e.key === eff.key)
+              return (
+                <div key={`r${i}`} className={styles.shellLine} style={{ color: RUNIC_COLOR }}>
+                  ✦ {def?.label ?? eff.key} : {eff.value}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CharacterDetailModal({ reg, onClose, t }) {
   const snap = reg.character_snapshot ?? {}
   const cls  = CLASSES[snap.class]
+  const [charData, setCharData] = useState(null)
+  const [fetching, setFetching] = useState(true)
+  const [tab,      setTab]      = useState('stuff')
+
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  useEffect(() => {
+    if (!hasSupabase || !reg.character_id) { setFetching(false); return }
+    supabase
+      .from('characters')
+      .select('equipment')
+      .eq('id', reg.character_id)
+      .single()
+      .then(({ data }) => { setCharData(data); setFetching(false) })
+  }, [reg.character_id])
+
+  const equip       = charData?.equipment ?? {}
+  const specialists = equip.specialists ?? []
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.profileModal}`} onClick={e => e.stopPropagation()}>
+      <div className={`${styles.modal} ${styles.charDetailModal}`} onClick={e => e.stopPropagation()}>
+
+        {/* ── Header ── */}
         <div className={styles.modalHead}>
-          <h3 className={styles.modalTitle}>{reg.player_username ?? t('detail.unknownPlayer')}</h3>
-          <button className={styles.modalClose} onClick={onClose}>✕</button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.profileRow}>
-            <span className={styles.profileClass} style={{ color: cls?.color }}>
-              {cls?.icon}
-            </span>
+          <div className={styles.charDetailHeader}>
+            <span style={{ color: cls?.color, fontSize: '1.4rem', lineHeight: 1 }}>{cls?.icon ?? '?'}</span>
             <div>
-              <p className={styles.charName}>{snap.name}</p>
-              <p className={styles.charLevel}>
-                {snap.class} · Lv.{snap.level}
-                {snap.heroLevel > 0 ? ` · H${snap.heroLevel}` : ''}
-              </p>
+              <span className={styles.modalTitle}>{snap.name}</span>
+              <span className={styles.charDetailSub}>
+                {snap.class} · Lv.{snap.level}{snap.heroLevel > 0 ? ` · H${snap.heroLevel}` : ''}
+                {reg.player_username && (
+                  <> · <Link to={`/players/${reg.player_username}`} onClick={onClose} className={styles.charDetailProfileLink}>
+                    {reg.player_username} →
+                  </Link></>
+                )}
+              </span>
             </div>
           </div>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
 
-          {(snap.specialists?.length > 0) && (
-            <div className={styles.field}>
-              <label className={styles.fieldLabel}>{t('detail.specialistsLabel')}</label>
-              <div className={styles.spPickList}>
-                {snap.specialists.map((sp, i) => (
-                  <div key={i} className={styles.spPickItem} style={{ cursor: 'default' }}>
-                    {sp.icon && (
-                      <img src={sp.icon} alt="" className={styles.spPickIcon} />
-                    )}
-                    <span>{sp.name}</span>
-                  </div>
-                ))}
-              </div>
+        {/* ── Tab bar ── */}
+        <div className={styles.charDetailTabs}>
+          <button
+            className={`${styles.charDetailTab} ${tab === 'stuff' ? styles.charDetailTabActive : ''}`}
+            onClick={() => setTab('stuff')}
+          >
+            {t('tabs.equipment')}
+          </button>
+          <button
+            className={`${styles.charDetailTab} ${tab === 'specialists' ? styles.charDetailTabActive : ''}`}
+            onClick={() => setTab('specialists')}
+          >
+            {t('tabs.specialists')}
+            {specialists.length > 0 && <span className={styles.charDetailTabCount}>{specialists.length}</span>}
+          </button>
+        </div>
+
+        {/* ── Body ── */}
+        <div className={styles.modalBody}>
+          {fetching ? (
+            <div className={styles.charDetailLoading}>…</div>
+          ) : tab === 'stuff' ? (
+            <div className={styles.charDetailSection}>
+              <EquipSlot label={t('equipKeys.weapon')}  w={equip.weapon}  t={t} />
+              <EquipSlot label={t('equipKeys.offhand')} w={equip.offhand} t={t} />
+              <EquipSlot label={t('equipKeys.armor')}   w={equip.armor}   t={t} />
             </div>
-          )}
-
-          {reg.player_username && (
-            <Link to={`/players/${reg.player_username}`} onClick={onClose}>
-              <Button variant="ghost" size="sm" style={{ marginTop: '0.5rem' }}>
-                {t('detail.viewFullProfile')}
-              </Button>
-            </Link>
+          ) : specialists.length === 0 ? (
+            <div className={styles.charDetailLoading}>{t('sp.empty')}</div>
+          ) : (
+            <div className={styles.spDetailList}>
+              {specialists.map((sp, i) => (
+                <div key={i} className={styles.spDetailItem}>
+                  <div className={styles.spDetailTop}>
+                    {sp.icon && <img src={sp.icon} alt="" className={styles.spDetailIcon} />}
+                    <span className={styles.spDetailName}>{sp.name}</span>
+                    <span className={styles.spDetailBadge}>+{sp.improvement ?? 0}</span>
+                    <span className={styles.spDetailBadgePerf}>{sp.perfection ?? 0}%</span>
+                  </div>
+                  {sp.stats && (
+                    <div className={styles.spDetailStats}>
+                      {[
+                        [t('sp.statAtk'),  sp.stats.attack],
+                        [t('sp.statDef'),  sp.stats.defense],
+                        [t('sp.statElem'), sp.stats.element],
+                        [t('sp.statHpmp'), sp.stats.hpmp],
+                      ].map(([label, val]) => (
+                        <div key={label} className={styles.spDetailStat}>
+                          <span className={styles.spDetailStatLabel}>{label}</span>
+                          <span className={styles.spDetailStatVal}>{val || '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -865,8 +965,8 @@ export default function RaidSessionDetailPage() {
   const [showInvite,    setShowInvite]    = useState(false)
   const [showCancel,    setShowCancel]    = useState(false)
   const [cancelling,    setCancelling]    = useState(false)
-  const [spTarget,      setSPTarget]      = useState(null)
-  const [profileTarget, setProfileTarget] = useState(null)
+  const [spTarget,    setSPTarget]    = useState(null)
+  const [charTarget,  setCharTarget]  = useState(null)
   const dragIdRef = useRef(null)
 
   const raid       = session ? RAIDS.find(r => r.slug === session.raid_slug) : null
@@ -1018,6 +1118,7 @@ export default function RaidSessionDetailPage() {
               onDragStart={handleDragStart}
               onAssignSP={setSPTarget}
               onRemoveFromTeam={handleRemoveFromTeam}
+              onViewChar={setCharTarget}
               t={t}
             />
           ))}
@@ -1033,7 +1134,7 @@ export default function RaidSessionDetailPage() {
           onRegister={() => setShowRegister(true)}
           onUnregister={handleUnregister}
           onDragStart={handleDragStart}
-          onViewProfile={setProfileTarget}
+          onViewChar={setCharTarget}
           onInviteFriends={() => setShowInvite(true)}
           session={session}
           t={t}
@@ -1079,10 +1180,10 @@ export default function RaidSessionDetailPage() {
           t={t}
         />
       )}
-      {profileTarget && (
-        <ProfileModal
-          reg={profileTarget}
-          onClose={() => setProfileTarget(null)}
+      {charTarget && (
+        <CharacterDetailModal
+          reg={charTarget}
+          onClose={() => setCharTarget(null)}
           t={t}
         />
       )}
