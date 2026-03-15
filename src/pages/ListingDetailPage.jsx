@@ -615,7 +615,7 @@ export default function ListingDetailPage() {
       {/* ── Offers section ── */}
       <div className={styles.offersSection}>
         <h2 className={styles.offersTitle}>
-          {isOwner ? t('market.allOffers') : t('market.myOffers')}
+          {t('market.allOffers')}
           <span className={styles.offersCount}>{sortedOffers.length}</span>
         </h2>
 

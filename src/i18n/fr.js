@@ -715,7 +715,7 @@ export default {
     formTitle:        'Titre',
     formTitlePlaceholder: 'Gravi +20, Nezarun…',
     formDesc:         'Description',
-    formDescPlaceholder: 'Détails, état, conditions…',
+    formDescPlaceholder: 'Détails, budget, état, conditions…',
     formTags:         'Tags',
     formImages:       'Images (liens externes)',
     formImagesPlaceholder: 'https://imgur.com/…',
