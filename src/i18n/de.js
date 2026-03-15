@@ -406,7 +406,7 @@ export default {
     title:             'Spielersuche',
     sub:               'Finde Abenteurer aus Arcadia und erkunde ihre Profile.',
     myProfile:         'Mein Profil',
-    searchPlaceholder: 'Spieler suchen…',
+    searchPlaceholder: 'Nach Benutzername oder Charaktername suchen…',
     noResults:         'Keine Spieler gefunden.',
     lv:                'Lv.',
     hero:              'Held',

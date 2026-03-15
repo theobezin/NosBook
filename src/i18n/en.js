@@ -406,7 +406,7 @@ export default {
     title:          'Player Search',
     sub:            'Find adventurers from NosTale and explore their profiles.',
     myProfile:      'My Profile',
-    searchPlaceholder: 'Search a player…',
+    searchPlaceholder: 'Search by username or character name…',
     noResults:      'No players found.',
     lv:             'Lv.',
     hero:           'Hero',

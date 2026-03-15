@@ -406,7 +406,7 @@ export default {
     title:             'Recherche de joueurs',
     sub:               "Retrouve des aventuriers de NosTale et explore leurs profils.",
     myProfile:         'Mon Profil',
-    searchPlaceholder: 'Rechercher un joueur…',
+    searchPlaceholder: 'Rechercher par pseudo ou nom de perso…',
     noResults:         'Aucun joueur trouvé.',
     lv:                'Niv.',
     hero:              'Héros',
