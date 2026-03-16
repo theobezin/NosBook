@@ -60,7 +60,17 @@ export function usePlannerData(defaultCharName) {
         activeChar: d.activeChar ?? null,
         blocks:     Array.isArray(d.blocks) ? d.blocks : [],
         checks:     d.checks     && typeof d.checks === 'object'  ? d.checks : {},
-        raids:      d.raids      && typeof d.raids  === 'object'  ? d.raids  : {},
+        raids: (() => {
+          if (!d.raids || typeof d.raids !== 'object') return {}
+          const keys = Object.keys(d.raids)
+          if (keys.length === 0) return {}
+          // Migration : ancien format plat { raidId: timestamp } → { charName: { raidId: ts } }
+          if (typeof d.raids[keys[0]] === 'number') {
+            const char = d.activeChar ?? null
+            return char ? { [char]: d.raids } : {}
+          }
+          return d.raids
+        })(),
         goals:      Array.isArray(d.goals) ? d.goals : [],
         notes:      Array.isArray(d.notes) ? d.notes : [],
       }
