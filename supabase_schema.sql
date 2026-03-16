@@ -1025,6 +1025,40 @@ create policy "admin_manage_sessions"
 -- -- INSERT autorisé uniquement via les fonctions SECURITY DEFINER (create_offer, etc.)
 
 -- ────────────────────────────────────────────────────────────
+-- MIGRATION J — Sécurité : restreindre les colonnes sensibles de profiles
+--               accessibles par le rôle anon (utilisateurs non connectés).
+--
+-- PROBLÈME : La policy "profiles_select_all" (using true) autorise tout le
+-- monde à lire TOUTES les colonnes de profiles via l'API REST Supabase,
+-- y compris planner_data (données privées), is_admin, muted_until, is_banned.
+-- L'ANON_KEY étant embarquée dans le bundle Vite (comportement normal),
+-- n'importe qui peut interroger l'API directement depuis la console.
+--
+-- SOLUTION : Révoquer le SELECT complet sur profiles pour le rôle anon,
+-- et n'accorder que les colonnes publiquement nécessaires.
+-- Le rôle authenticated garde un accès complet (RLS reste le gardien).
+--
+-- ⚠️  À EXÉCUTER dans le SQL Editor Supabase (pas de changement de schéma) :
+-- ────────────────────────────────────────────────────────────
+-- -- 1. Révoquer l'accès complet à la table pour anon
+-- REVOKE SELECT ON public.profiles FROM anon;
+--
+-- -- 2. N'accorder que les colonnes publiques à anon
+-- GRANT SELECT (
+--   id, username, bio, avatar_url, server,
+--   discord_handle, trades_completed, trades_reported,
+--   created_at, updated_at
+-- ) ON public.profiles TO anon;
+--
+-- -- 3. S'assurer que authenticated garde un accès complet
+-- GRANT SELECT ON public.profiles TO authenticated;
+--
+-- Résultat :
+--   - anon (non connecté) : peut lire uniquement les colonnes publiques
+--   - authenticated (connecté) : accès complet, RLS contrôle les lignes
+--   - planner_data, is_admin, muted_until, is_banned : invisibles pour anon
+
+-- ────────────────────────────────────────────────────────────
 -- MIGRATION I — notify_outbid sur market_offers
 --               + notifications offre acceptée/refusée
 -- ────────────────────────────────────────────────────────────
