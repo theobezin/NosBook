@@ -385,7 +385,7 @@ export default {
     },
     defaultChar:  'Character 1',
     filterAll:    'All',
-    raidTypes:    ['All','Act 1','Act 5','Act 6','Act 7','Act 8','Act 9','Act 10','Hardcore','Event'],
+    raidTypes:    ['All','Act 1','Act 5','Act 6','Act 7','Act 8','Act 9','Act 10','Event','Hardcore'],
     activityTypes: [
       { id:'xp',      label:'XP'      },
       { id:'farm',    label:'Farm'    },

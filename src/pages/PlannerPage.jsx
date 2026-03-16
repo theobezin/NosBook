@@ -183,7 +183,7 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
         <div style={{background:th.surface,border:`1px solid ${th.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',gap:10,marginBottom:10,flexWrap:'wrap'}}>
             <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder={i18n.namePlaceholder} style={{...inp,flex:2,minWidth:140}} onKeyDown={e=>e.key==='Enter'&&addGoal()}/>
-            <input type="text" inputMode="numeric" value={newTarget} onChange={e=>setNewTarget(fmtShorthand(e.target.value))} placeholder={i18n.targetPlaceholder} style={{...inp,width:175}}/>
+            <input type="text" inputMode="numeric" value={newTarget} onChange={e=>setNewTarget(e.target.value)} onBlur={e=>setNewTarget(fmtShorthand(e.target.value))} placeholder={i18n.targetPlaceholder} style={{...inp,width:220}}/>
             <input value={newUnit} onChange={e=>setNewUnit(e.target.value)} placeholder={i18n.unitPlaceholder} style={{...inp,width:70}}/>
           </div>
           <button onClick={addGoal} style={{padding:'8px 20px',borderRadius:20,background:th.gold+'20',border:`1px solid ${th.gold}`,color:th.gold,fontFamily:'Cinzel',fontSize:11,cursor:'pointer'}}>{i18n.createBtn}</button>
@@ -219,10 +219,11 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
                   type="text"
                   inputMode="numeric"
                   value={step}
-                  onChange={e=>setSteps(s=>({...s,[goal.id]:fmtShorthand(e.target.value)}))}
+                  onChange={e=>setSteps(s=>({...s,[goal.id]:e.target.value}))}
+                  onBlur={e=>setSteps(s=>({...s,[goal.id]:fmtShorthand(e.target.value)}))}
                   onKeyDown={e=>e.key==='Enter'&&applyStep(goal.id,+1)}
                   placeholder={i18n.amountPlaceholder}
-                  style={{...inp,width:165,padding:'5px 10px',fontSize:13,textAlign:'center'}}
+                  style={{...inp,width:200,padding:'5px 10px',fontSize:13,textAlign:'center'}}
                 />
                 <button
                   onClick={()=>applyStep(goal.id,+1)}
@@ -821,7 +822,9 @@ export default function PlannerPage() {
     }
     return doneTs + cooldownH * 3600000
   }
-  const readyRaids=RAIDS.filter(r=>!raids[r.id]||nextRaidReset(raids[r.id],r.cooldown)<=Date.now()).length
+  const charRaids = (activeChar && raids[activeChar]) ? raids[activeChar] : {}
+  const setCharRaids = v => setRaids(prev => ({ ...prev, [activeChar]: typeof v === 'function' ? v(prev[activeChar] ?? {}) : v }))
+  const readyRaids=RAIDS.filter(r=>!charRaids[r.id]||nextRaidReset(charRaids[r.id],r.cooldown)<=Date.now()).length
 
   const chipBtn=active=>({padding:'8px 18px',borderRadius:20,background:active?th.gold+'1a':'transparent',border:`1px solid ${active?th.gold+'66':th.border}`,color:active?th.gold:th.textSub,fontFamily:'Cinzel',fontSize:11,letterSpacing:1,cursor:'pointer',transition:'all .2s'})
   const TABS=[{id:'planning',label:p.tabs.planning},{id:'dailies',label:p.tabs.dailies},{id:'raids',label:p.tabs.raids},{id:'farm',label:p.tabs.farm}]
@@ -904,7 +907,7 @@ export default function PlannerPage() {
           {activeTab==='raids'&&(
             <div>
               <div style={{fontFamily:'Cinzel',fontSize:11,color:th.textSub,letterSpacing:2,marginBottom:16}}>{p.raids.title} {readyRaids}/{RAIDS.length} {p.raids.available}</div>
-              <RaidCooldownTracker raids={raids} setRaids={setRaids} th={th} i18n={{...p.raids,raidTypes:p.raidTypes}}/>
+              <RaidCooldownTracker raids={charRaids} setRaids={setCharRaids} th={th} i18n={{...p.raids,raidTypes:p.raidTypes}}/>
             </div>
           )}
           {activeTab==='farm'&&<FarmTracker goals={goals} setGoals={setGoals} th={th} i18n={p.farm}/>}
