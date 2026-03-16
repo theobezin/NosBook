@@ -23,6 +23,17 @@ const SUPABASE_SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 const FROM_EMAIL = 'NosBook Market <notifications@nosbook.gg>'
 
+// ── HTML escaping to prevent injection in email templates ─
+function h(str: string | null | undefined): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 // ── Supabase admin client ─────────────────────────────────
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { persistSession: false },
@@ -86,11 +97,11 @@ async function handleOfferSelected(listingId: string, offerId: string) {
         <h2 style="margin:0;color:#0d0f14;">🏷️ NosBook Market</h2>
       </div>
       <div style="background:#1a1d24;color:#e8e8e8;padding:24px;border-radius:0 0 8px 8px;border:1px solid #2a2d38;">
-        <p>Bonjour <strong>${seller?.username ?? 'vendeur'}</strong>,</p>
-        <p>Une offre a été acceptée sur votre annonce <strong>${listing.title}</strong>.</p>
+        <p>Bonjour <strong>${h(seller?.username) || 'vendeur'}</strong>,</p>
+        <p>Une offre a été acceptée sur votre annonce <strong>${h(listing.title)}</strong>.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-          <tr><td style="color:#9ca3af;padding:4px 0;width:140px;">Acheteur</td><td style="color:#c9a84c;font-weight:700;">${buyer?.username ?? '—'}</td></tr>
-          <tr><td style="color:#9ca3af;padding:4px 0;">Discord</td><td>${buyer?.discord_handle ? `<span style="color:#7c83e0;">${buyer.discord_handle}</span>` : '<em style="color:#6b7280;">non renseigné</em>'}</td></tr>
+          <tr><td style="color:#9ca3af;padding:4px 0;width:140px;">Acheteur</td><td style="color:#c9a84c;font-weight:700;">${h(buyer?.username) || '—'}</td></tr>
+          <tr><td style="color:#9ca3af;padding:4px 0;">Discord</td><td>${buyer?.discord_handle ? `<span style="color:#7c83e0;">${h(buyer.discord_handle)}</span>` : '<em style="color:#6b7280;">non renseigné</em>'}</td></tr>
           <tr><td style="color:#9ca3af;padding:4px 0;">Prix proposé</td><td style="color:#4ade80;font-weight:700;">${price}</td></tr>
         </table>
         <p style="color:#9ca3af;font-size:0.9em;">Contactez l'acheteur pour finaliser l'échange, puis confirmez la vente depuis l'annonce.</p>
@@ -100,7 +111,7 @@ async function handleOfferSelected(listingId: string, offerId: string) {
     </div>
   `
 
-  await sendEmail(sellerEmail, `[NosBook] Offre acceptée sur "${listing.title}"`, html)
+  await sendEmail(sellerEmail, `[NosBook] Offre acceptée sur "${h(listing.title)}"`, html)
 }
 
 // ── Handler: sale confirmed (buyer notified) ─────────────
@@ -137,11 +148,11 @@ async function handleSaleConfirmed(listingId: string) {
         <h2 style="margin:0;color:#0d0f14;">✅ NosBook Market</h2>
       </div>
       <div style="background:#1a1d24;color:#e8e8e8;padding:24px;border-radius:0 0 8px 8px;border:1px solid #2a2d38;">
-        <p>Bonjour <strong>${buyer?.username ?? 'acheteur'}</strong>,</p>
-        <p>Votre échange sur <strong>${listing.title}</strong> a été confirmé par le vendeur. 🎉</p>
+        <p>Bonjour <strong>${h(buyer?.username) || 'acheteur'}</strong>,</p>
+        <p>Votre échange sur <strong>${h(listing.title)}</strong> a été confirmé par le vendeur. 🎉</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-          <tr><td style="color:#9ca3af;padding:4px 0;width:140px;">Vendeur</td><td style="color:#c9a84c;font-weight:700;">${seller?.username ?? '—'}</td></tr>
-          <tr><td style="color:#9ca3af;padding:4px 0;">Discord</td><td>${seller?.discord_handle ? `<span style="color:#7c83e0;">${seller.discord_handle}</span>` : '<em style="color:#6b7280;">non renseigné</em>'}</td></tr>
+          <tr><td style="color:#9ca3af;padding:4px 0;width:140px;">Vendeur</td><td style="color:#c9a84c;font-weight:700;">${h(seller?.username) || '—'}</td></tr>
+          <tr><td style="color:#9ca3af;padding:4px 0;">Discord</td><td>${seller?.discord_handle ? `<span style="color:#7c83e0;">${h(seller.discord_handle)}</span>` : '<em style="color:#6b7280;">non renseigné</em>'}</td></tr>
         </table>
         <p style="color:#9ca3af;font-size:0.9em;">Si vous avez besoin de contacter le vendeur pour finaliser la remise, utilisez son Discord ci-dessus.</p>
         <a href="${link}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#22c55e;color:#0d0f14;text-decoration:none;border-radius:6px;font-weight:700;">Voir l'annonce</a>
@@ -150,7 +161,7 @@ async function handleSaleConfirmed(listingId: string) {
     </div>
   `
 
-  await sendEmail(buyerEmail, `[NosBook] Échange confirmé — ${listing.title}`, html)
+  await sendEmail(buyerEmail, `[NosBook] Échange confirmé — ${h(listing.title)}`, html)
 }
 
 // ── Main handler ──────────────────────────────────────────
