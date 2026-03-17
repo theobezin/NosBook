@@ -9,6 +9,8 @@ import styles from './NotificationsPage.module.css'
 
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
 
+const MARKET_TYPES = ['market_outbid', 'market_offer_accepted', 'market_offer_rejected', 'market_new_offer']
+
 export default function NotificationsPage() {
   const { user, isAuthenticated } = useAuth()
   const { t, lang } = useLang()
@@ -16,6 +18,7 @@ export default function NotificationsPage() {
 
   const [notifs,  setNotifs]  = useState([])
   const [loading, setLoading] = useState(true)
+  const [tab,     setTab]     = useState('unread') // 'unread' | 'read'
 
   useEffect(() => {
     if (!hasSupabase || !user?.id) { setLoading(false); return }
@@ -27,23 +30,18 @@ export default function NotificationsPage() {
       .then(({ data }) => { setNotifs(data ?? []); setLoading(false) })
   }, [user?.id])
 
-  // Marquer toutes comme lues à l'ouverture
-  useEffect(() => {
-    if (!hasSupabase || !user?.id) return
-    supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('user_id', user.id)
-      .eq('read', false)
-      .then(() => setNotifs(prev => prev.map(n => ({ ...n, read: true }))))
-  }, [user?.id])
-
   const handleMarkAllRead = async () => {
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('user_id', user.id)
     setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+    setTab('read')
+  }
+
+  const handleMarkRead = async (id) => {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    await supabase.from('notifications').update({ read: true }).eq('id', id)
   }
 
   const handleDelete = async (id) => {
@@ -53,16 +51,19 @@ export default function NotificationsPage() {
 
   const handleFriendRequest = async (n, accept) => {
     if (!n.related_user_id) return
-    // Update the friendship status
     await supabase
       .from('friendships')
       .update({ status: accept ? 'accepted' : 'rejected', updated_at: new Date().toISOString() })
       .eq('requester_id', n.related_user_id)
       .eq('addressee_id', user.id)
       .eq('status', 'pending')
-    // Remove the notification
     setNotifs(prev => prev.filter(notif => notif.id !== n.id))
     await supabase.from('notifications').delete().eq('id', n.id)
+  }
+
+  const handleNavigate = (id, path) => {
+    handleMarkRead(id)
+    navigate(path)
   }
 
   if (!isAuthenticated) {
@@ -77,21 +78,36 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifs.filter(n => !n.read).length
+  const displayed   = notifs.filter(n => tab === 'unread' ? !n.read : n.read)
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>
           🔔 {t('notif.title')}
-          {unreadCount > 0 && (
-            <span className={styles.unreadBadge}>{unreadCount} {t('notif.unread')}</span>
-          )}
         </h1>
-        {notifs.length > 0 && (
+        {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
             {t('notif.markAllRead')}
           </Button>
         )}
+      </div>
+
+      {/* Onglets Lues / Non lues */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${tab === 'unread' ? styles.tabActive : ''}`}
+          onClick={() => setTab('unread')}
+        >
+          {t('notif.tabUnread')}
+          {unreadCount > 0 && <span className={styles.tabBadge}>{unreadCount}</span>}
+        </button>
+        <button
+          className={`${styles.tab} ${tab === 'read' ? styles.tabActive : ''}`}
+          onClick={() => setTab('read')}
+        >
+          {t('notif.tabRead')}
+        </button>
       </div>
 
       {loading ? (
@@ -100,13 +116,16 @@ export default function NotificationsPage() {
             <div key={i} className={`${styles.notifCard} ${styles.skeleton}`} />
           ))}
         </div>
-      ) : notifs.length === 0 ? (
-        <p className={styles.empty}>{t('notif.empty')}</p>
+      ) : displayed.length === 0 ? (
+        <p className={styles.empty}>
+          {tab === 'unread' ? t('notif.emptyUnread') : t('notif.emptyRead')}
+        </p>
       ) : (
         <div className={styles.list}>
-          {notifs.map(n => {
+          {displayed.map(n => {
             const raid = RAID_MAP[n.session_raid_name]
             const isFriendRequest = n.type === 'friend_request'
+            const isMarket        = MARKET_TYPES.includes(n.type)
             return (
               <div
                 key={n.id}
@@ -125,6 +144,8 @@ export default function NotificationsPage() {
                     <span className={styles.cancelledIcon}>✅</span>
                   ) : n.type === 'market_offer_rejected' ? (
                     <span className={styles.cancelledIcon}>❌</span>
+                  ) : n.type === 'market_new_offer' ? (
+                    <span className={styles.cancelledIcon}>🛒</span>
                   ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -147,6 +168,8 @@ export default function NotificationsPage() {
                       ? t('notif.marketOfferAccepted')
                       : n.type === 'market_offer_rejected'
                       ? t('notif.marketOfferRejected')
+                      : n.type === 'market_new_offer'
+                      ? t('notif.marketNewOffer')
                       : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
@@ -183,7 +206,12 @@ export default function NotificationsPage() {
                       {t('notif.marketOfferRejectedSub')} <strong>"{n.content_preview}"</strong>
                     </p>
                   )}
-                  {!isFriendRequest && n.type !== 'session_invite' && n.type !== 'market_outbid' && n.type !== 'market_offer_accepted' && n.type !== 'market_offer_rejected' && n.content_preview && (
+                  {n.type === 'market_new_offer' && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      {t('notif.marketNewOfferSub')} <strong>"{n.content_preview}"</strong>
+                    </p>
+                  )}
+                  {!isFriendRequest && n.type !== 'session_invite' && !isMarket && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>
                   )}
                   <p className={styles.notifTime}>
@@ -217,25 +245,16 @@ export default function NotificationsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/raids/${n.session_id}`)}
+                          onClick={() => handleNavigate(n.id, `/raids/${n.session_id}`)}
                         >
                           {t('notif.viewSession')} →
                         </Button>
                       )}
-                      {n.type === 'market_outbid' && n.listing_id && (
+                      {isMarket && n.listing_id && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/market/${n.listing_id}`)}
-                        >
-                          {t('notif.viewListing')} →
-                        </Button>
-                      )}
-                      {(n.type === 'market_offer_accepted' || n.type === 'market_offer_rejected') && n.listing_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/market/${n.listing_id}`)}
+                          onClick={() => handleNavigate(n.id, `/market/${n.listing_id}`)}
                         >
                           {t('notif.viewListing')} →
                         </Button>

@@ -733,6 +733,13 @@ begin
   values (auth.uid(), p_listing_id)
   on conflict (profile_id, listing_id) do nothing;
 
+  -- Notifier le vendeur : nouvelle offre reçue (sauf s'il enchérit sur son propre post)
+  insert into public.notifications (user_id, type, content_preview, listing_id, read)
+  select ml.profile_id, 'market_new_offer', ml.title, p_listing_id, false
+  from public.market_listings ml
+  where ml.id = p_listing_id
+    and ml.profile_id <> auth.uid();
+
   -- Notifier les utilisateurs dont l'offre active vient d'être surenchérie
   if p_price is not null then
     insert into public.notifications (user_id, type, content_preview, listing_id, read)
@@ -760,7 +767,6 @@ begin
 end;
 $$;
 
-grant execute on function public.create_offer(uuid, bigint, text, text, text, text) to authenticated;
 grant execute on function public.create_offer(uuid, bigint, text, text, text, text, boolean) to authenticated;
 
 -- ────────────────────────────────────────────────────────────
@@ -1005,6 +1011,30 @@ create policy "admin_manage_sessions"
 --   • Seules les annulations acheteur comptent (pas les rejets vendeur).
 --   • Les lignes sont supprimées automatiquement si l'annonce est supprimée (CASCADE).
 --   • Le client reçoit l'erreur "COOLDOWN:<minutes>" et affiche le temps restant.
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION G-bis — création de la table notifications (si absente)
+-- ────────────────────────────────────────────────────────────
+-- create table public.notifications (
+--   id              uuid        primary key default gen_random_uuid(),
+--   user_id         uuid        not null references public.profiles(id) on delete cascade,
+--   type            text        not null,
+--   content_preview text,
+--   listing_id      uuid        references public.market_listings(id) on delete cascade,
+--   session_id      uuid,
+--   session_raid_name text,
+--   related_user_id uuid        references public.profiles(id) on delete set null,
+--   read            boolean     not null default false,
+--   created_at      timestamptz not null default now()
+-- );
+-- create index notifications_user_id_idx on public.notifications(user_id, created_at desc);
+-- alter table public.notifications enable row level security;
+-- create policy "notifs_select_own" on public.notifications
+--   for select to authenticated using (user_id = auth.uid());
+-- create policy "notifs_update_own" on public.notifications
+--   for update to authenticated using (user_id = auth.uid());
+-- create policy "notifs_delete_own" on public.notifications
+--   for delete to authenticated using (user_id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────
 -- MIGRATION H — colonne listing_id sur notifications

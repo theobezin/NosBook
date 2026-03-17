@@ -543,7 +543,13 @@ export default {
     marketOfferAcceptedSub: 'The seller accepted your offer for',
     marketOfferRejected:    '❌ Offer declined',
     marketOfferRejectedSub: 'The seller declined your offer for',
+    marketNewOffer:         '🛒 New offer received',
+    marketNewOfferSub:      'Someone placed an offer on',
     viewListing:           'View listing',
+    tabUnread:             'Unread',
+    tabRead:               'Read',
+    emptyUnread:           'No unread notifications.',
+    emptyRead:             'No read notifications.',
   },
   friends: {
     title:       'Friends',
