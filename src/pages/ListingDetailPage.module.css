@@ -286,6 +286,14 @@
 .btnArchive:hover { border-color: #6b7280; color: #9ca3af; }
 .btnArchive:disabled { opacity: 0.5; cursor: default; }
 
+.btnReportListing {
+  font-size: 0.72rem; padding: 5px 10px; border-radius: 6px;
+  border: 1px solid #e6b43044; background: transparent; color: #e6b43099;
+  cursor: pointer; transition: color 0.2s, background 0.2s;
+  margin-left: auto;
+}
+.btnReportListing:hover { color: #e6b430; background: rgba(230,180,48,0.08); }
+
 .blockedMsg   { font-size: 0.78rem; color: #ef4444; font-style: italic; margin: 0; }
 .restrictedMsg { font-size: 0.78rem; color: #e6b430; font-style: italic; margin: 0; }
 

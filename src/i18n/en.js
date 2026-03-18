@@ -779,6 +779,7 @@ export default {
     rejectOffer:      'Decline',
     rejectOfferConfirm: 'Decline this offer?',
     reportBuyer:      'Report buyer',
+    reportListing:    'Report listing',
     archiveListing:   'Archive listing',
     cancelOffer:      'Cancel my offer',
     bumpListing:      'Bump listing',

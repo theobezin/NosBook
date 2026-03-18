@@ -463,7 +463,7 @@ begin
      set blocked_profiles     = array_append(blocked_profiles, v_reported_profile),
          confirmation_pending = false,
          accepted_offer_id    = null,
-         status               = 'active'
+         status               = 'archived'
    where id = v_listing_id;
 
   update public.profiles
@@ -1274,7 +1274,7 @@ create policy "admin_manage_sessions"
 --     where listing_id = v_listing_id and profile_id = v_reported_profile and status = 'active';
 --   update public.market_listings
 --      set blocked_profiles = array_append(blocked_profiles, v_reported_profile),
---          confirmation_pending = false, accepted_offer_id = null, status = 'active'
+--          confirmation_pending = false, accepted_offer_id = null, status = 'archived'
 --    where id = v_listing_id;
 --   update public.profiles set trades_reported = trades_reported + 1 where id = v_reported_profile;
 --   insert into public.admin_logs (action, actor_id, actor_username, target_id, target_username, details)
