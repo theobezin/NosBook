@@ -4,7 +4,7 @@
 // Création de famille intégrée (utilisateurs connectés).
 // ============================================================
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
@@ -14,21 +14,43 @@ import styles from './FamiliesListPage.module.css'
 
 // ── Couleurs de niveau ────────────────────────────────────────
 const LEVEL_COLORS = [
-  { max: 3,  color: '#a0a0a0' },
-  { max: 6,  color: '#5dc85d' },
-  { max: 10, color: '#4499ff' },
-  { max: 14, color: '#bb44ff' },
-  { max: 18, color: '#ff8833' },
-  { max: 22, color: '#ff3333' },
-  { max: 26, color: '#ff66aa' },
-  { max: 30, color: '#ffcc00' },
+  { max: 1,  color: '#ffffff' },
+  { max: 2,  color: '#ffff7f' },
+  { max: 3,  color: '#e1e100' },
+  { max: 4,  color: '#ccff00' },
+  { max: 5,  color: '#99ff00' },
+  { max: 6,  color: '#66ff00' },
+  { max: 7,  color: '#00ff00' },
+  { max: 8,  color: '#00e940' },
+  { max: 9,  color: '#00d200' },
+  { max: 10, color: '#00c57a' },
+  { max: 11, color: '#00b999' },
+  { max: 12, color: '#00a8b6' },
+  { max: 13, color: '#0099d0' },
+  { max: 14, color: '#2897f1' },
+  { max: 15, color: '#329dff' },
+  { max: 16, color: '#689aff' },
+  { max: 17, color: '#819eff' },
+  { max: 18, color: '#9788ff' },
+  { max: 19, color: '#b07eff' },
+  { max: 20, color: '#c874ff' },
+  { max: 21, color: '#d978ff' },
+  { max: 22, color: '#d8a6f7' },
+  { max: 23, color: '#e9c9ff' },
+  { max: 24, color: '#ffbdf0' },
+  { max: 25, color: '#ff91ca' },
+  { max: 26, color: '#ff6b94' },
+  { max: 27, color: '#ff5c8a' },
+  { max: 28, color: '#ff456d' },
+  { max: 29, color: '#ff4545' },
+  { max: 30, color: '#ff2121' },
 ]
 function getLevelColor(level) {
   return (LEVEL_COLORS.find(b => level <= b.max) ?? LEVEL_COLORS[LEVEL_COLORS.length - 1]).color
 }
 
 // ── Composant carte famille ───────────────────────────────────
-function FamilyCard({ family, t, lang }) {
+function FamilyCard({ family, t, lang, canManage }) {
   const [expanded, setExpanded] = useState(false)
   const [members, setMembers] = useState(null)
   const levelColor = getLevelColor(family.level)
@@ -72,6 +94,15 @@ function FamilyCard({ family, t, lang }) {
               {headUsername}
             </Link>
           </span>
+          {canManage && (
+            <Link
+              to="/family"
+              className={styles.manageLink}
+              onClick={e => e.stopPropagation()}
+            >
+              {t('familiesList.manageBtn')}
+            </Link>
+          )}
           <span className={styles.expandCaret}>{expanded ? '▴' : '▾'}</span>
         </div>
       </div>
@@ -227,6 +258,7 @@ export default function FamiliesListPage() {
   const [search,       setSearch]       = useState('')
   const [serverFilter, setServerFilter] = useState('all')
   const [showCreate,   setShowCreate]   = useState(false)
+  const [myManagedFamilyIds, setMyManagedFamilyIds] = useState(new Set())
 
   function fetchFamilies() {
     if (!hasSupabase) { setLoading(false); return }
@@ -242,6 +274,16 @@ export default function FamiliesListPage() {
   }
 
   useEffect(() => { fetchFamilies() }, [])
+
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) return
+    supabase.from('family_members').select('family_id, role')
+      .eq('profile_id', user.id)
+      .in('role', ['head', 'assistant'])
+      .then(({ data }) => {
+        setMyManagedFamilyIds(new Set((data ?? []).map(m => m.family_id)))
+      })
+  }, [user?.id])
 
   function handleCreated(fam) {
     setShowCreate(false)
@@ -302,7 +344,7 @@ export default function FamiliesListPage() {
       ) : (
         <div className={styles.list}>
           {filtered.map(f => (
-            <FamilyCard key={f.id} family={f} t={t} lang={lang} />
+            <FamilyCard key={f.id} family={f} t={t} lang={lang} canManage={myManagedFamilyIds.has(f.id)} />
           ))}
         </div>
       )}

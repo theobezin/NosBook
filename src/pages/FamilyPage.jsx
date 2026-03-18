@@ -15,14 +15,36 @@ import styles from './FamilyPage.module.css'
 
 // ── Couleurs de niveau famille ────────────────────────────────
 const LEVEL_COLORS = [
-  { max: 3,  color: '#a0a0a0' },
-  { max: 6,  color: '#5dc85d' },
-  { max: 10, color: '#4499ff' },
-  { max: 14, color: '#bb44ff' },
-  { max: 18, color: '#ff8833' },
-  { max: 22, color: '#ff3333' },
-  { max: 26, color: '#ff66aa' },
-  { max: 30, color: '#ffcc00' },
+  { max: 1,  color: '#ffffff' },
+  { max: 2,  color: '#ffff7f' },
+  { max: 3,  color: '#e1e100' },
+  { max: 4,  color: '#ccff00' },
+  { max: 5,  color: '#99ff00' },
+  { max: 6,  color: '#66ff00' },
+  { max: 7,  color: '#00ff00' },
+  { max: 8,  color: '#00e940' },
+  { max: 9,  color: '#00d200' },
+  { max: 10, color: '#00c57a' },
+  { max: 11, color: '#00b999' },
+  { max: 12, color: '#00a8b6' },
+  { max: 13, color: '#0099d0' },
+  { max: 14, color: '#2897f1' },
+  { max: 15, color: '#329dff' },
+  { max: 16, color: '#689aff' },
+  { max: 17, color: '#819eff' },
+  { max: 18, color: '#9788ff' },
+  { max: 19, color: '#b07eff' },
+  { max: 20, color: '#c874ff' },
+  { max: 21, color: '#d978ff' },
+  { max: 22, color: '#d8a6f7' },
+  { max: 23, color: '#e9c9ff' },
+  { max: 24, color: '#ffbdf0' },
+  { max: 25, color: '#ff91ca' },
+  { max: 26, color: '#ff6b94' },
+  { max: 27, color: '#ff5c8a' },
+  { max: 28, color: '#ff456d' },
+  { max: 29, color: '#ff4545' },
+  { max: 30, color: '#ff2121' },
 ]
 function getLevelColor(level) {
   return (LEVEL_COLORS.find(b => level <= b.max) ?? LEVEL_COLORS[LEVEL_COLORS.length - 1]).color
@@ -60,6 +82,8 @@ export default function FamilyPage() {
 
   // Confirmation
   const [confirm, setConfirm] = useState(null)
+  const [editingLevel,  setEditingLevel]  = useState(false)
+  const [levelInput,    setLevelInput]    = useState(1)
 
   // ── Chargement ───────────────────────────────────────────────
 
@@ -135,8 +159,9 @@ export default function FamilyPage() {
   // ── Sélection du panneau de gestion ──────────────────────────
 
   function handleManage(charId) {
-    if (managingCharId === charId) { setManagingCharId(null); return }
+    if (managingCharId === charId) { setManagingCharId(null); setEditingLevel(false); return }
     setManagingCharId(charId)
+    setEditingLevel(false)
     const mem = memberships[charId]
     if (mem?.family) loadFamilyMembers(mem.family.id)
   }
@@ -254,6 +279,33 @@ export default function FamilyPage() {
       family_id:       myMem.family.id,
     })
     setInvitedIds(prev => new Set([...prev, friend.id]))
+  }
+
+  // ── Ajouter un propre personnage ──────────────────────────────
+
+  async function handleAddMyChar(char) {
+    const myMem = memberships[managingCharId]
+    if (!myMem) return
+    const { error } = await supabase.from('family_members').insert({
+      family_id:    myMem.family.id,
+      character_id: char.id,
+      profile_id:   user.id,
+      role:         'member',
+    })
+    if (!error) {
+      await loadAll()
+      await loadFamilyMembers(myMem.family.id)
+    }
+  }
+
+  // ── Modifier le niveau ────────────────────────────────────────
+
+  async function handleSaveLevel(familyId) {
+    const lvl = Math.min(30, Math.max(1, levelInput))
+    await supabase.from('families').update({ level: lvl }).eq('id', familyId)
+    setEditingLevel(false)
+    await loadAll()
+    await loadFamilyMembers(familyId)
   }
 
   // ── Rendu ─────────────────────────────────────────────────────
@@ -392,9 +444,27 @@ export default function FamilyPage() {
                         <span className={styles.familyName} style={{ color: levelColor }}>
                           {family.name}
                         </span>
-                        <span className={styles.familyLvl} style={{ borderColor: levelColor, color: levelColor }}>
-                          {t('family.level')} {family.level}
-                        </span>
+                        {isHead && editingLevel ? (
+                          <div className={styles.levelEditRow}>
+                            <input
+                              type="number" min="1" max="30"
+                              className={styles.levelInput}
+                              value={levelInput}
+                              onChange={e => setLevelInput(Number(e.target.value))}
+                            />
+                            <button className={styles.btnSaveLevel} onClick={() => handleSaveLevel(family.id)}>✓</button>
+                            <button className={styles.btnCancelLevel} onClick={() => setEditingLevel(false)}>✕</button>
+                          </div>
+                        ) : (
+                          <span
+                            className={styles.familyLvl}
+                            style={{ borderColor: levelColor, color: levelColor, cursor: isHead ? 'pointer' : 'default' }}
+                            title={isHead ? t('family.editLevelHint') : undefined}
+                            onClick={isHead ? () => { setLevelInput(family.level); setEditingLevel(true) } : undefined}
+                          >
+                            {t('family.level')} {family.level}{isHead && ' ✎'}
+                          </span>
+                        )}
                         <span className={styles.serverTag}>{t(`raids.server.${family.server}`)}</span>
                         <span className={styles.familyCount}>
                           {familyMembers.length} {t('family.members')}
@@ -483,6 +553,32 @@ export default function FamilyPage() {
                           })}
                         </div>
                       )}
+
+                      {/* Ajouter mes autres personnages */}
+                      {(() => {
+                        const myFreeChars = characters.filter(c => !memberships[c.id])
+                        if (myFreeChars.length === 0) return null
+                        return (
+                          <>
+                            <h3 className={styles.panelTitle}>{t('family.addMyCharsTitle')}</h3>
+                            <div className={styles.inviteList}>
+                              {myFreeChars.map(c => {
+                                const charCls = CLASSES[c.class] ?? CLASSES.Archer
+                                return (
+                                  <div key={c.id} className={styles.inviteRow}>
+                                    <span className={styles.inviteName} style={{ color: charCls.color }}>
+                                      {charCls.icon} {c.name}
+                                    </span>
+                                    <button className={styles.btnInvite} onClick={() => handleAddMyChar(c)}>
+                                      {t('family.addCharBtn')}
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </>
+                        )
+                      })()}
                     </div>
                   )
                 })()}

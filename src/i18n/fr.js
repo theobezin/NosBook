@@ -607,6 +607,9 @@ export default {
     noCharacters:    'Aucun personnage trouvé sur ton profil.',
     manageBtn:       'Gérer',
     confirmCreate:   'Créer',
+    addMyCharsTitle: 'Mes autres personnages',
+    addCharBtn:      'Ajouter',
+    editLevelHint:   'Cliquer pour modifier le niveau',
   },
   familiesList: {
     title:           'Familles',
@@ -619,6 +622,7 @@ export default {
     serverLabel:     'Serveur',
     createCharLabel: 'Personnage',
     noAvailableChar: 'Tous tes personnages sont déjà dans une famille.',
+    manageBtn:       'Gérer',
   },
   raids: {
     badge:                 '⚔️ Classement PVE · Speedrun',

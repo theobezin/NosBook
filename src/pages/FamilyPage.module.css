@@ -437,6 +437,47 @@
   cursor: default;
 }
 
+/* ── Édition du niveau ────────────────────────── */
+.levelEditRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.levelInput {
+  width: 56px;
+  background: #111318;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  padding: 3px 6px;
+  color: #e0e0f0;
+  font-size: 0.85rem;
+  outline: none;
+  text-align: center;
+}
+
+.btnSaveLevel {
+  background: #c9a84c22;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  color: #c9a84c;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btnSaveLevel:hover { background: #c9a84c44; }
+
+.btnCancelLevel {
+  background: transparent;
+  border: 1px solid #3a3d50;
+  border-radius: 6px;
+  color: #7a7a9a;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btnCancelLevel:hover { color: #c0c0d8; border-color: #6a6a8a; }
+
 /* ── Confirmation ─────────────────────────────── */
 .confirmOverlay {
   position: fixed;

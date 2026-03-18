@@ -59,17 +59,30 @@ export default function NotificationsPage() {
     await supabase.from('notifications').delete().eq('id', id)
   }
 
+  const getPickedChars = (notifId) =>
+    charPick[notifId] ?? (myCharacters[0] ? [myCharacters[0].id] : [])
+
+  const toggleCharPick = (notifId, charId) => {
+    setCharPick(prev => {
+      const current = prev[notifId] ?? (myCharacters[0] ? [myCharacters[0].id] : [])
+      const has = current.includes(charId)
+      const next = has ? current.filter(id => id !== charId) : [...current, charId]
+      return { ...prev, [notifId]: next }
+    })
+  }
+
   const handleFamilyInvite = async (n, accept) => {
     if (accept && n.family_id) {
-      const characterId = charPick[n.id] || myCharacters[0]?.id
-      if (!characterId) return
-      const { error } = await supabase.from('family_members').insert({
-        family_id:    n.family_id,
-        profile_id:   user.id,
-        character_id: characterId,
-        role:         'member',
-      })
-      if (error) return
+      const charIds = getPickedChars(n.id)
+      if (charIds.length === 0) return
+      for (const cid of charIds) {
+        await supabase.from('family_members').insert({
+          family_id:    n.family_id,
+          profile_id:   user.id,
+          character_id: cid,
+          role:         'member',
+        })
+      }
     }
     setCharPick(prev => { const next = { ...prev }; delete next[n.id]; return next })
     setNotifs(prev => prev.filter(notif => notif.id !== n.id))
@@ -213,16 +226,22 @@ export default function NotificationsPage() {
                         {t('notif.familyInviteSub')}{' '}
                         <strong>{n.content_preview}</strong>
                       </p>
-                      {myCharacters.length > 1 && (
-                        <select
-                          className={styles.charSelect}
-                          value={charPick[n.id] ?? myCharacters[0]?.id ?? ''}
-                          onChange={e => setCharPick(prev => ({ ...prev, [n.id]: e.target.value }))}
-                        >
-                          {myCharacters.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
+                      {myCharacters.length > 0 && (
+                        <div className={styles.charCheckList}>
+                          {myCharacters.map(c => {
+                            const picked = getPickedChars(n.id).includes(c.id)
+                            return (
+                              <label key={c.id} className={styles.charCheckItem}>
+                                <input
+                                  type="checkbox"
+                                  checked={picked}
+                                  onChange={() => toggleCharPick(n.id, c.id)}
+                                />
+                                <span>{c.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
                       )}
                     </>
                   )}
@@ -275,7 +294,7 @@ export default function NotificationsPage() {
                 <div className={styles.notifActions}>
                   {isFamilyInvite ? (
                     <>
-                      <Button variant="solid" size="sm" onClick={() => handleFamilyInvite(n, true)}>
+                      <Button variant="solid" size="sm" onClick={() => handleFamilyInvite(n, true)} disabled={getPickedChars(n.id).length === 0}>
                         {t('notif.familyAccept')}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleFamilyInvite(n, false)}>
