@@ -1072,3 +1072,77 @@ create policy "admin_manage_sessions"
 -- 5. grant execute on function public.reject_offer(uuid) to authenticated;
 --
 -- 6. Auto-follow lors d'une enchère (inclus dans create_offer — redéployer suffit)
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION J — notifications nouvelles offres (market_new_offer)
+--               + corrections RLS market_offers
+-- ────────────────────────────────────────────────────────────
+-- 1. Fix policy market_offers_select pour que tous les connectés voient les offres
+--    des annonces actives/vendues :
+-- drop policy if exists "market_offers_select" on public.market_offers;
+-- create policy "market_offers_select" on public.market_offers for select
+--   using (
+--     exists (select 1 from public.market_listings ml where ml.id = listing_id and ml.status in ('active','sold'))
+--     or auth.uid() = profile_id
+--     or exists (select 1 from public.market_listings ml where ml.id = listing_id and ml.profile_id = auth.uid())
+--     or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+--   );
+--
+-- 2. Redéployer create_offer pour inclure la notif market_new_offer au vendeur
+--    (bloc INSERT INTO notifications … SELECT ml.profile_id … — voir fonction ci-dessus)
+
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION K — badges profil + is_moderator
+-- ────────────────────────────────────────────────────────────
+-- 1. Colonnes
+-- alter table public.profiles
+--   add column if not exists badges text[] not null default '{}',
+--   add column if not exists is_moderator boolean not null default false;
+--
+-- 2. Fonctions admin (SECURITY DEFINER — exécuter en entier)
+
+-- create or replace function public.admin_set_badges(p_profile_id uuid, p_badges text[])
+-- returns void language plpgsql security definer as $$
+-- begin
+--   if not (select is_admin from public.profiles where id = auth.uid()) then
+--     raise exception 'Unauthorized';
+--   end if;
+--   update public.profiles set badges = p_badges where id = p_profile_id;
+-- end;
+-- $$;
+-- grant execute on function public.admin_set_badges(uuid, text[]) to authenticated;
+
+-- create or replace function public.admin_set_moderator(p_profile_id uuid, p_value boolean)
+-- returns void language plpgsql security definer as $$
+-- begin
+--   if not (select is_admin from public.profiles where id = auth.uid()) then
+--     raise exception 'Unauthorized';
+--   end if;
+--   update public.profiles set is_moderator = p_value where id = p_profile_id;
+-- end;
+-- $$;
+-- grant execute on function public.admin_set_moderator(uuid, boolean) to authenticated;
+
+-- 3. Fonction top1 PVE (lecture de la DB — accessible à tous)
+-- create or replace function public.get_profile_top1_raids(p_profile_id uuid)
+-- returns table(raid_slug text) language plpgsql security definer as $$
+-- begin
+--   return query
+--     select distinct rr.raid_slug
+--     from public.raid_records rr
+--     where rr.status = 'validated'
+--       and rr.time_seconds = (
+--         select min(rr2.time_seconds)
+--         from public.raid_records rr2
+--         where rr2.raid_slug = rr.raid_slug
+--           and rr2.status = 'validated'
+--       )
+--       and rr.team_members && (
+--         select array_agg(c.name)
+--         from public.characters c
+--         where c.profile_id = p_profile_id
+--       );
+-- end;
+-- $$;
+-- grant execute on function public.get_profile_top1_raids(uuid) to authenticated, anon;
+

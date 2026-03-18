@@ -11,7 +11,7 @@ const LANGS = ['en', 'fr', 'de']
 
 export default function Navbar() {
   const { isAuthenticated, user, signOut } = useAuth()
-  const { isAdmin } = useAdmin()
+  const { isAdmin, isModerator } = useAdmin()
   const { lang, setLang, t } = useLang()
   const navigate = useNavigate()
 
@@ -25,7 +25,7 @@ export default function Navbar() {
 
   // Badge admin : records raids en attente
   useEffect(() => {
-    if (!isAdmin || !hasSupabase) return
+    if (!isModerator || !hasSupabase) return
     supabase
       .from('raid_records')
       .select('id', { count: 'exact', head: true })
@@ -65,7 +65,7 @@ export default function Navbar() {
 
   // Fermeture du menu au clic extérieur
   useEffect(() => {
-    if (!isAdmin || !hasSupabase) return
+    if (!isModerator || !hasSupabase) return
     supabase
       .from('market_reports')
       .select('id', { count: 'exact', head: true })
@@ -106,13 +106,13 @@ export default function Navbar() {
           <NavLink to="/" end className={linkClass}>{t('nav.hub')}</NavLink>
           <NavLink to="/players" className={linkClass}>{t('nav.profile')}</NavLink>
           <NavLink to="/planner" className={linkClass}>{t('nav.planner')}</NavLink>
-          {isAdmin && (
+          {isModerator && (
             <div className={styles.adminMenuWrap} ref={adminMenuRef}>
               <button
                 className={`${styles.link} ${styles.adminLink} ${styles.adminMenuTrigger}`}
                 onClick={() => setAdminMenuOpen(v => !v)}
               >
-                🛡️ Admin
+                🛡️ {isAdmin ? 'Admin' : 'Modération'}
                 {(pendingCount + marketPending) > 0 && (
                   <span className={styles.adminBadge}>
                     {(pendingCount + marketPending) > 99 ? '99+' : pendingCount + marketPending}
@@ -143,6 +143,15 @@ export default function Navbar() {
                       <span className={styles.adminBadge}>{marketPending}</span>
                     )}
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/players"
+                      className={styles.userMenuItem}
+                      onClick={() => setAdminMenuOpen(false)}
+                    >
+                      👥 Joueurs
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
