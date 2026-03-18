@@ -478,14 +478,23 @@ export default function FamilyPage() {
                           const isMe   = m.profile_id === user.id
                           const charName = m.characters?.name ?? '—'
                           const uname  = m.profiles?.username ?? '—'
-                          const canKick = !isMe && isHead && m.role !== 'head'
+                          // Kick : chef peut kick tout sauf lui-même et la tête
+                          //        assistant peut kick gardien/membre seulement
+                          const canKick = !isMe && (
+                            (isHead && m.role !== 'head') ||
+                            (mem.role === 'assistant' && (m.role === 'guardian' || m.role === 'member'))
+                          )
                           const actions = []
                           if (!isMe && isHead && m.role !== 'head') {
+                            // Seule la tête peut promouvoir/rétrograder un assistant
+                            // Seule la tête peut promouvoir quelqu'un en assistant
                             if (m.role !== 'assistant') actions.push({ label: t('family.makeAssistant'), role: 'assistant' })
                             if (m.role !== 'guardian')  actions.push({ label: t('family.makeGuardian'),  role: 'guardian' })
                             if (m.role !== 'member')    actions.push({ label: t('family.makeMember'),    role: 'member' })
-                            actions.push({ label: t('family.makeHead'), role: 'head' })
+                            // Seul un assistant peut devenir tête (la tête devient alors assistant)
+                            if (m.role === 'assistant') actions.push({ label: t('family.makeHead'), role: 'head' })
                           }
+                          // Assistant : peut gérer gardien ↔ membre uniquement (pas les autres assistants)
                           if (!isMe && mem.role === 'assistant' && m.role === 'member')
                             actions.push({ label: t('family.makeGuardian'), role: 'guardian' })
                           if (!isMe && mem.role === 'assistant' && m.role === 'guardian')
