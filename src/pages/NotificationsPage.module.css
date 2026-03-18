@@ -115,6 +115,19 @@
   text-overflow: ellipsis;
 }
 
+.charSelect {
+  margin-top: 6px;
+  background: #1a1d24;
+  border: 1px solid #3a3d50;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #e0e0f0;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+.charSelect:focus { border-color: #c9a84c; }
+
 .friendLink {
   color: var(--gold-dim);
   text-decoration: none;

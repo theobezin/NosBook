@@ -209,6 +209,16 @@
   text-transform: uppercase;
 }
 
+.slotFamilyBadge {
+  font-size: 0.65rem;
+  color: #c9a84c;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 /* ── Empty slot icons ──────────────────────── */
 .slotAddIcon {
   font-size: 1.8rem;

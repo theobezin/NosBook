@@ -398,6 +398,7 @@ export default function PlayerProfilePage() {
   const [recordsLoading, setRecordsLoading] = useState(false)
   const [marketListings,        setMarketListings]        = useState([])
   const [marketListingsLoading, setMarketListingsLoading] = useState(false)
+  const [charFamilies,          setCharFamilies]          = useState({})
 
   const decoded = decodeURIComponent(usernameParam)
 
@@ -427,6 +428,22 @@ export default function PlayerProfilePage() {
       })
       .finally(() => setLoading(false))
   }, [decoded])
+
+  // Fetch family membership per character
+  useEffect(() => {
+    if (!hasSupabase || characters.length === 0) { setCharFamilies({}); return }
+    const charIds = characters.map(c => c.id)
+    supabase.from('family_members')
+      .select('character_id, role, families(name, level)')
+      .in('character_id', charIds)
+      .then(({ data }) => {
+        const map = {}
+        ;(data ?? []).forEach(m => {
+          map[m.character_id] = { name: m.families?.name, level: m.families?.level, role: m.role }
+        })
+        setCharFamilies(map)
+      })
+  }, [characters])
 
   // Fetch PVE records where player's username appears in team_members
   useEffect(() => {
@@ -619,6 +636,9 @@ export default function PlayerProfilePage() {
                 <div className={styles.slotClass} style={{ color: charCls.color }}>
                   {t(`classes.${char.class}`)}
                 </div>
+                {charFamilies[char.id] && (
+                  <div className={styles.slotFamilyBadge}>🏠 {charFamilies[char.id].name}</div>
+                )}
                 {active && <div className={styles.slotActiveBar} />}
               </button>
             )

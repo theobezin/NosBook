@@ -17,9 +17,11 @@ export default function NotificationsPage() {
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
-  const [notifs,  setNotifs]  = useState([])
-  const [loading, setLoading] = useState(true)
-  const [tab,     setTab]     = useState('unread') // 'unread' | 'read'
+  const [notifs,      setNotifs]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [tab,         setTab]         = useState('unread') // 'unread' | 'read'
+  const [myCharacters, setMyCharacters] = useState([])
+  const [charPick,    setCharPick]    = useState({}) // notif_id → character_id
 
   useEffect(() => {
     if (!hasSupabase || !user?.id) { setLoading(false); return }
@@ -29,6 +31,13 @@ export default function NotificationsPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setNotifs(data ?? []); setLoading(false) })
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) return
+    supabase.from('characters').select('id, name').eq('profile_id', user.id)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setMyCharacters(data ?? []))
   }, [user?.id])
 
   const handleMarkAllRead = async () => {
@@ -52,12 +61,17 @@ export default function NotificationsPage() {
 
   const handleFamilyInvite = async (n, accept) => {
     if (accept && n.family_id) {
-      await supabase.from('family_members').insert({
-        family_id:  n.family_id,
-        profile_id: user.id,
-        role:       'member',
+      const characterId = charPick[n.id] || myCharacters[0]?.id
+      if (!characterId) return
+      const { error } = await supabase.from('family_members').insert({
+        family_id:    n.family_id,
+        profile_id:   user.id,
+        character_id: characterId,
+        role:         'member',
       })
+      if (error) return
     }
+    setCharPick(prev => { const next = { ...prev }; delete next[n.id]; return next })
     setNotifs(prev => prev.filter(notif => notif.id !== n.id))
     await supabase.from('notifications').delete().eq('id', n.id)
   }
@@ -194,10 +208,23 @@ export default function NotificationsPage() {
                     )}
                   </p>
                   {isFamilyInvite && (
-                    <p className={styles.notifPreview}>
-                      {t('notif.familyInviteSub')}{' '}
-                      <strong>{n.content_preview}</strong>
-                    </p>
+                    <>
+                      <p className={styles.notifPreview}>
+                        {t('notif.familyInviteSub')}{' '}
+                        <strong>{n.content_preview}</strong>
+                      </p>
+                      {myCharacters.length > 1 && (
+                        <select
+                          className={styles.charSelect}
+                          value={charPick[n.id] ?? myCharacters[0]?.id ?? ''}
+                          onChange={e => setCharPick(prev => ({ ...prev, [n.id]: e.target.value }))}
+                        >
+                          {myCharacters.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </>
                   )}
                   {isFriendRequest && n.content_preview && (
                     <p className={styles.notifPreview}>

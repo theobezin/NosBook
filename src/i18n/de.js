@@ -604,6 +604,17 @@ export default {
     inviteEmpty:     'Keine verfügbaren Freunde zum Einladen.',
     inviteSent:      'Einladung gesendet!',
     joinedAt:        'Seit dem',
+    noCharacters:    'Keine Charaktere auf deinem Profil gefunden.',
+    manageBtn:       'Verwalten',
+    confirmCreate:   'Erstellen',
+  },
+  familiesList: {
+    title:    'Familien',
+    sub:      'Liste aller NosTale-Familien, die auf NosBook registriert sind.',
+    searchPh: 'Familie suchen…',
+    total:    '{n} Familie(n)',
+    empty:    'Keine Familien gefunden.',
+    head:     'Anführer',
   },
   raids: {
     badge:                 '⚔️ PVE-Rangliste · Speedrun',
