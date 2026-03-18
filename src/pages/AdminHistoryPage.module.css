@@ -1,0 +1,171 @@
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  color: var(--text);
+  margin: 0 0 0.3rem;
+}
+
+.sub {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem;
+}
+
+.denied {
+  text-align: center;
+  padding: 4rem;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterBtn:hover {
+  border-color: var(--text-faint);
+  color: var(--text);
+}
+
+.filterActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  color: var(--text-faint);
+  padding: 3rem;
+  font-style: italic;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.row:hover {
+  border-color: var(--border-soft);
+  background: var(--surface-hover);
+}
+
+.rowIcon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 22px;
+  text-align: center;
+}
+
+.rowContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.rowAction {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.rowSep {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+
+.rowTarget {
+  font-family: 'Cinzel', serif;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.rowDetail {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  background: var(--surface-hover);
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.rowMeta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.rowActor {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.rowDate {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.rowNote {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.loadMore {
+  display: block;
+  margin: 1.2rem auto 0;
+  padding: 9px 28px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.loadMore:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

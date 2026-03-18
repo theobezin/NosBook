@@ -144,7 +144,7 @@ function RecordRow({ record, lang, t, onApprove, onReject, submitterName }) {
 // ── AdminRaidsPage ────────────────────────────────────────────────────────────
 
 export default function AdminRaidsPage() {
-  const { isAdmin, loading: adminLoading } = useAdmin()
+  const { isAdmin, isModerator, loading: adminLoading } = useAdmin()
   const { t, lang } = useLang()
 
   const [filter,        setFilter]       = useState('pending')
@@ -167,12 +167,12 @@ export default function AdminRaidsPage() {
   }
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!isModerator) return
     fetchCounts()
-  }, [isAdmin])
+  }, [isModerator])
 
   useEffect(() => {
-    if (!isAdmin || !hasSupabase) return
+    if (!isModerator || !hasSupabase) return
 
     setLoading(true)
     let q = supabase
@@ -199,14 +199,11 @@ export default function AdminRaidsPage() {
         setSubmitterMap(map)
       }
     }).finally(() => setLoading(false))
-  }, [isAdmin, filter])
+  }, [isModerator, filter])
 
   const approve = async (id) => {
     const rec = records.find(r => r.id === id)
-    const { error } = await supabase
-      .from('raid_records')
-      .update({ status: 'approved', admin_note: null })
-      .eq('id', id)
+    const { error } = await supabase.rpc('mod_validate_raid', { p_record_id: id, p_action: 'approved', p_note: null })
     if (!error) {
       setRecords(prev => prev.map(r => r.id === id ? { ...r, status: 'approved', admin_note: null } : r))
       setGlobalCounts(prev => {
@@ -222,10 +219,7 @@ export default function AdminRaidsPage() {
 
   const reject = async (id, note) => {
     const rec = records.find(r => r.id === id)
-    const { error } = await supabase
-      .from('raid_records')
-      .update({ status: 'rejected', admin_note: note })
-      .eq('id', id)
+    const { error } = await supabase.rpc('mod_validate_raid', { p_record_id: id, p_action: 'rejected', p_note: note ?? null })
     if (!error) {
       setRecords(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', admin_note: note } : r))
       setGlobalCounts(prev => {
@@ -249,7 +243,7 @@ export default function AdminRaidsPage() {
   }
 
   // ── Accès refusé ──
-  if (!isAdmin) {
+  if (!isModerator) {
     return (
       <div className={styles.page}>
         <div className={styles.denied}>

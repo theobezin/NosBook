@@ -551,14 +551,14 @@ export async function fetchModeratedProfiles() {
 }
 
 /**
- * Admin: reject a report.
+ * Admin/Modérateur: reject a report (via RPC SECURITY DEFINER pour log + accès mod).
  */
 export async function rejectReport(reportId, adminNote = '') {
   if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
-  const { error } = await supabase
-    .from('market_reports')
-    .update({ status: 'rejected', admin_note: adminNote || null })
-    .eq('id', reportId)
+  const { error } = await supabase.rpc('mod_reject_report', {
+    p_report_id:  reportId,
+    p_admin_note: adminNote || null,
+  })
   return { error }
 }
 
