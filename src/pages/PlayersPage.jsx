@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES } from '@/lib/mockData'
+import { BADGE_DEFS } from '@/components/BadgeDisplay'
 import Button from '@/components/ui/Button'
 import styles from './PlayersPage.module.css'
 
@@ -20,14 +21,16 @@ export default function PlayersPage() {
 
     supabase
       .from('profiles')
-      .select('username, characters(id, name, class, sort_order)')
+      .select('username, badges, is_moderator, characters(id, name, class, sort_order)')
       .order('username')
       .limit(50)
       .then(({ data }) => {
         if (data) {
           setAccounts(data.map(p => ({
-            username:   p.username,
-            characters: [...(p.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+            username:    p.username,
+            badges:      p.badges ?? [],
+            isModerator: p.is_moderator ?? false,
+            characters:  [...(p.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order),
           })))
         }
       })
@@ -105,7 +108,17 @@ export default function PlayersPage() {
                 </div>
 
                 <div className={styles.playerInfo}>
-                  <span className={styles.playerName}>{account.username}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span className={styles.playerName}>{account.username}</span>
+                    {/* Badges mini (icône seule) */}
+                    {account.isModerator && (
+                      <span title="Modérateur" style={{ fontSize: '0.8rem' }}>🛡️</span>
+                    )}
+                    {account.badges.map(id => {
+                      const def = BADGE_DEFS[id]
+                      return def ? <span key={id} title={id} style={{ fontSize: '0.8rem' }}>{def.icon}</span> : null
+                    })}
+                  </div>
                   <span className={styles.playerMeta}>
                     {account.characters.length} {t('players.chars')}
                     {account.characters.length > 0 && (
@@ -125,6 +138,7 @@ export default function PlayersPage() {
                 </div>
 
                 <span className={styles.arrow}>→</span>
+
               </Link>
             )
           })

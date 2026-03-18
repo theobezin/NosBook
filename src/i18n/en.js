@@ -565,6 +565,13 @@ export default {
     inviteSent:      'Invitation sent!',
     noFamilyToInvite:'You must be Head or Assistant to invite.',
   },
+  badges: {
+    founder:     'Founder',
+    betaTester:  'Beta Tester',
+    contributor: 'Contributor',
+    moderator:   'Moderator',
+    destroyer:   'Destroyer of {raid}',
+  },
   family: {
     title:           'Family',
     navLabel:        'Family',

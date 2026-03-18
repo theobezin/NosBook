@@ -565,6 +565,13 @@ export default {
     inviteSent:      'Einladung gesendet!',
     noFamilyToInvite:'Du musst Oberhaupt oder Assistent sein, um einzuladen.',
   },
+  badges: {
+    founder:     'Gründer',
+    betaTester:  'Beta-Tester',
+    contributor: 'Mitwirkender',
+    moderator:   'Moderator',
+    destroyer:   'Zerstörer von {raid}',
+  },
   family: {
     title:           'Familie',
     navLabel:        'Familie',

@@ -7,6 +7,7 @@ import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WE
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
+import BadgeDisplay from '@/components/BadgeDisplay'
 import styles from './ProfilePage.module.css'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -2367,6 +2368,9 @@ export default function ProfilePage() {
   const [discordHandle,  setDiscordHandle]  = useState(null)
   const [discordEditing, setDiscordEditing] = useState(false)
   const [discordSaving,  setDiscordSaving]  = useState(false)
+  const [myBadges,       setMyBadges]       = useState([])
+  const [myIsMod,        setMyIsMod]        = useState(false)
+  const [myTop1Raids,    setMyTop1Raids]    = useState([])
   const [discordDraft,   setDiscordDraft]   = useState('')
   const [charFamilies,   setCharFamilies]   = useState({}) // charId → { name, level }
 
@@ -2392,16 +2396,21 @@ export default function ProfilePage() {
     if (!user || !hasSupabase) return
     supabase
       .from('profiles')
-      .select('server, discord_handle')
+      .select('server, discord_handle, badges, is_moderator')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.server) {
           setProfileServer(data.server)
         } else {
-          setServerEditing(true) // Show selector immediately if not set
+          setServerEditing(true)
         }
         setDiscordHandle(data?.discord_handle ?? null)
+        setMyBadges(data?.badges ?? [])
+        setMyIsMod(data?.is_moderator ?? false)
+        // Top1 PVE
+        supabase.rpc('get_profile_top1_raids', { p_profile_id: user.id })
+          .then(({ data: slugs }) => setMyTop1Raids((slugs ?? []).map(r => r.raid_slug)))
       })
   }, [user?.id])
 
@@ -2482,7 +2491,10 @@ export default function ProfilePage() {
       {/* ── Character Selector ─────────────────────────────────────── */}
       <div className={styles.selectorSection}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-          <h2 className={styles.selectorTitle} style={{ margin: 0 }}>{t('profile.myCharacters')}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <h2 className={styles.selectorTitle} style={{ margin: 0 }}>{t('profile.myCharacters')}</h2>
+            <BadgeDisplay badges={myBadges} isModerator={myIsMod} top1Raids={myTop1Raids} />
+          </div>
 
           {/* Server selector */}
           {!serverEditing && profileServer ? (

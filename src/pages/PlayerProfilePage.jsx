@@ -5,6 +5,7 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES, EQUIP_KEYS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TRAINING_BOOKS, NOSMATES, PARTNER_CLASS_COLORS, PARTNER_SP_RANK_COLORS } from '@/lib/mockData'
 import { RAIDS } from '@/lib/raids'
+import BadgeDisplay from '@/components/BadgeDisplay'
 import { formatTime, SERVER_COLORS } from '@/lib/utils'
 import { LISTING_STATUS } from '@/lib/market'
 import Button from '@/components/ui/Button'
@@ -381,11 +382,14 @@ export default function PlayerProfilePage() {
   const { isAuthenticated, user } = useAuth()
   const { t, lang } = useLang()
 
-  const [username,   setUsername]   = useState(null)
-  const [profileId,  setProfileId]  = useState(null)
-  const [characters, setCharacters] = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [notFound,   setNotFound]   = useState(false)
+  const [username,    setUsername]    = useState(null)
+  const [profileId,   setProfileId]   = useState(null)
+  const [profileBadges, setProfileBadges] = useState([])
+  const [profileIsMod,  setProfileIsMod]  = useState(false)
+  const [top1Raids,   setTop1Raids]   = useState([])
+  const [characters,  setCharacters]  = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [notFound,    setNotFound]    = useState(false)
 
   // Friend system
   const [friendStatus,    setFriendStatus]    = useState(null) // null | 'pending_sent' | 'pending_received' | 'accepted'
@@ -412,7 +416,7 @@ export default function PlayerProfilePage() {
 
     supabase
       .from('profiles')
-      .select('id, username, characters(*)')
+      .select('id, username, badges, is_moderator, characters(*)')
       .ilike('username', decoded)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -421,9 +425,14 @@ export default function PlayerProfilePage() {
         } else {
           setUsername(data.username)
           setProfileId(data.id)
+          setProfileBadges(data.badges ?? [])
+          setProfileIsMod(data.is_moderator ?? false)
           setCharacters(
             [...(data.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(fromDB)
           )
+          // Badges top1 PVE
+          supabase.rpc('get_profile_top1_raids', { p_profile_id: data.id })
+            .then(({ data: slugs }) => setTop1Raids((slugs ?? []).map(r => r.raid_slug)))
         }
       })
       .finally(() => setLoading(false))
@@ -672,6 +681,7 @@ export default function PlayerProfilePage() {
                 <span className={`${styles.badge} ${styles.badgeMain}`}>{t('profile.lv')} {data.level}</span>
                 <span className={`${styles.badge} ${styles.badgeHero}`}>{t('profile.heroLevel')} {data.heroLevel}</span>
               </div>
+              <BadgeDisplay badges={profileBadges} isModerator={profileIsMod} top1Raids={top1Raids} />
             </div>
 
             <div className={styles.actions}>
