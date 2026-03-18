@@ -590,6 +590,8 @@ export default {
     you:             '(you)',
     leaveBtn:        'Leave family',
     leaveConfirm:    'Leave this family?',
+    dissolveBtn:     'Dissolve family',
+    dissolveConfirm: 'Dissolve this family? All members will be removed.',
     leaveHeadError:  'Appoint a new Head before leaving.',
     errLeave:        'Error while leaving. Please try again.',
     kick:            'Kick',
@@ -610,6 +612,10 @@ export default {
     addMyCharsTitle: 'My other characters',
     addCharBtn:      'Add',
     editLevelHint:   'Click to edit the level',
+    descPh:        'Introduce your family…',
+    discordUrlPh:  'https://discord.gg/…',
+    editInfoBtn:   'Edit',
+    saveInfo:      'Save',
   },
   familiesList: {
     title:           'Families',
@@ -623,6 +629,13 @@ export default {
     createCharLabel: 'Character',
     noAvailableChar: 'All your characters are already in a family.',
     manageBtn:       'Manage',
+  },
+  familyDetail: {
+    back:     '← Families',
+    notFound: 'Family not found.',
+    head:     'Head',
+    manage:   'Manage',
+    discord:  'Join Discord',
   },
   raids: {
     badge:                 '⚔️ PVE Ranking · Speedrun',

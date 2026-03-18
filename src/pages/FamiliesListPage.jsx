@@ -55,7 +55,9 @@ function FamilyCard({ family, t, lang, canManage }) {
   const [members, setMembers] = useState(null)
   const levelColor = getLevelColor(family.level)
   const memberCount = family.family_members?.length ?? 0
-  const headUsername = family.profiles?.username ?? '—'
+  const headUsername = family.profiles?.username ?? ''
+  const headMember   = family.family_members?.find(m => m.role === 'head')
+  const headCharName = headMember?.characters?.name ?? (headUsername || '—')
   const serverLabel = t(`raids.server.${family.server ?? 'undercity'}`)
 
   async function loadMembers() {
@@ -77,9 +79,14 @@ function FamilyCard({ family, t, lang, canManage }) {
         onKeyDown={e => e.key === 'Enter' && loadMembers()}
       >
         <div className={styles.cardLeft}>
-          <span className={styles.familyName} style={{ color: levelColor }}>
+          <Link
+            to={`/families/${family.id}`}
+            className={styles.familyName}
+            style={{ color: levelColor }}
+            onClick={e => e.stopPropagation()}
+          >
             🏠 {family.name}
-          </span>
+          </Link>
           <span className={styles.familyLvl} style={{ borderColor: levelColor, color: levelColor }}>
             {t('family.level')} {family.level}
           </span>
@@ -91,12 +98,12 @@ function FamilyCard({ family, t, lang, canManage }) {
             {t('familiesList.head')} :{' '}
             <Link to={`/players/${headUsername}`} className={styles.headLink}
               onClick={e => e.stopPropagation()}>
-              {headUsername}
+              {headCharName}
             </Link>
           </span>
           {canManage && (
             <Link
-              to="/family"
+              to={`/families/${family.id}`}
               className={styles.manageLink}
               onClick={e => e.stopPropagation()}
             >
@@ -264,7 +271,7 @@ export default function FamiliesListPage() {
     if (!hasSupabase) { setLoading(false); return }
     supabase
       .from('families')
-      .select('id, name, level, server, profiles!head_id(username), family_members(character_id)')
+      .select('id, name, level, server, profiles!head_id(username), family_members(character_id, role, characters(name))')
       .order('level', { ascending: false })
       .order('created_at', { ascending: true })
       .then(({ data }) => {

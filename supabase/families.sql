@@ -107,3 +107,7 @@ ALTER TABLE public.families
 ALTER TABLE public.families DROP CONSTRAINT IF EXISTS families_name_unique;
 ALTER TABLE public.families ADD CONSTRAINT IF NOT EXISTS families_name_server_unique
   UNIQUE (name, server);
+
+-- Migration : description et lien discord
+ALTER TABLE public.families ADD COLUMN IF NOT EXISTS description text;
+ALTER TABLE public.families ADD COLUMN IF NOT EXISTS discord_url text;
