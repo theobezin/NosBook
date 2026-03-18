@@ -19,6 +19,7 @@ import MarketPage          from '@/pages/MarketPage'
 import ListingDetailPage  from '@/pages/ListingDetailPage'
 import AdminMarketPage    from '@/pages/AdminMarketPage'
 import FriendsPage        from '@/pages/FriendsPage'
+import FamilyPage         from '@/pages/FamilyPage'
 
 function withLayout(Component) {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
           <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />
           <Route path="/friends"         element={withLayout(FriendsPage)}        />
+          <Route path="/family"          element={withLayout(FamilyPage)}         />
           <Route path="*"               element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>
