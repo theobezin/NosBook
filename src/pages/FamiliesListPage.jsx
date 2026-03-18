@@ -114,10 +114,10 @@ function FamilyCard({ family, t, lang, canManage }) {
             .map((m, i) => (
               <div key={i} className={styles.memberRow}>
                 <span className={`${styles.roleDot} ${styles['role_' + m.role]}`} />
-                <Link to={`/players/${m.profiles?.username ?? ''}`} className={styles.memberUsername}>
-                  {m.profiles?.username ?? '—'}
+                <span className={styles.memberUsername}>{m.characters?.name ?? '—'}</span>
+                <Link to={`/players/${m.profiles?.username ?? ''}`} className={styles.memberChar}>
+                  ({m.profiles?.username ?? '—'})
                 </Link>
-                <span className={styles.memberChar}>({m.characters?.name ?? '—'})</span>
                 <span className={styles.memberRole}>{t(`family.roles.${m.role}`)}</span>
               </div>
             ))}

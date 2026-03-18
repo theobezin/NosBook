@@ -504,11 +504,11 @@ export default function FamilyPage() {
                             <div key={m.id} className={styles.memberCard}>
                               <div className={styles.memberInfo}>
                                 <div className={styles.memberNameRow}>
-                                  <Link to={`/players/${uname}`} className={styles.memberName}>{uname}</Link>
+                                  <span className={styles.memberName}>{charName}</span>
                                   {isMe && <span className={styles.youBadge}>{t('family.you')}</span>}
                                 </div>
                                 <div className={styles.memberMeta}>
-                                  <span className={styles.memberChar}>🗡 {charName}</span>
+                                  <Link to={`/players/${uname}`} className={styles.memberChar}>🗡 {uname}</Link>
                                   <RoleBadge role={m.role} t={t} />
                                   <span className={styles.joinedAt}>
                                     {t('family.joinedAt')} {new Date(m.joined_at).toLocaleDateString(

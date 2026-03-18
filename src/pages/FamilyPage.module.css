@@ -305,7 +305,7 @@
   font-size: 0.88rem;
   text-decoration: none;
 }
-.memberName:hover { color: #c9a84c; text-decoration: underline; }
+.memberName:hover { color: #c9a84c; }
 
 .youBadge {
   font-size: 0.7rem;
