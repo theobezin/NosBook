@@ -23,6 +23,7 @@ import AdminHistoryPage   from '@/pages/AdminHistoryPage'
 import FriendsPage        from '@/pages/FriendsPage'
 import FamilyPage         from '@/pages/FamilyPage'
 import FamiliesListPage   from '@/pages/FamiliesListPage'
+import FamilyDetailPage from '@/pages/FamilyDetailPage'
 
 function withLayout(Component) {
   return (
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/friends"         element={withLayout(FriendsPage)}        />
           <Route path="/family"          element={withLayout(FamilyPage)}         />
           <Route path="/families"        element={withLayout(FamiliesListPage)}    />
+          <Route path="/families/:familyId" element={withLayout(FamilyDetailPage)} />
           <Route path="*"               element={withLayout(NotFoundPage)}      />
         </Routes>
       </BrowserRouter>

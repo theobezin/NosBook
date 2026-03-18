@@ -1,0 +1,534 @@
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.backLink {
+  color: #7a7a9a;
+  font-size: 0.85rem;
+  text-decoration: none;
+  width: fit-content;
+}
+.backLink:hover { color: #c9a84c; }
+
+.notFound {
+  color: #7a7a9a;
+  text-align: center;
+  padding: 40px 0;
+  margin: 0;
+}
+
+/* ── Header ───────────────────────────────────── */
+.header {
+  position: relative;
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 28px 24px 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.headerBg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top left, var(--accent, #c9a84c)12, transparent 70%);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.familyName {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.lvlBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+.serverBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid #3a3d50;
+  border-radius: 20px;
+  padding: 2px 10px;
+  color: #8888aa;
+}
+
+.memberCount {
+  font-size: 0.78rem;
+  color: #6a6a8a;
+}
+
+.headLine {
+  font-size: 0.84rem;
+  color: #7a7a9a;
+}
+
+.headLink {
+  color: #c9a84c;
+  text-decoration: none;
+  font-weight: 600;
+}
+.headLink:hover { text-decoration: underline; }
+
+.manageBtn {
+  position: relative;
+  flex-shrink: 0;
+  background: #c9a84c22;
+  border: 1px solid #c9a84c66;
+  border-radius: 8px;
+  color: #c9a84c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.manageBtn:hover { background: #c9a84c44; }
+
+/* ── Info card ────────────────────────────────── */
+.infoCard {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.description {
+  font-size: 0.88rem;
+  color: #a0a0c0;
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.discordBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #5865f222;
+  border: 1px solid #5865f266;
+  border-radius: 8px;
+  color: #8fa0ff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  text-decoration: none;
+  width: fit-content;
+  transition: background 0.15s;
+}
+.discordBtn:hover { background: #5865f244; }
+
+/* ── Membres ──────────────────────────────────── */
+.membersCard {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8d5a0;
+  margin: 0 0 14px;
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #13151c;
+}
+
+.roleDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.memberInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.memberNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memberUsername {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.youBadge {
+  font-size: 0.7rem;
+  color: #7a7aaa;
+}
+
+.memberMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.memberChar {
+  font-size: 0.75rem;
+  color: #8888aa;
+  text-decoration: none;
+}
+.memberChar:hover { color: #c9a84c; }
+
+.memberActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.roleBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.roleHead      { background: rgba(255,204,0,0.14);    color: #ffcc00; border: 1px solid rgba(255,204,0,0.3); }
+.roleAssistant { background: rgba(68,153,255,0.14);   color: #4499ff; border: 1px solid rgba(68,153,255,0.3); }
+.roleGuardian  { background: rgba(93,200,93,0.14);    color: #5dc85d; border: 1px solid rgba(93,200,93,0.3); }
+.roleMember    { background: rgba(150,150,180,0.1);   color: #9696b4; border: 1px solid rgba(150,150,180,0.22); }
+
+.joinedAt {
+  font-size: 0.68rem;
+  color: #5a5a7a;
+}
+
+/* ── Boutons actions membres ──────────────────── */
+.btnRole {
+  background: transparent;
+  border: 1px solid #3a3d50;
+  border-radius: 5px;
+  color: #9090b0;
+  font-size: 0.7rem;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btnRole:hover { border-color: #c9a84c; color: #c9a84c; }
+
+.btnMakeHead {
+  background: rgba(255,204,0,0.08);
+  border: 1px solid rgba(255,204,0,0.3);
+  border-radius: 5px;
+  color: #ffcc00;
+  font-size: 0.7rem;
+  padding: 3px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btnMakeHead:hover { background: rgba(255,204,0,0.18); }
+
+.btnKick {
+  background: transparent;
+  border: 1px solid #553333;
+  border-radius: 5px;
+  color: #cc5555;
+  font-size: 0.7rem;
+  padding: 3px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btnKick:hover { background: rgba(204,85,85,0.1); }
+
+/* ── Panneau de gestion (invite / ajout perso) ── */
+.manageSection {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panelTitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c9a84c;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.emptySmall {
+  font-size: 0.85rem;
+  color: #6a6a8a;
+  margin: 0;
+}
+
+/* ── Invitations ──────────────────────────────── */
+.inviteList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inviteRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #13151c;
+  border: 1px solid #2a2d38;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.inviteName {
+  flex: 1;
+  font-size: 0.88rem;
+  color: #d0d0e8;
+}
+
+.btnInvite {
+  background: transparent;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  color: #c9a84c;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.btnInvite:hover { background: rgba(201,168,76,0.12); }
+
+.btnInvited {
+  background: rgba(93,200,93,0.1);
+  border: 1px solid rgba(93,200,93,0.3);
+  border-radius: 6px;
+  color: #5dc85d;
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+/* ── Édition du niveau ────────────────────────── */
+.levelEditRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.levelInput {
+  width: 56px;
+  background: #111318;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  padding: 3px 6px;
+  color: #e0e0f0;
+  font-size: 0.85rem;
+  outline: none;
+  text-align: center;
+}
+
+.btnSaveLevel {
+  background: #c9a84c22;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  color: #c9a84c;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btnSaveLevel:hover { background: #c9a84c44; }
+
+.btnCancelLevel {
+  background: transparent;
+  border: 1px solid #3a3d50;
+  border-radius: 6px;
+  color: #7a7a9a;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btnCancelLevel:hover { color: #c0c0d8; border-color: #6a6a8a; }
+
+/* ── Info (description / discord éditable) ────── */
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btnEditInfo {
+  background: transparent;
+  border: 1px solid #3a3d50;
+  border-radius: 6px;
+  color: #7a7a9a;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  width: fit-content;
+}
+.btnEditInfo:hover { color: #c9a84c; border-color: #c9a84c; }
+
+.infoActions {
+  display: flex;
+  gap: 8px;
+}
+
+.createTextarea {
+  width: 100%;
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.createTextarea:focus { border-color: #4499ff; }
+
+.createInput {
+  width: 100%;
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.createInput:focus { border-color: #4499ff; }
+
+/* ── Quitter / Dissoudre ──────────────────────── */
+.leaveSection {
+  display: flex;
+  justify-content: flex-start;
+  padding: 4px 0;
+}
+
+.btnLeave {
+  background: transparent;
+  border: 1px solid #553333;
+  border-radius: 8px;
+  color: #cc5555;
+  font-size: 0.82rem;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnLeave:hover { background: rgba(204,85,85,0.1); }
+
+.btnDissolve {
+  background: rgba(204,85,85,0.08);
+  border: 1px solid #553333;
+  border-radius: 8px;
+  color: #cc5555;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnDissolve:hover { background: rgba(204,85,85,0.18); }
+
+/* ── Confirmation ─────────────────────────────── */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.confirmBox {
+  background: #1a1d24;
+  border: 1px solid #3a3d50;
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.confirmMsg {
+  color: #d0d0e8;
+  font-size: 0.95rem;
+  margin: 0;
+  text-align: center;
+}
+.confirmActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ── Skeleton ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1a1d24 25%, #222530 50%, #1a1d24 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}

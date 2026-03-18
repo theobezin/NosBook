@@ -597,6 +597,8 @@ export default {
     you:             '(toi)',
     leaveBtn:        'Quitter la famille',
     leaveConfirm:    'Quitter cette famille ?',
+    dissolveBtn:     'Dissoudre la famille',
+    dissolveConfirm: 'Dissoudre cette famille ? Tous les membres seront expulsés.',
     leaveHeadError:  'Nomme un nouveau chef avant de quitter.',
     errLeave:        'Erreur lors du départ. Réessaie.',
     kick:            'Expulser',
@@ -617,6 +619,10 @@ export default {
     addMyCharsTitle: 'Mes autres personnages',
     addCharBtn:      'Ajouter',
     editLevelHint:   'Cliquer pour modifier le niveau',
+    descPh:        'Présente ta famille…',
+    discordUrlPh:  'https://discord.gg/…',
+    editInfoBtn:   'Modifier',
+    saveInfo:      'Enregistrer',
   },
   familiesList: {
     title:           'Familles',
@@ -630,6 +636,13 @@ export default {
     createCharLabel: 'Personnage',
     noAvailableChar: 'Tous tes personnages sont déjà dans une famille.',
     manageBtn:       'Gérer',
+  },
+  familyDetail: {
+    back:     '← Familles',
+    notFound: 'Famille introuvable.',
+    head:     'Chef',
+    manage:   'Gérer',
+    discord:  'Rejoindre le Discord',
   },
   raids: {
     badge:                 '⚔️ Classement PVE · Speedrun',
