@@ -221,7 +221,7 @@
   text-decoration: none;
   font-weight: 500;
 }
-.memberUsername:hover { color: #c9a84c; text-decoration: underline; }
+.memberUsername:hover { color: #c9a84c; }
 
 .memberChar {
   color: #6a6a8a;
