@@ -135,6 +135,35 @@
   background: rgba(220, 50, 50, 0.08);
 }
 
+/* ── Invitation famille ─────────────────────────────────────────── */
+.inviteBtn {
+  background: transparent;
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  color: #c9a84c;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.inviteBtn:hover {
+  background: rgba(201, 168, 76, 0.12);
+}
+
+.alreadyInFamily {
+  font-size: 0.72rem;
+  color: #6a6a8a;
+  white-space: nowrap;
+}
+
+.inviteSent {
+  font-size: 0.72rem;
+  color: #5dc85d;
+  white-space: nowrap;
+}
+
 /* ── Skeleton ───────────────────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -400px 0; }

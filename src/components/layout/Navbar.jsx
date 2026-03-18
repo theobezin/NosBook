@@ -216,6 +216,13 @@ export default function Navbar() {
                       >
                         👥 {t('friends.title')}
                       </Link>
+                      <Link
+                        to="/family"
+                        className={styles.userMenuItem}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        🏠 {t('family.navLabel')}
+                      </Link>
                     </div>
                   )}
                 </div>

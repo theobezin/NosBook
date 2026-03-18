@@ -10,15 +10,18 @@ import styles from './NotificationsPage.module.css'
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
 
 const MARKET_TYPES = ['market_outbid', 'market_offer_accepted', 'market_offer_rejected', 'market_new_offer']
+const FAMILY_TYPE  = 'family_invite'
 
 export default function NotificationsPage() {
   const { user, isAuthenticated } = useAuth()
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
-  const [notifs,  setNotifs]  = useState([])
-  const [loading, setLoading] = useState(true)
-  const [tab,     setTab]     = useState('unread') // 'unread' | 'read'
+  const [notifs,      setNotifs]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [tab,         setTab]         = useState('unread') // 'unread' | 'read'
+  const [myCharacters, setMyCharacters] = useState([])
+  const [charPick,    setCharPick]    = useState({}) // notif_id → character_id
 
   useEffect(() => {
     if (!hasSupabase || !user?.id) { setLoading(false); return }
@@ -28,6 +31,13 @@ export default function NotificationsPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setNotifs(data ?? []); setLoading(false) })
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) return
+    supabase.from('characters').select('id, name').eq('profile_id', user.id)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setMyCharacters(data ?? []))
   }, [user?.id])
 
   const handleMarkAllRead = async () => {
@@ -47,6 +57,36 @@ export default function NotificationsPage() {
   const handleDelete = async (id) => {
     setNotifs(prev => prev.filter(n => n.id !== id))
     await supabase.from('notifications').delete().eq('id', id)
+  }
+
+  const getPickedChars = (notifId) =>
+    charPick[notifId] ?? (myCharacters[0] ? [myCharacters[0].id] : [])
+
+  const toggleCharPick = (notifId, charId) => {
+    setCharPick(prev => {
+      const current = prev[notifId] ?? (myCharacters[0] ? [myCharacters[0].id] : [])
+      const has = current.includes(charId)
+      const next = has ? current.filter(id => id !== charId) : [...current, charId]
+      return { ...prev, [notifId]: next }
+    })
+  }
+
+  const handleFamilyInvite = async (n, accept) => {
+    if (accept && n.family_id) {
+      const charIds = getPickedChars(n.id)
+      if (charIds.length === 0) return
+      for (const cid of charIds) {
+        await supabase.from('family_members').insert({
+          family_id:    n.family_id,
+          profile_id:   user.id,
+          character_id: cid,
+          role:         'member',
+        })
+      }
+    }
+    setCharPick(prev => { const next = { ...prev }; delete next[n.id]; return next })
+    setNotifs(prev => prev.filter(notif => notif.id !== n.id))
+    await supabase.from('notifications').delete().eq('id', n.id)
   }
 
   const handleFriendRequest = async (n, accept) => {
@@ -125,6 +165,7 @@ export default function NotificationsPage() {
           {displayed.map(n => {
             const raid = RAID_MAP[n.session_raid_name]
             const isFriendRequest = n.type === 'friend_request'
+            const isFamilyInvite  = n.type === FAMILY_TYPE
             const isMarket        = MARKET_TYPES.includes(n.type)
             return (
               <div
@@ -132,7 +173,9 @@ export default function NotificationsPage() {
                 className={`${styles.notifCard} ${!n.read ? styles.notifUnread : ''}`}
               >
                 <div className={styles.notifIcon}>
-                  {isFriendRequest ? (
+                  {isFamilyInvite ? (
+                    <span className={styles.cancelledIcon}>🏠</span>
+                  ) : isFriendRequest ? (
                     <span className={styles.cancelledIcon}>👥</span>
                   ) : n.type === 'session_cancelled' ? (
                     <span className={styles.cancelledIcon}>🚫</span>
@@ -156,7 +199,9 @@ export default function NotificationsPage() {
                 </div>
                 <div className={styles.notifBody}>
                   <p className={styles.notifType}>
-                    {isFriendRequest
+                    {isFamilyInvite
+                      ? t('notif.familyInvite')
+                      : isFriendRequest
                       ? t('notif.friendRequest')
                       : n.type === 'session_cancelled'
                       ? t('notif.sessionCancelled')
@@ -175,6 +220,31 @@ export default function NotificationsPage() {
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
                     )}
                   </p>
+                  {isFamilyInvite && (
+                    <>
+                      <p className={styles.notifPreview}>
+                        {t('notif.familyInviteSub')}{' '}
+                        <strong>{n.content_preview}</strong>
+                      </p>
+                      {myCharacters.length > 0 && (
+                        <div className={styles.charCheckList}>
+                          {myCharacters.map(c => {
+                            const picked = getPickedChars(n.id).includes(c.id)
+                            return (
+                              <label key={c.id} className={styles.charCheckItem}>
+                                <input
+                                  type="checkbox"
+                                  checked={picked}
+                                  onChange={() => toggleCharPick(n.id, c.id)}
+                                />
+                                <span>{c.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
                   {isFriendRequest && n.content_preview && (
                     <p className={styles.notifPreview}>
                       <Link to={`/players/${n.content_preview}`} className={styles.friendLink}>
@@ -222,7 +292,16 @@ export default function NotificationsPage() {
                   </p>
                 </div>
                 <div className={styles.notifActions}>
-                  {isFriendRequest ? (
+                  {isFamilyInvite ? (
+                    <>
+                      <Button variant="solid" size="sm" onClick={() => handleFamilyInvite(n, true)} disabled={getPickedChars(n.id).length === 0}>
+                        {t('notif.familyAccept')}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleFamilyInvite(n, false)}>
+                        {t('notif.familyDecline')}
+                      </Button>
+                    </>
+                  ) : isFriendRequest ? (
                     <>
                       <Button
                         variant="solid"

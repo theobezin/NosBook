@@ -1,0 +1,321 @@
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pageHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e8d5a0;
+  margin: 0;
+}
+
+.sub {
+  font-size: 0.88rem;
+  color: #7a7a9a;
+  margin: 0;
+}
+
+/* ── Onglets serveur ──────────────────────────── */
+.serverTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.serverTab {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 20px;
+  padding: 5px 14px;
+  color: #7a7a9a;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.serverTab:hover { border-color: #3a3d50; color: #c0c0d8; }
+.serverTabActive { border-color: #c9a84c !important; color: #c9a84c !important; }
+
+.manageLink {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c9a84c;
+  text-decoration: none;
+  border: 1px solid #c9a84c44;
+  border-radius: 20px;
+  padding: 2px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.manageLink:hover { background: #c9a84c18; border-color: #c9a84c; }
+
+/* ── Badge serveur sur carte ──────────────────── */
+.serverBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid #3a3d50;
+  border-radius: 20px;
+  padding: 2px 8px;
+  color: #8888aa;
+  white-space: nowrap;
+}
+
+/* ── Recherche ────────────────────────────────── */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  background: #1a1d24;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+}
+.searchInput:focus { border-color: #c9a84c; }
+
+.total {
+  font-size: 0.78rem;
+  color: #6a6a8a;
+  white-space: nowrap;
+}
+
+/* ── Liste ────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty {
+  color: #7a7a9a;
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ── Carte famille ────────────────────────────── */
+.card {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: #3a3d50; }
+
+.cardHeader {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.cardHeader:hover { background: rgba(255,255,255,0.02); }
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.familyName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-shadow: 0 0 14px currentColor;
+}
+
+.familyLvl {
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid;
+  border-radius: 20px;
+  padding: 2px 9px;
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.memberCount {
+  font-size: 0.8rem;
+  color: #8888aa;
+}
+
+.headLabel {
+  font-size: 0.8rem;
+  color: #7a7a9a;
+}
+
+.headLink {
+  color: #c9a84c;
+  text-decoration: none;
+}
+.headLink:hover { text-decoration: underline; }
+
+.expandCaret {
+  color: #6a6a8a;
+  font-size: 0.75rem;
+  min-width: 10px;
+}
+
+/* ── Liste membres (expandée) ─────────────────── */
+.memberList {
+  border-top: 1px solid #2a2d38;
+  padding: 10px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #13151c;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.roleDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.role_head      { background: #ffcc00; }
+.role_assistant { background: #4499ff; }
+.role_guardian  { background: #5dc85d; }
+.role_member    { background: #6a6a8a; }
+
+.memberUsername {
+  color: #d0d0e8;
+  text-decoration: none;
+  font-weight: 500;
+}
+.memberUsername:hover { color: #c9a84c; text-decoration: underline; }
+
+.memberChar {
+  color: #6a6a8a;
+  font-size: 0.76rem;
+}
+
+.memberRole {
+  color: #7a7a9a;
+  font-size: 0.74rem;
+  margin-left: auto;
+}
+
+/* ── Skeleton ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1a1d24 25%, #222530 50%, #1a1d24 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border: none !important;
+}
+
+/* ── Modal création ───────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal {
+  background: #1a1d24;
+  border: 1px solid #3a3d50;
+  border-radius: 12px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modalTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e8d5a0;
+  margin: 0;
+}
+
+.modalLoading, .modalEmpty {
+  color: #7a7a9a;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modalLabel {
+  font-size: 0.78rem;
+  color: #8888aa;
+  margin-top: 4px;
+}
+
+.modalSelect, .modalInput {
+  width: 100%;
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.modalSelect:focus, .modalInput:focus { border-color: #c9a84c; }
+
+.modalErr {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
