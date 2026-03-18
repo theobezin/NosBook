@@ -19,6 +19,7 @@ import MarketPage          from '@/pages/MarketPage'
 import ListingDetailPage  from '@/pages/ListingDetailPage'
 import AdminMarketPage    from '@/pages/AdminMarketPage'
 import AdminPlayersPage   from '@/pages/AdminPlayersPage'
+import AdminHistoryPage   from '@/pages/AdminHistoryPage'
 import FriendsPage        from '@/pages/FriendsPage'
 import FamilyPage         from '@/pages/FamilyPage'
 import FamiliesListPage   from '@/pages/FamiliesListPage'
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />
           <Route path="/admin/market"    element={withLayout(AdminMarketPage)}    />
           <Route path="/admin/players"   element={withLayout(AdminPlayersPage)}   />
+          <Route path="/admin/history"   element={withLayout(AdminHistoryPage)}   />
           <Route path="/friends"         element={withLayout(FriendsPage)}        />
           <Route path="/family"          element={withLayout(FamilyPage)}         />
           <Route path="/families"        element={withLayout(FamiliesListPage)}    />

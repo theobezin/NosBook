@@ -152,6 +152,13 @@ export default function Navbar() {
                       👥 Joueurs
                     </Link>
                   )}
+                  <Link
+                    to="/admin/history"
+                    className={styles.userMenuItem}
+                    onClick={() => setAdminMenuOpen(false)}
+                  >
+                    📋 Historique
+                  </Link>
                 </div>
               )}
             </div>

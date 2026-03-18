@@ -1146,3 +1146,140 @@ create policy "admin_manage_sessions"
 -- $$;
 -- grant execute on function public.get_profile_top1_raids(uuid) to authenticated, anon;
 
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION L — droits modérateurs + historique admin
+-- ────────────────────────────────────────────────────────────
+
+-- 1. Table d'audit (historique des actions admin/modérateur)
+-- create table if not exists public.admin_logs (
+--   id              uuid        primary key default gen_random_uuid(),
+--   action          text        not null,
+--   actor_id        uuid        references public.profiles(id) on delete set null,
+--   actor_username  text,
+--   target_id       uuid,
+--   target_username text,
+--   details         jsonb,
+--   created_at      timestamptz default now()
+-- );
+-- alter table public.admin_logs enable row level security;
+-- create policy "admin_logs_select" on public.admin_logs for select
+--   using (exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true)));
+
+-- 2. RPC validation raid — remplace UPDATE direct, ouvre aux modérateurs + log
+-- create or replace function public.mod_validate_raid(
+--   p_record_id uuid,
+--   p_action    text,   -- 'approved' | 'rejected'
+--   p_note      text default null
+-- )
+-- returns void language plpgsql security definer as $$
+-- declare
+--   v_actor_username  text;
+--   v_raid_slug       text;
+--   v_submitter_id    uuid;
+--   v_submitter_uname text;
+-- begin
+--   if not exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
+--     then raise exception 'Permission denied'; end if;
+--   select username into v_actor_username from public.profiles where id = auth.uid();
+--   select raid_slug, submitted_by into v_raid_slug, v_submitter_id from public.raid_records where id = p_record_id;
+--   select username into v_submitter_uname from public.profiles where id = v_submitter_id;
+--   if p_action = 'approved' then
+--     update public.raid_records set status = 'approved', admin_note = null where id = p_record_id;
+--   elsif p_action = 'rejected' then
+--     update public.raid_records set status = 'rejected', admin_note = p_note where id = p_record_id;
+--   else raise exception 'Invalid action: %', p_action; end if;
+--   insert into public.admin_logs (action, actor_id, actor_username, target_id, target_username, details)
+--   values ('raid_' || p_action, auth.uid(), v_actor_username, v_submitter_id, v_submitter_uname,
+--     jsonb_build_object('raid_slug', v_raid_slug, 'record_id', p_record_id, 'note', p_note));
+-- end;
+-- $$;
+-- grant execute on function public.mod_validate_raid(uuid, text, text) to authenticated;
+
+-- 3. Mise à jour admin_set_moderation — ouvrir aux modérateurs + log
+-- create or replace function public.admin_set_moderation(
+--   p_profile_id    uuid,
+--   p_action        text,
+--   p_duration_days int default null
+-- )
+-- returns void language plpgsql security definer as $$
+-- declare
+--   v_actor_username  text;
+--   v_target_username text;
+-- begin
+--   if not exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
+--     then raise exception 'Permission denied: admin or moderator only'; end if;
+--   select username into v_actor_username from public.profiles where id = auth.uid();
+--   select username into v_target_username from public.profiles where id = p_profile_id;
+--   if p_action = 'mute' then
+--     if p_duration_days is null or p_duration_days <= 0 then raise exception 'Duration required for mute action'; end if;
+--     update public.profiles set muted_until = now() + (p_duration_days || ' days')::interval where id = p_profile_id;
+--   elsif p_action = 'ban' then
+--     update public.profiles set is_banned = true, muted_until = null where id = p_profile_id;
+--   elsif p_action = 'unmute' then
+--     update public.profiles set muted_until = null where id = p_profile_id;
+--   elsif p_action = 'unban' then
+--     update public.profiles set is_banned = false where id = p_profile_id;
+--   else raise exception 'Unknown moderation action: %', p_action; end if;
+--   insert into public.admin_logs (action, actor_id, actor_username, target_id, target_username, details)
+--   values (p_action, auth.uid(), v_actor_username, p_profile_id, v_target_username,
+--     jsonb_build_object('duration_days', p_duration_days));
+-- end;
+-- $$ language plpgsql security definer;
+
+-- 4. Rejet signalement marché — SECURITY DEFINER, ouvre aux modérateurs + log
+-- create or replace function public.mod_reject_report(
+--   p_report_id  uuid,
+--   p_admin_note text default null
+-- )
+-- returns void language plpgsql security definer as $$
+-- declare
+--   v_actor_username text;
+--   v_reported_id    uuid;
+--   v_reported_uname text;
+-- begin
+--   if not exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
+--     then raise exception 'Permission denied'; end if;
+--   select username into v_actor_username from public.profiles where id = auth.uid();
+--   select reported_profile_id into v_reported_id from public.market_reports where id = p_report_id;
+--   select username into v_reported_uname from public.profiles where id = v_reported_id;
+--   update public.market_reports set status = 'rejected', admin_note = p_admin_note where id = p_report_id;
+--   insert into public.admin_logs (action, actor_id, actor_username, target_id, target_username, details)
+--   values ('report_rejected', auth.uid(), v_actor_username, v_reported_id, v_reported_uname,
+--     jsonb_build_object('report_id', p_report_id, 'note', p_admin_note));
+-- end;
+-- $$;
+-- grant execute on function public.mod_reject_report(uuid, text) to authenticated;
+
+-- 5. validate_market_report — ouvrir aux modérateurs + log (remplace la version existante)
+-- create or replace function public.validate_market_report(
+--   p_report_id  uuid,
+--   p_admin_note text default null
+-- )
+-- returns void language plpgsql security definer as $$
+-- declare
+--   v_listing_id       uuid;
+--   v_reported_profile uuid;
+--   v_actor_username   text;
+--   v_reported_uname   text;
+-- begin
+--   if not exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
+--     then raise exception 'Permission denied'; end if;
+--   select listing_id, reported_profile_id into v_listing_id, v_reported_profile
+--     from public.market_reports where id = p_report_id and status = 'pending';
+--   if not found then raise exception 'Report not found or already processed'; end if;
+--   select username into v_actor_username from public.profiles where id = auth.uid();
+--   select username into v_reported_uname from public.profiles where id = v_reported_profile;
+--   update public.market_reports set status = 'validated', admin_note = p_admin_note where id = p_report_id;
+--   update public.market_offers set status = 'blocked'
+--     where listing_id = v_listing_id and profile_id = v_reported_profile and status = 'active';
+--   update public.market_listings
+--      set blocked_profiles = array_append(blocked_profiles, v_reported_profile),
+--          confirmation_pending = false, accepted_offer_id = null, status = 'active'
+--    where id = v_listing_id;
+--   update public.profiles set trades_reported = trades_reported + 1 where id = v_reported_profile;
+--   insert into public.admin_logs (action, actor_id, actor_username, target_id, target_username, details)
+--   values ('report_validated', auth.uid(), v_actor_username, v_reported_profile, v_reported_uname,
+--     jsonb_build_object('report_id', p_report_id, 'listing_id', v_listing_id, 'note', p_admin_note));
+-- end;
+-- $$ language plpgsql security definer;
+

@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
+import { useAdmin } from '@/hooks/useAdmin'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import {
   fetchReports,
@@ -389,45 +390,31 @@ function StatsPanel() {
 export default function AdminMarketPage() {
   const { t } = useLang()
   const { user } = useAuth()
+  const { isModerator, loading: adminLoading } = useAdmin()
 
-  const [isAdmin,  setIsAdmin]  = useState(false)
-  const [checking, setChecking] = useState(true)
   const [section,  setSection]  = useState('reports') // 'reports' | 'moderation' | 'stats'
   const [tab,      setTab]      = useState('pending')
   const [reports,  setReports]  = useState([])
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState(null)
 
-  useEffect(() => {
-    if (!user || !hasSupabase) { setChecking(false); return }
-    supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        setIsAdmin(data?.is_admin === true)
-        setChecking(false)
-      })
-  }, [user?.id])
-
   const loadReports = useCallback(async () => {
-    if (!isAdmin) return
+    if (!isModerator) return
     setLoading(true)
     setError(null)
     const { data, error: err } = await fetchReports(tab)
     setLoading(false)
     if (err) { setError(err.message); return }
     setReports(data)
-  }, [isAdmin, tab])
+  }, [isModerator, tab])
 
   useEffect(() => {
     if (section === 'reports') loadReports()
   }, [section, loadReports])
 
-  if (checking) return <div className={styles.page}><Spinner size="md" /></div>
+  if (adminLoading) return <div className={styles.page}><Spinner size="md" /></div>
 
-  if (!user || !isAdmin) {
+  if (!user || !isModerator) {
     return (
       <div className={styles.page}>
         <div className={styles.gateBox}>
