@@ -779,6 +779,7 @@ export default {
     rejectOffer:      'Refuser',
     rejectOfferConfirm: 'Refuser cette offre ?',
     reportBuyer:      'Signaler l\'acheteur',
+    reportListing:    'Signaler l\'annonce',
     archiveListing:   'Archiver l\'annonce',
     cancelOffer:      'Annuler mon offre',
     bumpListing:      'Remettre en avant',

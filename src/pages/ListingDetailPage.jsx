@@ -273,8 +273,9 @@ export default function ListingDetailPage() {
   const { profile }    = useProfile(user?.id)
   const { characters } = useCharacters()
 
-  const [showOfferModal,  setShowOfferModal]  = useState(false)
-  const [showReportModal, setShowReportModal] = useState(false)
+  const [showOfferModal,        setShowOfferModal]        = useState(false)
+  const [showReportModal,       setShowReportModal]       = useState(false)
+  const [showListingReportModal,setShowListingReportModal]= useState(false)
   const [showEditModal,   setShowEditModal]   = useState(false)
   const [actionLoading,   setActionLoading]   = useState(false)
   const [confirmState,    setConfirmState]    = useState(null)
@@ -601,6 +602,16 @@ export default function ListingDetailPage() {
                 {t('market.archiveListing')}
               </button>
             )}
+
+            {/* Non-owner: signaler l'annonce */}
+            {!isOwner && isAuthenticated && !isSold && !isArchived && (
+              <button
+                className={styles.btnReportListing}
+                onClick={() => setShowListingReportModal(true)}
+              >
+                ⚠️ {t('market.reportListing')}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -665,6 +676,17 @@ export default function ListingDetailPage() {
           offerId={listing.acceptedOfferId}
           onClose={() => setShowReportModal(false)}
           onSuccess={() => { setShowReportModal(false); refetch() }}
+        />
+      )}
+
+      {showListingReportModal && (
+        <ReportModal
+          listing={listing}
+          offerId={null}
+          reportedProfileId={listing.profileId}
+          mode="spam"
+          onClose={() => setShowListingReportModal(false)}
+          onSuccess={() => setShowListingReportModal(false)}
         />
       )}
 

@@ -779,6 +779,7 @@ export default {
     rejectOffer:      'Ablehnen',
     rejectOfferConfirm: 'Dieses Angebot ablehnen?',
     reportBuyer:      'Käufer melden',
+    reportListing:    'Anzeige melden',
     archiveListing:   'Anzeige archivieren',
     cancelOffer:      'Mein Angebot stornieren',
     bumpListing:      'Anzeige hochschieben',
