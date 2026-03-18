@@ -9,7 +9,7 @@ import styles from './NotificationsPage.module.css'
 
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
 
-const MARKET_TYPES = ['market_outbid', 'market_offer_accepted', 'market_offer_rejected', 'market_new_offer']
+const MARKET_TYPES = ['market_outbid', 'market_offer_accepted', 'market_offer_rejected', 'market_new_offer', 'listing_comment']
 const FAMILY_TYPE  = 'family_invite'
 
 export default function NotificationsPage() {
@@ -189,6 +189,8 @@ export default function NotificationsPage() {
                     <span className={styles.cancelledIcon}>❌</span>
                   ) : n.type === 'market_new_offer' ? (
                     <span className={styles.cancelledIcon}>🛒</span>
+                  ) : n.type === 'listing_comment' ? (
+                    <span className={styles.cancelledIcon}>💬</span>
                   ) : raid ? (
                     <img
                       src={`https://nosapki.com/images/icons/${raid.icon}.png`}
@@ -215,6 +217,8 @@ export default function NotificationsPage() {
                       ? t('notif.marketOfferRejected')
                       : n.type === 'market_new_offer'
                       ? t('notif.marketNewOffer')
+                      : n.type === 'listing_comment'
+                      ? t('notif.listingComment')
                       : t('notif.raidMessage')}
                     {raid && (
                       <> · <span className={styles.raidName}>{raid[lang] ?? raid.en}</span></>
@@ -280,6 +284,9 @@ export default function NotificationsPage() {
                     <p className={styles.notifPreview}>
                       {t('notif.marketNewOfferSub')} <strong>"{n.content_preview}"</strong>
                     </p>
+                  )}
+                  {n.type === 'listing_comment' && n.content_preview && (
+                    <p className={styles.notifPreview}>{n.content_preview}</p>
                   )}
                   {!isFriendRequest && n.type !== 'session_invite' && !isMarket && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>

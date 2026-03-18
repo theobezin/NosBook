@@ -562,6 +562,67 @@ export async function rejectReport(reportId, adminNote = '') {
   return { error }
 }
 
+// ── Listing comments ───────────────────────────────────────
+
+/**
+ * Fetch comments for a listing. Subscribes to realtime updates.
+ */
+export function useListingComments(listingId) {
+  const [comments, setComments] = useState([])
+  const [loading,  setLoading]  = useState(true)
+
+  const fetch = useCallback(async () => {
+    if (!hasSupabase || !listingId) { setLoading(false); return }
+    const { data } = await supabase
+      .from('listing_comments')
+      .select('*')
+      .eq('listing_id', listingId)
+      .order('created_at', { ascending: true })
+    setComments(data ?? [])
+    setLoading(false)
+  }, [listingId])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!hasSupabase || !listingId) return
+    const ch = supabase
+      .channel(`comments-${listingId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'listing_comments',
+        filter: `listing_id=eq.${listingId}`,
+      }, () => fetch())
+      .subscribe()
+    return () => supabase.removeChannel(ch)
+  }, [listingId, fetch])
+
+  return { comments, loading, refetch: fetch }
+}
+
+/**
+ * Add a comment to a listing (owner + admin/mod only, enforced by RPC).
+ */
+export async function addComment(listingId, content) {
+  if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+  const { data, error } = await supabase.rpc('add_listing_comment', {
+    p_listing_id: listingId,
+    p_content:    content,
+  })
+  return { data, error }
+}
+
+/**
+ * Delete a comment (author or admin/mod, enforced by RLS).
+ */
+export async function deleteComment(commentId) {
+  if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+  const { error } = await supabase
+    .from('listing_comments')
+    .delete()
+    .eq('id', commentId)
+  return { error }
+}
+
 // ── Follows ────────────────────────────────────────────────
 
 /**

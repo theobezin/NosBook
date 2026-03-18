@@ -10,7 +10,8 @@ import { useLang } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { useCharacters } from '@/hooks/useCharacters'
-import { useMarketListing, cancelOffer, rejectOffer, triggerConfirmation, confirmSale, rejectConfirmation, archiveListing, isBanned, isMuted } from '@/hooks/useMarket'
+import { useMarketListing, useListingComments, addComment, deleteComment, cancelOffer, rejectOffer, triggerConfirmation, confirmSale, rejectConfirmation, archiveListing, isBanned, isMuted } from '@/hooks/useMarket'
+import { useAdmin } from '@/hooks/useAdmin'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { MARKET_TAGS, formatGold, bestOffer, LISTING_STATUS, OFFER_STATUS } from '@/lib/market'
 import OfferModal        from '@/components/market/OfferModal'
@@ -78,6 +79,94 @@ function SellerOtherListings({ sellerId, currentListingId, t }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ── ListingComments ─────────────────────────────────────────
+// Visible par tous. Postable uniquement par le propriétaire ou un admin/mod.
+function ListingComments({ listingId, isOwner, isModerator, user, t, lang }) {
+  const { comments, loading, refetch } = useListingComments(listingId)
+  const [content,    setContent]    = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [deleting,   setDeleting]   = useState(null)
+
+  const canComment = isOwner || isModerator
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!content.trim()) return
+    setSubmitting(true)
+    await addComment(listingId, content.trim())
+    setContent('')
+    setSubmitting(false)
+    refetch()
+  }
+
+  async function handleDelete(commentId) {
+    setDeleting(commentId)
+    await deleteComment(commentId)
+    setDeleting(null)
+    refetch()
+  }
+
+  return (
+    <div className={styles.commentsSection}>
+      <h2 className={styles.commentsTitle}>
+        {t('market.comments')}
+        {comments.length > 0 && <span className={styles.commentsCount}>{comments.length}</span>}
+      </h2>
+
+      {!loading && comments.length === 0 && (
+        <p className={styles.noComments}>{t('market.noComments')}</p>
+      )}
+
+      {comments.length > 0 && (
+        <div className={styles.commentsList}>
+          {comments.map(c => (
+            <div key={c.id} className={styles.commentRow}>
+              <div className={styles.commentHeader}>
+                <span className={styles.commentAuthor}>{c.username}</span>
+                <span className={styles.commentTime}>
+                  {new Date(c.created_at).toLocaleString(
+                    lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+                    { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
+                  )}
+                </span>
+                {(user?.id === c.profile_id || isModerator) && (
+                  <button
+                    className={styles.commentDelete}
+                    onClick={() => handleDelete(c.id)}
+                    disabled={deleting === c.id}
+                    title={t('market.deleteComment')}
+                  >✕</button>
+                )}
+              </div>
+              <p className={styles.commentContent}>{c.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {canComment && (
+        <form className={styles.commentForm} onSubmit={handleSubmit}>
+          <textarea
+            className={styles.commentInput}
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder={t('market.commentPlaceholder')}
+            maxLength={1000}
+            rows={3}
+          />
+          <button
+            className={styles.commentSubmit}
+            type="submit"
+            disabled={submitting || !content.trim()}
+          >
+            {submitting ? '…' : t('market.commentSubmit')}
+          </button>
+        </form>
+      )}
     </div>
   )
 }
@@ -265,13 +354,14 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
 
 export default function ListingDetailPage() {
   const { id }  = useParams()
-  const { t }   = useLang()
+  const { t, lang } = useLang()
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
   const { listing, loading, error, refetch } = useMarketListing(id)
   const { profile }    = useProfile(user?.id)
   const { characters } = useCharacters()
+  const { isModerator } = useAdmin()
 
   const [showOfferModal,        setShowOfferModal]        = useState(false)
   const [showReportModal,       setShowReportModal]       = useState(false)
@@ -622,6 +712,16 @@ export default function ListingDetailPage() {
           {isSell ? t('market.soldNoticeSell') : t('market.soldNoticeBuy')}
         </div>
       )}
+
+      {/* ── Comments section ── */}
+      <ListingComments
+        listingId={id}
+        isOwner={isOwner}
+        isModerator={isModerator}
+        user={user}
+        t={t}
+        lang={lang}
+      />
 
       {/* ── Offers section ── */}
       <div className={styles.offersSection}>

@@ -554,6 +554,7 @@ export default {
     familyInviteSub:       'Du wurdest eingeladen, der Familie beizutreten',
     familyAccept:          'Beitreten',
     familyDecline:         'Ablehnen',
+    listingComment:        '💬 Neuer Kommentar zu einer Anzeige',
   },
   friends: {
     title:           'Freunde',
@@ -733,6 +734,11 @@ export default {
     shareListing:      'Link kopieren',
     linkCopied:        'Link kopiert!',
     sellerOtherListings: 'Weitere Angebote dieses Verkäufers',
+    comments:            'Kommentare',
+    noComments:          'Noch keine Kommentare.',
+    commentPlaceholder:  'Kommentar hinzufügen…',
+    commentSubmit:       'Veröffentlichen',
+    deleteComment:       'Kommentar löschen',
     // Detail page
     backToMarket:      '← Zurück zum Markt',
     allOffers:         'Alle Angebote',

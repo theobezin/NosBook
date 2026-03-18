@@ -1283,3 +1283,74 @@ create policy "admin_manage_sessions"
 -- end;
 -- $$ language plpgsql security definer;
 
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION M — commentaires sur les annonces marché
+-- ────────────────────────────────────────────────────────────
+
+-- 1. Table listing_comments
+-- create table public.listing_comments (
+--   id         uuid        primary key default gen_random_uuid(),
+--   listing_id uuid        not null references public.market_listings(id) on delete cascade,
+--   profile_id uuid        not null references public.profiles(id) on delete cascade,
+--   username   text        not null,
+--   content    text        not null check (char_length(content) between 1 and 1000),
+--   created_at timestamptz not null default now()
+-- );
+-- create index listing_comments_listing_id_idx on public.listing_comments(listing_id, created_at);
+-- alter table public.listing_comments enable row level security;
+-- create policy "comments_select_all" on public.listing_comments
+--   for select using (true);
+-- create policy "comments_delete_allowed" on public.listing_comments
+--   for delete using (
+--     auth.uid() = profile_id
+--     or exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
+--   );
+
+-- 2. RPC add_listing_comment
+-- create or replace function public.add_listing_comment(p_listing_id uuid, p_content text)
+-- returns uuid language plpgsql security definer as $$
+-- declare
+--   v_profile_id    uuid;
+--   v_username      text;
+--   v_is_admin      boolean;
+--   v_is_mod        boolean;
+--   v_listing_owner uuid;
+--   v_comment_id    uuid;
+-- begin
+--   v_profile_id := auth.uid();
+--   select username, is_admin, is_moderator
+--     into v_username, v_is_admin, v_is_mod
+--     from public.profiles where id = v_profile_id;
+--   select profile_id into v_listing_owner
+--     from public.market_listings where id = p_listing_id;
+--   if v_listing_owner is null then
+--     raise exception 'Annonce introuvable';
+--   end if;
+--   if not (v_profile_id = v_listing_owner or v_is_admin = true or v_is_mod = true) then
+--     raise exception 'Permission refusée';
+--   end if;
+--   insert into public.listing_comments (listing_id, profile_id, username, content)
+--   values (p_listing_id, v_profile_id, v_username, trim(p_content))
+--   returning id into v_comment_id;
+--   -- Notifier le propriétaire de l'annonce (si ce n'est pas le posteur)
+--   if v_listing_owner != v_profile_id then
+--     insert into public.notifications (user_id, type, listing_id, content_preview, read)
+--     values (v_listing_owner, 'listing_comment', p_listing_id,
+--             v_username || ': ' || left(trim(p_content), 80), false);
+--   end if;
+--   -- Notifier les followers (sauf le posteur et l'owner déjà notifié)
+--   insert into public.notifications (user_id, type, listing_id, content_preview, read)
+--   select mf.profile_id, 'listing_comment', p_listing_id,
+--          v_username || ': ' || left(trim(p_content), 80), false
+--   from public.market_follows mf
+--   where mf.listing_id = p_listing_id
+--     and mf.profile_id != v_profile_id
+--     and mf.profile_id != v_listing_owner;
+--   return v_comment_id;
+-- end;
+-- $$;
+-- grant execute on function public.add_listing_comment(uuid, text) to authenticated;
+
+-- 3. Activer le realtime sur listing_comments
+-- alter publication supabase_realtime add table public.listing_comments;
+
