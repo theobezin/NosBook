@@ -189,6 +189,29 @@
 }
 .createInput:focus { border-color: #4499ff; }
 
+.serverSelect {
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #e0e0f0;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.serverSelect:focus { border-color: #c9a84c; }
+
+.serverTag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid #3a3d50;
+  border-radius: 20px;
+  padding: 1px 7px;
+  color: #8888aa;
+  white-space: nowrap;
+}
+
 .err {
   color: #ff6b6b;
   font-size: 0.82rem;

@@ -13,6 +13,13 @@
   gap: 6px;
 }
 
+.pageHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -24,6 +31,36 @@
   font-size: 0.88rem;
   color: #7a7a9a;
   margin: 0;
+}
+
+/* ── Onglets serveur ──────────────────────────── */
+.serverTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.serverTab {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 20px;
+  padding: 5px 14px;
+  color: #7a7a9a;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.serverTab:hover { border-color: #3a3d50; color: #c0c0d8; }
+.serverTabActive { border-color: #c9a84c !important; color: #c9a84c !important; }
+
+/* ── Badge serveur sur carte ──────────────────── */
+.serverBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid #3a3d50;
+  border-radius: 20px;
+  padding: 2px 8px;
+  color: #8888aa;
+  white-space: nowrap;
 }
 
 /* ── Recherche ────────────────────────────────── */
@@ -194,4 +231,78 @@
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border: none !important;
+}
+
+/* ── Modal création ───────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal {
+  background: #1a1d24;
+  border: 1px solid #3a3d50;
+  border-radius: 12px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modalTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e8d5a0;
+  margin: 0;
+}
+
+.modalLoading, .modalEmpty {
+  color: #7a7a9a;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modalLabel {
+  font-size: 0.78rem;
+  color: #8888aa;
+  margin-top: 4px;
+}
+
+.modalSelect, .modalInput {
+  width: 100%;
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.modalSelect:focus, .modalInput:focus { border-color: #c9a84c; }
+
+.modalErr {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }

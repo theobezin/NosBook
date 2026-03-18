@@ -10,11 +10,14 @@
 CREATE TABLE IF NOT EXISTS public.families (
   id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   name       text        NOT NULL,
+  server     text        NOT NULL DEFAULT 'undercity'
+               CHECK (server IN ('undercity', 'dragonveil')),
   level      int         NOT NULL DEFAULT 1 CHECK (level BETWEEN 1 AND 30),
   head_id    uuid        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
 
-  CONSTRAINT families_name_unique UNIQUE (name)
+  -- Le nom d'une famille doit être unique par serveur
+  CONSTRAINT families_name_server_unique UNIQUE (name, server)
 );
 
 -- ── Table membres ─────────────────────────────────────────────────────────────
@@ -94,3 +97,13 @@ CREATE POLICY "family_members_delete" ON public.family_members
 -- Utilisée pour les invitations famille (type = 'family_invite')
 ALTER TABLE public.notifications
   ADD COLUMN IF NOT EXISTS family_id uuid REFERENCES public.families(id) ON DELETE CASCADE;
+
+-- ── Migration : ajout de la colonne server ────────────────────────────────────
+-- À exécuter si la table families existe déjà sans la colonne server
+ALTER TABLE public.families
+  ADD COLUMN IF NOT EXISTS server text NOT NULL DEFAULT 'undercity'
+    CHECK (server IN ('undercity', 'dragonveil'));
+
+ALTER TABLE public.families DROP CONSTRAINT IF EXISTS families_name_unique;
+ALTER TABLE public.families ADD CONSTRAINT IF NOT EXISTS families_name_server_unique
+  UNIQUE (name, server);

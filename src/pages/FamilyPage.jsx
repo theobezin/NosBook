@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES } from '@/lib/mockData'
+import { SERVERS } from '@/lib/market'
 import Button from '@/components/ui/Button'
 import styles from './FamilyPage.module.css'
 
@@ -50,6 +51,7 @@ export default function FamilyPage() {
   // Formulaire création
   const [createForCharId, setCreateForCharId] = useState(null)
   const [createName,      setCreateName]      = useState('')
+  const [createServer,    setCreateServer]    = useState('undercity')
   const [createLoading,   setCreateLoading]   = useState(false)
   const [createErr,       setCreateErr]       = useState(null)
 
@@ -68,6 +70,12 @@ export default function FamilyPage() {
 
   async function loadAll() {
     setLoading(true)
+    // 0. Serveur du profil (pré-remplissage du formulaire)
+    const { data: prof } = await supabase
+      .from('profiles').select('server').eq('id', user.id).single()
+    const profileServer = prof?.server ?? 'undercity'
+    setCreateServer(profileServer)
+
     // 1. Personnages du joueur
     const { data: chars } = await supabase
       .from('characters')
@@ -82,7 +90,7 @@ export default function FamilyPage() {
       const charIds = charList.map(c => c.id)
       const { data: mRows } = await supabase
         .from('family_members')
-        .select('id, character_id, role, family_id, families(id, name, level, head_id)')
+        .select('id, character_id, role, family_id, families(id, name, level, server, head_id)')
         .in('character_id', charIds)
       const map = {}
       ;(mRows ?? []).forEach(m => {
@@ -137,14 +145,16 @@ export default function FamilyPage() {
 
   async function handleCreate(e) {
     e.preventDefault()
-    const name = createName.trim()
-    if (!name) { setCreateErr(t('family.errNameRequired')); return }
+    const name   = createName.trim()
+    const charId = createForCharId // capture avant tout setState
+    if (!name)   { setCreateErr(t('family.errNameRequired')); return }
+    if (!charId) { setCreateErr(t('family.errCreate')); return }
     setCreateLoading(true)
     setCreateErr(null)
 
     const { data: fam, error } = await supabase
       .from('families')
-      .insert({ name, head_id: user.id })
+      .insert({ name, server: createServer, head_id: user.id })
       .select()
       .single()
 
@@ -154,19 +164,26 @@ export default function FamilyPage() {
       return
     }
 
-    await supabase.from('family_members').insert({
+    const { error: memErr } = await supabase.from('family_members').insert({
       family_id:    fam.id,
-      character_id: createForCharId,
+      character_id: charId,
       profile_id:   user.id,
       role:         'head',
     })
+
+    if (memErr) {
+      // Rollback : supprimer la famille créée
+      await supabase.from('families').delete().eq('id', fam.id)
+      setCreateErr(t('family.errCreate'))
+      setCreateLoading(false)
+      return
+    }
 
     setCreateName('')
     setCreateForCharId(null)
     setCreateLoading(false)
     await loadAll()
-    // Ouvre automatiquement la gestion
-    setManagingCharId(createForCharId)
+    setManagingCharId(charId)
     await loadFamilyMembers(fam.id)
   }
 
@@ -293,6 +310,7 @@ export default function FamilyPage() {
                       <span className={styles.charFamily} style={{ color: levelColor }}>
                         🏠 {mem.family.name}
                         <span className={styles.charFamilyLevel}>Niv.{mem.family.level}</span>
+                        <span className={styles.serverTag}>{t(`raids.server.${mem.family.server}`)}</span>
                         <RoleBadge role={mem.role} t={t} />
                       </span>
                     ) : (
@@ -330,6 +348,16 @@ export default function FamilyPage() {
                   <form className={styles.createForm} onSubmit={handleCreate}>
                     <h3 className={styles.panelTitle}>{t('family.createTitle')}</h3>
                     <div className={styles.createRow}>
+                      <select
+                        className={styles.serverSelect}
+                        value={createServer}
+                        onChange={e => setCreateServer(e.target.value)}
+                        disabled={createLoading}
+                      >
+                        {SERVERS.map(s => (
+                          <option key={s} value={s}>{t(`raids.server.${s}`)}</option>
+                        ))}
+                      </select>
                       <input
                         className={styles.createInput}
                         value={createName}
@@ -367,6 +395,7 @@ export default function FamilyPage() {
                         <span className={styles.familyLvl} style={{ borderColor: levelColor, color: levelColor }}>
                           {t('family.level')} {family.level}
                         </span>
+                        <span className={styles.serverTag}>{t(`raids.server.${family.server}`)}</span>
                         <span className={styles.familyCount}>
                           {familyMembers.length} {t('family.members')}
                         </span>

@@ -1,11 +1,15 @@
 // ============================================================
 // FamiliesListPage — Liste publique des familles NosTale
-// Accessible depuis le Hub. Recherche par nom.
+// Accessible depuis le Hub. Recherche par nom + filtre serveur.
+// Création de famille intégrée (utilisateurs connectés).
 // ============================================================
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
+import { SERVERS } from '@/lib/market'
+import Button from '@/components/ui/Button'
 import styles from './FamiliesListPage.module.css'
 
 // ── Couleurs de niveau ────────────────────────────────────────
@@ -30,6 +34,7 @@ function FamilyCard({ family, t, lang }) {
   const levelColor = getLevelColor(family.level)
   const memberCount = family.family_members?.length ?? 0
   const headUsername = family.profiles?.username ?? '—'
+  const serverLabel = t(`raids.server.${family.server ?? 'undercity'}`)
 
   async function loadMembers() {
     if (members !== null) { setExpanded(v => !v); return }
@@ -56,6 +61,7 @@ function FamilyCard({ family, t, lang }) {
           <span className={styles.familyLvl} style={{ borderColor: levelColor, color: levelColor }}>
             {t('family.level')} {family.level}
           </span>
+          <span className={styles.serverBadge}>{serverLabel}</span>
         </div>
         <div className={styles.cardRight}>
           <span className={styles.memberCount}>{memberCount} {t('family.members')}</span>
@@ -90,36 +96,189 @@ function FamilyCard({ family, t, lang }) {
   )
 }
 
-// ── Page principale ───────────────────────────────────────────
-export default function FamiliesListPage() {
-  const { t, lang } = useLang()
-
-  const [families, setFamilies] = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [search,   setSearch]   = useState('')
+// ── Modal création de famille ─────────────────────────────────
+function CreateFamilyModal({ t, user, onClose, onCreated }) {
+  const [characters,   setCharacters]   = useState([])
+  const [charLoading,  setCharLoading]  = useState(true)
+  const [charId,       setCharId]       = useState('')
+  const [name,         setName]         = useState('')
+  const [server,       setServer]       = useState('undercity')
+  const [submitting,   setSubmitting]   = useState(false)
+  const [err,          setErr]          = useState(null)
 
   useEffect(() => {
+    if (!hasSupabase || !user?.id) return
+    // Charger le serveur du profil + les personnages sans famille
+    Promise.all([
+      supabase.from('profiles').select('server').eq('id', user.id).single(),
+      supabase.from('characters').select('id, name')
+        .eq('profile_id', user.id).order('sort_order'),
+    ]).then(([{ data: prof }, { data: chars }]) => {
+      if (prof?.server) setServer(prof.server)
+      // Exclure les personnages déjà dans une famille
+      const allChars = chars ?? []
+      if (allChars.length === 0) { setCharacters([]); setCharLoading(false); return }
+      const charIds = allChars.map(c => c.id)
+      supabase.from('family_members').select('character_id').in('character_id', charIds)
+        .then(({ data: taken }) => {
+          const takenSet = new Set((taken ?? []).map(m => m.character_id))
+          const available = allChars.filter(c => !takenSet.has(c.id))
+          setCharacters(available)
+          if (available.length > 0) setCharId(available[0].id)
+          setCharLoading(false)
+        })
+    })
+  }, [user?.id])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (!trimmed) { setErr(t('family.errNameRequired')); return }
+    if (!charId)  { setErr(t('family.errCreate')); return }
+    setSubmitting(true)
+    setErr(null)
+
+    const { data: fam, error } = await supabase
+      .from('families')
+      .insert({ name: trimmed, server, head_id: user.id })
+      .select().single()
+
+    if (error) {
+      setErr(error.code === '23505' ? t('family.errNameTaken') : t('family.errCreate'))
+      setSubmitting(false)
+      return
+    }
+
+    const { error: memErr } = await supabase.from('family_members').insert({
+      family_id:    fam.id,
+      character_id: charId,
+      profile_id:   user.id,
+      role:         'head',
+    })
+
+    if (memErr) {
+      await supabase.from('families').delete().eq('id', fam.id)
+      setErr(t('family.errCreate'))
+      setSubmitting(false)
+      return
+    }
+
+    onCreated(fam)
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <h2 className={styles.modalTitle}>{t('family.createTitle')}</h2>
+
+        {charLoading ? (
+          <p className={styles.modalLoading}>…</p>
+        ) : characters.length === 0 ? (
+          <p className={styles.modalEmpty}>{t('familiesList.noAvailableChar')}</p>
+        ) : (
+          <form onSubmit={handleSubmit} className={styles.modalForm}>
+            <label className={styles.modalLabel}>{t('familiesList.createCharLabel')}</label>
+            <select className={styles.modalSelect} value={charId}
+              onChange={e => setCharId(e.target.value)} disabled={submitting}>
+              {characters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+
+            <label className={styles.modalLabel}>{t('familiesList.serverLabel')}</label>
+            <select className={styles.modalSelect} value={server}
+              onChange={e => setServer(e.target.value)} disabled={submitting}>
+              {SERVERS.map(s => <option key={s} value={s}>{t(`raids.server.${s}`)}</option>)}
+            </select>
+
+            <label className={styles.modalLabel}>{t('family.createNameLabel')}</label>
+            <input
+              className={styles.modalInput}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={t('family.createNamePh')}
+              maxLength={30}
+              disabled={submitting}
+              autoFocus
+            />
+
+            {err && <p className={styles.modalErr}>{err}</p>}
+
+            <div className={styles.modalActions}>
+              <Button variant="solid" size="sm" type="submit" disabled={submitting}>
+                {submitting ? t('family.creating') : t('family.confirmCreate')}
+              </Button>
+              <Button variant="ghost" size="sm" type="button" onClick={onClose}>
+                {t('session.cancel')}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Page principale ───────────────────────────────────────────
+export default function FamiliesListPage() {
+  const { user, isAuthenticated } = useAuth()
+  const { t, lang } = useLang()
+
+  const [families,     setFamilies]     = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [search,       setSearch]       = useState('')
+  const [serverFilter, setServerFilter] = useState('all')
+  const [showCreate,   setShowCreate]   = useState(false)
+
+  function fetchFamilies() {
     if (!hasSupabase) { setLoading(false); return }
     supabase
       .from('families')
-      .select('id, name, level, profiles!head_id(username), family_members(character_id)')
+      .select('id, name, level, server, profiles!head_id(username), family_members(character_id)')
       .order('level', { ascending: false })
       .order('created_at', { ascending: true })
       .then(({ data }) => {
         setFamilies(data ?? [])
         setLoading(false)
       })
-  }, [])
+  }
 
-  const filtered = search.trim()
-    ? families.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
-    : families
+  useEffect(() => { fetchFamilies() }, [])
+
+  function handleCreated(fam) {
+    setShowCreate(false)
+    setLoading(true)
+    fetchFamilies()
+  }
+
+  const filtered = families
+    .filter(f => serverFilter === 'all' || f.server === serverFilter)
+    .filter(f => !search.trim() || f.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>🏠 {t('familiesList.title')}</h1>
-        <p className={styles.sub}>{t('familiesList.sub')}</p>
+        <div className={styles.pageHeaderRow}>
+          <div>
+            <h1 className={styles.title}>🏠 {t('familiesList.title')}</h1>
+            <p className={styles.sub}>{t('familiesList.sub')}</p>
+          </div>
+          {isAuthenticated && (
+            <Button variant="solid" size="sm" onClick={() => setShowCreate(true)}>
+              + {t('familiesList.createBtn')}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.serverTabs}>
+        {['all', ...SERVERS].map(s => (
+          <button
+            key={s}
+            className={`${styles.serverTab} ${serverFilter === s ? styles.serverTabActive : ''}`}
+            onClick={() => setServerFilter(s)}
+          >
+            {s === 'all' ? t('raids.server.all') : t(`raids.server.${s}`)}
+          </button>
+        ))}
       </div>
 
       <div className={styles.searchRow}>
@@ -129,7 +288,7 @@ export default function FamiliesListPage() {
           onChange={e => setSearch(e.target.value)}
           placeholder={t('familiesList.searchPh')}
         />
-        <span className={styles.total}>{t('familiesList.total', { n: families.length })}</span>
+        <span className={styles.total}>{t('familiesList.total', { n: filtered.length })}</span>
       </div>
 
       {loading ? (
@@ -146,6 +305,15 @@ export default function FamiliesListPage() {
             <FamilyCard key={f.id} family={f} t={t} lang={lang} />
           ))}
         </div>
+      )}
+
+      {showCreate && (
+        <CreateFamilyModal
+          t={t}
+          user={user}
+          onClose={() => setShowCreate(false)}
+          onCreated={handleCreated}
+        />
       )}
     </div>
   )
