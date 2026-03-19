@@ -335,9 +335,13 @@ export default {
       resetBtn:          'reset',
     },
     raids: {
-      title:     'RAID COOLDOWNS —',
-      available: 'AVAILABLE',
-      doneBtn:   'DONE',
+      title:       'RAID COOLDOWNS —',
+      available:   'AVAILABLE',
+      doneBtn:     'DONE',
+      perDay:      'Day',
+      perWeek:     'Week',
+      hcWeeklyMax: 'HC weekly limit reached (35/week)',
+      dailyMax:    'Daily limit reached',
     },
     timer: {
       inProgress: '⏱ IN PROGRESS',
@@ -554,6 +558,7 @@ export default {
     familyInviteSub:       'You have been invited to join',
     familyAccept:          'Join',
     familyDecline:         'Decline',
+    listingComment:        '💬 New comment on a listing',
   },
   friends: {
     title:           'Friends',
@@ -746,6 +751,11 @@ export default {
     shareListing:      'Copy link',
     linkCopied:        'Link copied!',
     sellerOtherListings: 'More from this seller',
+    comments:            'Comments',
+    noComments:          'No comments yet.',
+    commentPlaceholder:  'Add a comment…',
+    commentSubmit:       'Post',
+    deleteComment:       'Delete comment',
     // Detail page
     backToMarket:      '← Back to market',
     allOffers:         'All offers',

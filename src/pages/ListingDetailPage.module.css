@@ -297,6 +297,135 @@
 .blockedMsg   { font-size: 0.78rem; color: #ef4444; font-style: italic; margin: 0; }
 .restrictedMsg { font-size: 0.78rem; color: #e6b430; font-style: italic; margin: 0; }
 
+/* ── Comments section ────────────────────────── */
+.commentsSection {
+  border-top: 1px solid #2a2d38;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commentsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.commentsCount {
+  background: #2a2d38;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.noComments {
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commentRow {
+  background: #1a1d25;
+  border: 1px solid #2a2d38;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.commentAuthor {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #c9a84c;
+}
+
+.commentTime {
+  font-size: 0.78rem;
+  color: #6b7280;
+  flex: 1;
+}
+
+.commentDelete {
+  background: none;
+  border: none;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+  line-height: 1;
+}
+.commentDelete:hover { color: #ef4444; }
+
+.commentContent {
+  font-size: 0.9rem;
+  color: #d1d5db;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.commentInput {
+  background: #1a1d25;
+  border: 1px solid #2a2d38;
+  border-radius: 8px;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 70px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.commentInput:focus {
+  outline: none;
+  border-color: #c9a84c;
+}
+.commentInput::placeholder { color: #4b5563; }
+
+.commentSubmit {
+  align-self: flex-end;
+  background: #c9a84c;
+  color: #0f1117;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.commentSubmit:disabled { opacity: 0.4; cursor: not-allowed; }
+.commentSubmit:not(:disabled):hover { opacity: 0.85; }
+
 /* ── Offers section ──────────────────────────── */
 .offersSection {
   border-top: 1px solid #2a2d38;
@@ -361,6 +490,7 @@
 .offerUser     { font-size: 0.88rem; font-weight: 700; color: #60a5fa; }
 .offerUserLink { font-size: 0.88rem; font-weight: 700; color: #60a5fa; text-decoration: none; }
 .offerUserLink:hover { text-decoration: underline; }
+.offerDate     { font-size: 0.78rem; color: #6b7280; margin-left: auto; white-space: nowrap; }
 
 .offerStatusBadge {
   font-size: 0.65rem;

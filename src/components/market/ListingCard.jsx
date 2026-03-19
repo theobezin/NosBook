@@ -52,7 +52,7 @@ function TagPill({ slug, t }) {
 // ── ListingCard ────────────────────────────────────────────
 
 export default function ListingCard({ listing, onRefresh, userProfile, userCharServers = [], isFollowed = false, onToggleFollow }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -340,6 +340,14 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
                     {offer.discordHandle && (
                       <span className={styles.offerDiscord}>💬 {offer.discordHandle}</span>
                     )}
+                    {(offer.createdAt ?? offer.created_at) && (
+                      <span className={styles.offerDate}>
+                        {new Date(offer.createdAt ?? offer.created_at).toLocaleDateString(
+                          lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+                          { day: 'numeric', month: 'short' }
+                        )}
+                      </span>
+                    )}
                   </div>
                   <span className={styles.offerPrice}>
                     {formatGold(offer.price)} {t('market.gold')}
@@ -424,6 +432,14 @@ export default function ListingCard({ listing, onRefresh, userProfile, userCharS
               <span className={styles.repBadge}>{listing.profile.trades_completed}</span>
             )}
           </span>
+          {listing.createdAt && (
+            <span className={styles.listingDate}>
+              {new Date(listing.createdAt).toLocaleDateString(
+                lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+                { day: 'numeric', month: 'short', year: 'numeric' }
+              )}
+            </span>
+          )}
           {listing.profile?.discord_handle && (
             <span className={styles.discord}>
               💬 {listing.profile.discord_handle}

@@ -8,7 +8,7 @@ import { useAuth }        from '@/hooks/useAuth'
 import { usePlannerData, useSessionBlocks } from '@/hooks/usePlannerData'
 import { useCharacters }  from '@/hooks/useCharacters'
 import { useNavigate }    from 'react-router-dom'
-import { RAIDS, RAID_CATEGORIES } from '@/lib/raids'
+import { RAIDS, RAID_CATEGORIES, HC_WEEKLY_LIMIT } from '@/lib/raids'
 import { fmtThousands, fmtShorthand, parseShorthand } from '@/lib/utils'
 
 // ── Theme NosBook (fixe, cohérent avec le reste de l'app) ─────────────────
@@ -242,6 +242,18 @@ function FarmTracker({ goals, setGoals, th, i18n }) {
   )
 }
 
+// ── helpers date/semaine ───────────────────────────────────────────────────
+function isSameDay(ts) {
+  const d = new Date(ts), n = new Date()
+  return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate()
+}
+function startOfWeekTs() {
+  const d = new Date(); d.setHours(0,0,0,0)
+  const day = d.getDay(), diff = day===0?-6:1-day
+  d.setDate(d.getDate()+diff)
+  return d.getTime()
+}
+
 function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
   const { lang } = useLang()
   const ACT_KEYS = ['all', ...RAID_CATEGORIES.map(c => c.key)]
@@ -249,7 +261,8 @@ function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
   const filterIdx=i18n.raidTypes.indexOf(filter)
   const filterKey=ACT_KEYS[filterIdx>=0?filterIdx:0]
   const now=Date.now()
-  // Multiples de 24h → reset minuit ; autres (6h, 8h…) → cooldown fixe depuis le moment du raid
+
+  // Multiples de 24h → reset minuit ; autres (6h, 8h…) → cooldown fixe
   function nextReset(doneTs, cooldownH) {
     if (cooldownH % 24 === 0) {
       const m = new Date(doneTs); m.setHours(0,0,0,0)
@@ -258,28 +271,137 @@ function RaidCooldownTracker({ raids, setRaids, th, i18n }) {
     }
     return doneTs + cooldownH * 3600000
   }
-  const getStatus=raid=>{const done=raids[raid.id];if(!done)return null;const avail=nextReset(done,raid.cooldown);if(avail<=now)return{ready:true};const remMs=avail-now;const remH=Math.floor(remMs/3600000);const remM=Math.floor((remMs%3600000)/60000);return{ready:false,label:`${pad(remH)}h${pad(remM)}`}}
+
+  // Tableau de timestamps (nouveau format)
+  const getTsList = raidId => Array.isArray(raids[raidId]) ? raids[raidId] : (raids[raidId] != null ? [raids[raidId]] : [])
+  const getTodayCount = raidId => getTsList(raidId).filter(isSameDay).length
+
+  // HC : total de la semaine pour UN raid donné
+  const getWeekCount = raidId => getTsList(raidId).filter(ts=>ts>=startOfWeekTs()).length
+
+  // Statut cooldown pour les raids sans dailyLimit (simple done/reset)
+  function getSimpleStatus(raid) {
+    const list=getTsList(raid.id); if(!list.length) return null
+    const last=list[list.length-1]; const avail=nextReset(last,raid.cooldown)
+    if(avail<=now) return {ready:true}
+    const remMs=avail-now; const remH=Math.floor(remMs/3600000); const remM=Math.floor((remMs%3600000)/60000)
+    return {ready:false,label:`${pad(remH)}h${pad(remM)}`}
+  }
+
+  function addRun(raidId) {
+    setRaids(p=>({...p,[raidId]:[...(Array.isArray(p[raidId])?p[raidId]:p[raidId]!=null?[p[raidId]]:[]),Date.now()]}))
+  }
+  function removeLastRun(raidId) {
+    setRaids(p=>{const list=Array.isArray(p[raidId])?[...p[raidId]]:[];list.pop();const n={...p};if(list.length)n[raidId]=list;else delete n[raidId];return n})
+  }
+  function resetRaid(raidId) {
+    setRaids(p=>{const n={...p};delete n[raidId];return n})
+  }
+
   const filtered=filterKey==='all'?RAIDS:RAIDS.filter(r=>r.act===filterKey)
+
   return(
     <div>
+      {/* Filtre par acte */}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
         {i18n.raidTypes.map(tp=><button key={tp} onClick={()=>setFilter(tp)} style={{padding:'6px 13px',borderRadius:20,fontSize:11,background:filter===tp?th.gold+'20':'transparent',border:`1px solid ${filter===tp?th.gold:th.border}`,color:filter===tp?th.gold:th.textSub,fontFamily:'Cinzel',letterSpacing:.8,cursor:'pointer'}}>{tp.toUpperCase()}</button>)}
       </div>
+
+
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(145px,1fr))',gap:8}}>
         {filtered.map(raid=>{
-          const status=getStatus(raid),ready=!status||status.ready
-          return(
-            <div key={raid.id} style={{background:ready?th.surface:'rgba(0,0,0,.08)',border:`1px solid ${ready?raid.color+'55':th.borderSoft}`,borderRadius:10,padding:'12px 10px',opacity:!ready?.52:1,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:6,textAlign:'center'}}>
-              <RaidIcon iconId={raid.icon} size={36}/>
-              <div style={{fontSize:11,color:ready?raid.color:th.textSub,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid[lang]??raid.fr}</div>
-              <div style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:raid.color+'18',color:raid.color+'bb',border:`1px solid ${raid.color}30`,fontFamily:'Cinzel'}}>{RAID_CATEGORIES.find(c=>c.key===raid.act)?.[lang]??raid.act}</div>
-              {!ready&&<div style={{fontSize:12,color:th.textSub}}>⏳ {status.label}</div>}
-              {ready
-                ?<button onClick={()=>setRaids(p=>({...p,[raid.id]:Date.now()}))} style={{fontSize:10,padding:'4px 12px',borderRadius:20,background:raid.color+'20',border:`1px solid ${raid.color}`,color:raid.color,cursor:'pointer',fontFamily:'Cinzel'}}>{i18n.doneBtn}</button>
-                :<button onClick={()=>setRaids(p=>{const n={...p};delete n[raid.id];return n})} style={{fontSize:10,padding:'3px 10px',borderRadius:20,background:'transparent',border:`1px solid ${th.border}`,color:th.textSub,cursor:'pointer'}}>reset</button>
-              }
-            </div>
-          )
+          if(raid.hc){
+            // ── HC : compteur hebdomadaire uniquement (35/semaine par raid) ──
+            const weekCount=getWeekCount(raid.id)
+            const atLimit=weekCount>=HC_WEEKLY_LIMIT
+            const canAdd=!atLimit
+            const pct=Math.min(weekCount/HC_WEEKLY_LIMIT,1)
+            return(
+              <div key={raid.id} style={{background:atLimit?'rgba(0,0,0,.08)':th.surface,border:`1px solid ${atLimit?th.borderSoft:raid.color+'55'}`,borderRadius:10,padding:'12px 10px',opacity:atLimit?.55:1,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:6,textAlign:'center'}}>
+                <RaidIcon iconId={raid.icon} size={34}/>
+                <div style={{fontSize:11,color:atLimit?th.textSub:raid.color,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid[lang]??raid.fr}</div>
+                {/* Barre hebdomadaire */}
+                <div style={{width:'100%'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                    <span style={{fontSize:9,color:'#ff475799',fontFamily:'Cinzel'}}>{i18n.perWeek}</span>
+                    <span style={{fontSize:10,fontFamily:'Cinzel'}}>
+                      <span style={{color:atLimit?'#ff4757':weekCount>=HC_WEEKLY_LIMIT*.8?'#e07050':'#f0e6c8',fontWeight:700}}>{weekCount}</span>
+                      <span style={{color:th.textMuted}}>/{HC_WEEKLY_LIMIT}</span>
+                    </span>
+                  </div>
+                  <div style={{height:4,borderRadius:2,background:'rgba(255,255,255,.08)',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${pct*100}%`,background:atLimit?'#ff4757':weekCount>=HC_WEEKLY_LIMIT*.8?'#e07050':'#ff475766',borderRadius:2,transition:'width .3s'}}/>
+                  </div>
+                </div>
+                {/* Boutons +/− */}
+                <div style={{display:'flex',gap:6,marginTop:2}}>
+                  <button
+                    onClick={()=>removeLastRun(raid.id)}
+                    disabled={weekCount===0}
+                    style={{width:26,height:26,borderRadius:'50%',background:'transparent',border:`1px solid ${th.border}`,color:weekCount===0?th.textMuted:th.textSub,cursor:weekCount===0?'default':'pointer',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
+                  >−</button>
+                  <button
+                    onClick={()=>addRun(raid.id)}
+                    disabled={!canAdd}
+                    title={atLimit?i18n.hcWeeklyMax:''}
+                    style={{width:26,height:26,borderRadius:'50%',background:canAdd?raid.color+'20':'transparent',border:`1px solid ${canAdd?raid.color:th.borderSoft}`,color:canAdd?raid.color:th.textMuted,cursor:canAdd?'pointer':'default',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
+                  >+</button>
+                </div>
+              </div>
+            )
+          } else if(raid.dailyLimit){
+            // ── Raids avec limite journalière ──
+            const todayCount=getTodayCount(raid.id)
+            const atLimit=todayCount>=raid.dailyLimit
+            const canAdd=!atLimit
+            const pct=Math.min(todayCount/raid.dailyLimit,1)
+            return(
+              <div key={raid.id} style={{background:atLimit?'rgba(0,0,0,.08)':th.surface,border:`1px solid ${atLimit?th.borderSoft:raid.color+'55'}`,borderRadius:10,padding:'12px 10px',opacity:atLimit?.55:1,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:6,textAlign:'center'}}>
+                <RaidIcon iconId={raid.icon} size={34}/>
+                <div style={{fontSize:11,color:atLimit?th.textSub:raid.color,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid[lang]??raid.fr}</div>
+                <div style={{width:'100%'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                    <span style={{fontSize:9,color:th.textMuted,fontFamily:'Cinzel'}}>{i18n.perDay}</span>
+                    <span style={{fontSize:10,fontFamily:'Cinzel'}}>
+                      <span style={{color:atLimit?'#ff4757':raid.color,fontWeight:700}}>{todayCount}</span>
+                      <span style={{color:th.textMuted}}>/{raid.dailyLimit}</span>
+                    </span>
+                  </div>
+                  <div style={{height:4,borderRadius:2,background:'rgba(255,255,255,.08)',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${pct*100}%`,background:atLimit?'#ff4757':raid.color,borderRadius:2,transition:'width .3s'}}/>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:6,marginTop:2}}>
+                  <button
+                    onClick={()=>removeLastRun(raid.id)}
+                    disabled={todayCount===0}
+                    style={{width:26,height:26,borderRadius:'50%',background:'transparent',border:`1px solid ${th.border}`,color:todayCount===0?th.textMuted:th.textSub,cursor:todayCount===0?'default':'pointer',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
+                  >−</button>
+                  <button
+                    onClick={()=>addRun(raid.id)}
+                    disabled={!canAdd}
+                    title={atLimit?i18n.dailyMax:''}
+                    style={{width:26,height:26,borderRadius:'50%',background:canAdd?raid.color+'20':'transparent',border:`1px solid ${canAdd?raid.color:th.borderSoft}`,color:canAdd?raid.color:th.textMuted,cursor:canAdd?'pointer':'default',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
+                  >+</button>
+                </div>
+              </div>
+            )
+          } else {
+            // ── Raids simples (cooldown uniquement) ──
+            const status=getSimpleStatus(raid),ready=!status||status.ready
+            return(
+              <div key={raid.id} style={{background:ready?th.surface:'rgba(0,0,0,.08)',border:`1px solid ${ready?raid.color+'55':th.borderSoft}`,borderRadius:10,padding:'12px 10px',opacity:!ready?.52:1,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:6,textAlign:'center'}}>
+                <RaidIcon iconId={raid.icon} size={36}/>
+                <div style={{fontSize:11,color:ready?raid.color:th.textSub,fontFamily:'Cinzel',letterSpacing:.4,lineHeight:1.4}}>{raid[lang]??raid.fr}</div>
+                <div style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:raid.color+'18',color:raid.color+'bb',border:`1px solid ${raid.color}30`,fontFamily:'Cinzel'}}>{RAID_CATEGORIES.find(c=>c.key===raid.act)?.[lang]??raid.act}</div>
+                {!ready&&<div style={{fontSize:12,color:th.textSub}}>⏳ {status.label}</div>}
+                {ready
+                  ?<button onClick={()=>addRun(raid.id)} style={{fontSize:10,padding:'4px 12px',borderRadius:20,background:raid.color+'20',border:`1px solid ${raid.color}`,color:raid.color,cursor:'pointer',fontFamily:'Cinzel'}}>{i18n.doneBtn}</button>
+                  :<button onClick={()=>resetRaid(raid.id)} style={{fontSize:10,padding:'3px 10px',borderRadius:20,background:'transparent',border:`1px solid ${th.border}`,color:th.textSub,cursor:'pointer'}}>reset</button>
+                }
+              </div>
+            )
+          }
         })}
       </div>
     </div>

@@ -161,7 +161,7 @@ export default function AdminPlayersPage() {
                 <button
                   className={styles.saveBtn}
                   onClick={() => handleSave(player.id)}
-                  disabled={isSaving || player.is_admin}
+                  disabled={isSaving}
                 >
                   {isSaving ? 'Enregistrement…' : '✓ Enregistrer'}
                 </button>
