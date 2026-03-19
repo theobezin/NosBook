@@ -335,9 +335,13 @@ export default {
       resetBtn:          'reset',
     },
     raids: {
-      title:     'RAID ABKLINGZEITEN —',
-      available: 'VERFÜGBAR',
-      doneBtn:   'FERTIG',
+      title:       'RAID ABKLINGZEITEN —',
+      available:   'VERFÜGBAR',
+      doneBtn:     'FERTIG',
+      perDay:      'Tag',
+      perWeek:     'Woche',
+      hcWeeklyMax: 'HC-Wochenlimit erreicht (35/Woche)',
+      dailyMax:    'Tageslimit erreicht',
     },
     timer: {
       inProgress: '⏱ LÄUFT',

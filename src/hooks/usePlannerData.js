@@ -64,12 +64,26 @@ export function usePlannerData(defaultCharName) {
           if (!d.raids || typeof d.raids !== 'object') return {}
           const keys = Object.keys(d.raids)
           if (keys.length === 0) return {}
-          // Migration : ancien format plat { raidId: timestamp } → { charName: { raidId: ts } }
+          // Migration A : ancien format plat { raidId: timestamp } → { charName: { raidId: [ts] } }
           if (typeof d.raids[keys[0]] === 'number') {
             const char = d.activeChar ?? null
-            return char ? { [char]: d.raids } : {}
+            if (!char) return {}
+            const wrapped = {}
+            Object.keys(d.raids).forEach(k => { wrapped[k] = [d.raids[k]] })
+            return { [char]: wrapped }
           }
-          return d.raids
+          // Migration B : format { charName: { raidId: number } } → { charName: { raidId: [number] } }
+          const migrated = {}
+          Object.keys(d.raids).forEach(charName => {
+            const charData = d.raids[charName]
+            if (!charData || typeof charData !== 'object') return
+            migrated[charName] = {}
+            Object.keys(charData).forEach(raidId => {
+              const v = charData[raidId]
+              migrated[charName][raidId] = Array.isArray(v) ? v : (typeof v === 'number' ? [v] : [])
+            })
+          })
+          return migrated
         })(),
         goals:      Array.isArray(d.goals) ? d.goals : [],
         notes:      Array.isArray(d.notes) ? d.notes : [],

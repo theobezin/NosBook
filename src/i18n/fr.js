@@ -335,9 +335,13 @@ export default {
       resetBtn:          'reset',
     },
     raids: {
-      title:     'COOLDOWNS RAIDS —',
-      available: 'DISPONIBLES',
-      doneBtn:   'FAIT',
+      title:       'COOLDOWNS RAIDS —',
+      available:   'DISPONIBLES',
+      doneBtn:     'FAIT',
+      perDay:      'Jour',
+      perWeek:     'Semaine',
+      hcWeeklyMax: 'Limite hebdomadaire HC atteinte (35/semaine)',
+      dailyMax:    'Limite journalière atteinte',
     },
     timer: {
       inProgress: '⏱ EN COURS',

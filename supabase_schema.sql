@@ -429,7 +429,7 @@ create trigger on_auth_user_created
 -- FUNCTION: validate_market_report
 -- Admin valide un signalement acheteur.
 -- Effets : report → validated, offres acheteur → blocked,
---          listing → relist, trades_reported++
+--          listing → active (remis en vente sans l'acheteur problématique), trades_reported++
 -- ────────────────────────────────────────────────────────────
 create or replace function public.validate_market_report(
   p_report_id  uuid,
@@ -463,7 +463,7 @@ begin
      set blocked_profiles     = array_append(blocked_profiles, v_reported_profile),
          confirmation_pending = false,
          accepted_offer_id    = null,
-         status               = 'archived'
+         status               = 'active'
    where id = v_listing_id;
 
   update public.profiles
