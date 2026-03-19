@@ -416,7 +416,7 @@ export default function PlayerProfilePage() {
 
     supabase
       .from('profiles')
-      .select('id, username, badges, is_moderator, characters(*)')
+      .select('id, username, badges, is_moderator, is_admin, characters(*)')
       .ilike('username', decoded)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -426,7 +426,7 @@ export default function PlayerProfilePage() {
           setUsername(data.username)
           setProfileId(data.id)
           setProfileBadges(data.badges ?? [])
-          setProfileIsMod(data.is_moderator ?? false)
+          setProfileIsMod((data.is_moderator || data.is_admin) ?? false)
           setCharacters(
             [...(data.characters ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(fromDB)
           )

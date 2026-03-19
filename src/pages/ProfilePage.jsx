@@ -2396,7 +2396,7 @@ export default function ProfilePage() {
     if (!user || !hasSupabase) return
     supabase
       .from('profiles')
-      .select('server, discord_handle, badges, is_moderator')
+      .select('server, discord_handle, badges, is_moderator, is_admin')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
@@ -2407,7 +2407,7 @@ export default function ProfilePage() {
         }
         setDiscordHandle(data?.discord_handle ?? null)
         setMyBadges(data?.badges ?? [])
-        setMyIsMod(data?.is_moderator ?? false)
+        setMyIsMod((data?.is_moderator || data?.is_admin) ?? false)
         // Top1 PVE
         supabase.rpc('get_profile_top1_raids', { p_profile_id: user.id })
           .then(({ data: slugs }) => setMyTop1Raids((slugs ?? []).map(r => r.raid_slug)))
