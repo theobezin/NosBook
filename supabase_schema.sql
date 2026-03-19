@@ -1127,27 +1127,29 @@ create policy "admin_manage_sessions"
 -- grant execute on function public.admin_set_moderator(uuid, boolean) to authenticated;
 
 -- 3. Fonction top1 PVE (lecture de la DB — accessible à tous)
--- create or replace function public.get_profile_top1_raids(p_profile_id uuid)
--- returns table(raid_slug text) language plpgsql security definer as $$
--- begin
---   return query
---     select distinct rr.raid_slug
---     from public.raid_records rr
---     where rr.status = 'validated'
---       and rr.time_seconds = (
---         select min(rr2.time_seconds)
---         from public.raid_records rr2
---         where rr2.raid_slug = rr.raid_slug
---           and rr2.status = 'validated'
---       )
---       and rr.team_members && (
---         select array_agg(c.name)
---         from public.characters c
---         where c.profile_id = p_profile_id
---       );
--- end;
--- $$;
--- grant execute on function public.get_profile_top1_raids(uuid) to authenticated, anon;
+-- Retourne les slugs des raids où l'un des persos du profil est dans l'équipe
+-- ayant le meilleur temps validé, par raid ET par serveur.
+create or replace function public.get_profile_top1_raids(p_profile_id uuid)
+returns table(raid_slug text) language plpgsql security definer as $$
+begin
+  return query
+    select distinct rr.raid_slug
+    from public.raid_records rr
+    join public.characters c
+      on c.profile_id = p_profile_id
+     and c.server      = rr.server
+    where rr.status = 'approved'
+      and c.name = any(rr.team_members)
+      and rr.time_seconds = (
+        select min(rr2.time_seconds)
+        from public.raid_records rr2
+        where rr2.raid_slug = rr.raid_slug
+          and rr2.server    = rr.server
+          and rr2.status    = 'approved'
+      );
+end;
+$$;
+grant execute on function public.get_profile_top1_raids(uuid) to authenticated, anon;
 
 -- ────────────────────────────────────────────────────────────
 -- MIGRATION L — droits modérateurs + historique admin

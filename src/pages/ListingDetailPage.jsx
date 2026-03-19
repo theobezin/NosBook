@@ -19,6 +19,7 @@ import ReportModal      from '@/components/market/ReportModal'
 import EditListingModal from '@/components/market/EditListingModal'
 import Spinner          from '@/components/ui/Spinner'
 import ConfirmModal     from '@/components/ui/ConfirmModal'
+import BadgeDisplay    from '@/components/BadgeDisplay'
 import styles from './ListingDetailPage.module.css'
 
 // ── Helpers ────────────────────────────────────────────────
@@ -251,12 +252,17 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending, lang
   return (
     <div className={`${styles.offerRow} ${isMyOffer ? styles.offerMine : ''} ${isAccepted ? styles.offerAccepted : ''} ${isRejected ? styles.offerRejectedRow : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
 
-      {/* Offer header: username + status + date */}
+      {/* Offer header: username + badges + status + date */}
       <div className={styles.offerHeader}>
         {offer.profile?.username
           ? <Link to={`/players/${offer.profile.username}`} className={styles.offerUserLink}>{username}</Link>
           : <span className={styles.offerUser}>{username}</span>
         }
+        <BadgeDisplay
+          badges={offer.profile?.badges ?? []}
+          isModerator={(offer.profile?.is_moderator || offer.profile?.is_admin) ?? false}
+          size="sm"
+        />
         <span className={`${styles.offerStatusBadge} ${OFFER_STATUS_STYLE[offer.status] ?? ''}`}>
           {t(OFFER_STATUS_KEY[offer.status] ?? 'market.offerActive')}
         </span>
@@ -371,6 +377,7 @@ export default function ListingDetailPage() {
   const { characters } = useCharacters()
   const { isModerator } = useAdmin()
 
+  const [sellerTop1,            setSellerTop1]            = useState([])
   const [showOfferModal,        setShowOfferModal]        = useState(false)
   const [showReportModal,       setShowReportModal]       = useState(false)
   const [showListingReportModal,setShowListingReportModal]= useState(false)
@@ -379,6 +386,12 @@ export default function ListingDetailPage() {
   const [confirmState,    setConfirmState]    = useState(null)
   const [lightboxSrc,     setLightboxSrc]     = useState(null)
   const [copied,          setCopied]          = useState(false)
+
+  useEffect(() => {
+    if (!hasSupabase || !listing?.profileId) return
+    supabase.rpc('get_profile_top1_raids', { p_profile_id: listing.profileId })
+      .then(({ data }) => setSellerTop1((data ?? []).map(r => r.raid_slug)))
+  }, [listing?.profileId])
 
   function handleShare() {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -613,6 +626,12 @@ export default function ListingDetailPage() {
                 : '—'
               }
             </p>
+            <BadgeDisplay
+              badges={listing.profile?.badges ?? []}
+              isModerator={(listing.profile?.is_moderator || listing.profile?.is_admin) ?? false}
+              top1Raids={sellerTop1}
+              size="sm"
+            />
             {listing.profile?.discord_handle && (
               <p className={styles.discord}>
                 💬 {listing.profile.discord_handle}

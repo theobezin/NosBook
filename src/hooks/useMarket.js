@@ -187,10 +187,10 @@ export function useMarketListing(listingId) {
         .from('market_listings')
         .select(`
           *,
-          profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server ),
+          profiles!profile_id ( id, username, discord_handle, trades_completed, trades_reported, server, badges, is_moderator, is_admin ),
           market_offers!listing_id (
             *,
-            profiles!profile_id ( id, username, trades_completed, trades_reported )
+            profiles!profile_id ( id, username, trades_completed, trades_reported, badges, is_moderator, is_admin )
           )
         `)
         .eq('id', listingId)
