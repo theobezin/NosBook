@@ -148,6 +148,34 @@
   color: var(--text);
 }
 
+.filterTimeLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.filterTimeInput {
+  padding: 0.22rem 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  width: 88px;
+}
+.filterTimeInput:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+  color: var(--text);
+}
+
+.filterTimeSep {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 /* ── Serveur (formulaire) ──────────────────────────────────────── */
 .serverBtns {
   display: flex;

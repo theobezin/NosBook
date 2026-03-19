@@ -661,9 +661,11 @@ export default function RaidSessionsPage() {
   }, [user?.id, isAuthenticated])
 
   // Filtres
-  const [filterServer, setFilterServer] = useState('')
-  const [filterAct,    setFilterAct]    = useState('')
-  const [filterDate,   setFilterDate]   = useState('')
+  const [filterServer,  setFilterServer]  = useState('')
+  const [filterAct,     setFilterAct]     = useState('')
+  const [filterDate,    setFilterDate]    = useState('')
+  const [filterTimeMin, setFilterTimeMin] = useState('')
+  const [filterTimeMax, setFilterTimeMax] = useState('')
 
   const loadSessions = () => {
     if (!hasSupabase) { setLoading(false); return }
@@ -687,6 +689,11 @@ export default function RaidSessionsPage() {
 
   const today = new Date().toISOString().slice(0, 10)
 
+  const toMinutes = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    return h * 60 + m
+  }
+
   const applyFilters = (list) => list.filter(s => {
     if (s.date === today && s.time) {
       const [h, m]     = s.time.split(':').map(Number)
@@ -698,6 +705,12 @@ export default function RaidSessionsPage() {
     if (filterServer && s.server !== filterServer) return false
     if (actSlugs     && !actSlugs.has(s.raid_slug)) return false
     if (filterDate   && s.date !== filterDate)       return false
+    // Filtre horaire : on exclut uniquement les sessions qui ont un horaire défini et hors plage
+    if (s.time) {
+      const mins = toMinutes(s.time.slice(0, 5))
+      if (filterTimeMin && mins < toMinutes(filterTimeMin)) return false
+      if (filterTimeMax && mins > toMinutes(filterTimeMax)) return false
+    }
     return true
   })
 
@@ -782,6 +795,29 @@ export default function RaidSessionsPage() {
             />
             {filterDate && (
               <button className={styles.filterBtn} onClick={() => setFilterDate('')}>✕</button>
+            )}
+          </div>
+
+          {/* Filtre horaire */}
+          <div className={styles.filterGroup}>
+            <span className={styles.filterTimeLabel}>{t('session.filterTimeRange')}</span>
+            <input
+              type="time"
+              className={styles.filterTimeInput}
+              value={filterTimeMin}
+              onChange={e => setFilterTimeMin(e.target.value)}
+              title={t('session.filterTimeMin')}
+            />
+            <span className={styles.filterTimeSep}>–</span>
+            <input
+              type="time"
+              className={styles.filterTimeInput}
+              value={filterTimeMax}
+              onChange={e => setFilterTimeMax(e.target.value)}
+              title={t('session.filterTimeMax')}
+            />
+            {(filterTimeMin || filterTimeMax) && (
+              <button className={styles.filterBtn} onClick={() => { setFilterTimeMin(''); setFilterTimeMax('') }}>✕</button>
             )}
           </div>
         </div>
