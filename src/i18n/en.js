@@ -644,6 +644,7 @@ export default {
     statsRecords:          'validated records',
     searchPlaceholder:     'Search a raid…',
     submitBtn:             'Submit a record',
+    mySubmissions:         'My submissions',
     noRecord:              'No record yet',
     noResults:             'No raid found.',
     server: {

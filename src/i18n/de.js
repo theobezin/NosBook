@@ -644,6 +644,7 @@ export default {
     statsRecords:          'validierte Rekorde',
     searchPlaceholder:     'Raid suchen…',
     submitBtn:             'Rekord einreichen',
+    mySubmissions:         'Meine Einreichungen',
     noRecord:              'Noch kein Rekord',
     noResults:             'Kein Raid gefunden.',
     server: {
