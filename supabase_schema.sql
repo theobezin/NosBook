@@ -532,6 +532,9 @@ begin
      set status = 'sold', confirmation_pending = false, last_activity_at = now()
    where id = p_listing_id;
 
+  -- Supprimer tous les suivis de l'annonce (vendue = plus de suivi utile)
+  delete from public.market_follows where listing_id = p_listing_id;
+
   -- Incrémenter le compteur de transactions
   update public.profiles
      set trades_completed = trades_completed + 1
@@ -1353,4 +1356,7 @@ create policy "admin_manage_sessions"
 
 -- 3. Activer le realtime sur listing_comments
 -- alter publication supabase_realtime add table public.listing_comments;
+
+-- 4. Redéployer confirm_market_sale (ajout DELETE market_follows à la vente)
+--    cf. bloc FUNCTION: confirm_market_sale ci-dessus
 

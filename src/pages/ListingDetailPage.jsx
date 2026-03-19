@@ -198,7 +198,7 @@ const OFFER_STATUS_STYLE = {
 
 // ── OfferRow ───────────────────────────────────────────────
 
-function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
+function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending, lang }) {
   const [loading,       setLoading]       = useState(false)
   const [spamReport,    setSpamReport]    = useState(false)
   const [confirmState,  setConfirmState]  = useState(null)
@@ -251,7 +251,7 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
   return (
     <div className={`${styles.offerRow} ${isMyOffer ? styles.offerMine : ''} ${isAccepted ? styles.offerAccepted : ''} ${isRejected ? styles.offerRejectedRow : ''} ${offer.status === OFFER_STATUS.BLOCKED ? styles.offerBlockedRow : ''}`}>
 
-      {/* Offer header: username + status */}
+      {/* Offer header: username + status + date */}
       <div className={styles.offerHeader}>
         {offer.profile?.username
           ? <Link to={`/players/${offer.profile.username}`} className={styles.offerUserLink}>{username}</Link>
@@ -263,6 +263,14 @@ function OfferRow({ offer, isOwner, listing, onRefresh, t, user, isPending }) {
         {offer.price != null && (
           <span className={`${styles.offerPrice} ${isAccepted ? styles.offerPriceAccepted : ''}`}>
             {formatGold(offer.price)} {t('market.gold')}
+          </span>
+        )}
+        {offer.createdAt && (
+          <span className={styles.offerDate}>
+            {new Date(offer.createdAt).toLocaleString(
+              lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+              { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
+            )}
           </span>
         )}
       </div>
@@ -580,7 +588,10 @@ export default function ListingDetailPage() {
           {/* Meta */}
           <div className={styles.meta}>
             <span className={styles.metaItem}>
-              {t('market.postedDate')} {new Date(listing.createdAt).toLocaleDateString()}
+              {t('market.postedDate')} {new Date(listing.createdAt).toLocaleDateString(
+                lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+                { day: 'numeric', month: 'long', year: 'numeric' }
+              )}
             </span>
             {!isSold && !isArchived && (
               <span className={styles.metaItem}>
@@ -744,6 +755,7 @@ export default function ListingDetailPage() {
                 t={t}
                 user={user}
                 isPending={isPending}
+                lang={lang}
               />
             ))}
           </div>

@@ -244,6 +244,7 @@
 .offerProfile { color: #60a5fa; font-weight: 600; flex: 1 0 auto; }
 .offerPrice   { color: #4ade80; font-weight: 700; white-space: nowrap; }
 .offerComment { color: #9ca3af; font-style: italic; font-size: 0.72rem; flex: 2; }
+.offerDate    { color: #6b7280; font-size: 0.72rem; white-space: nowrap; }
 
 .btnAcceptOffer {
   background: #22c55e22;
@@ -315,6 +316,7 @@
 
 .sellerName { font-size: 0.75rem; color: #6b7280; }
 .sellerName strong { color: #c9a84c; }
+.listingDate { font-size: 0.72rem; color: #4b5563; }
 
 .discord { font-size: 0.72rem; color: #7c83e0; }
 

@@ -490,6 +490,7 @@
 .offerUser     { font-size: 0.88rem; font-weight: 700; color: #60a5fa; }
 .offerUserLink { font-size: 0.88rem; font-weight: 700; color: #60a5fa; text-decoration: none; }
 .offerUserLink:hover { text-decoration: underline; }
+.offerDate     { font-size: 0.78rem; color: #6b7280; margin-left: auto; white-space: nowrap; }
 
 .offerStatusBadge {
   font-size: 0.65rem;
