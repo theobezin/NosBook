@@ -10,6 +10,7 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES } from '@/lib/mockData'
 import { SERVERS } from '@/lib/market'
+import { FAMILY_TAGS } from '@/lib/families'
 import Button from '@/components/ui/Button'
 import styles from './FamilyPage.module.css'
 
@@ -80,6 +81,12 @@ export default function FamilyPage() {
   // Feedback invitation
   const [invitedIds, setInvitedIds] = useState(new Set())
 
+  // Recrutement (tags, recruiting, min_level)
+  const [recruitTags,       setRecruitTags]       = useState([])
+  const [recruitOpen,       setRecruitOpen]       = useState(false)
+  const [recruitMinLevel,   setRecruitMinLevel]   = useState('')
+  const [recruitSaving,     setRecruitSaving]     = useState(false)
+
   // Confirmation
   const [confirm, setConfirm] = useState(null)
   const [editingLevel,  setEditingLevel]  = useState(false)
@@ -114,7 +121,7 @@ export default function FamilyPage() {
       const charIds = charList.map(c => c.id)
       const { data: mRows } = await supabase
         .from('family_members')
-        .select('id, character_id, role, family_id, families(id, name, level, server, head_id)')
+        .select('id, character_id, role, family_id, families(id, name, level, server, head_id, tags, recruiting, min_level)')
         .in('character_id', charIds)
       const map = {}
       ;(mRows ?? []).forEach(m => {
@@ -163,7 +170,12 @@ export default function FamilyPage() {
     setManagingCharId(charId)
     setEditingLevel(false)
     const mem = memberships[charId]
-    if (mem?.family) loadFamilyMembers(mem.family.id)
+    if (mem?.family) {
+      loadFamilyMembers(mem.family.id)
+      setRecruitTags(mem.family.tags ?? [])
+      setRecruitOpen(mem.family.recruiting ?? false)
+      setRecruitMinLevel(mem.family.min_level ?? '')
+    }
   }
 
   // ── Créer une famille ─────────────────────────────────────────
@@ -299,6 +311,18 @@ export default function FamilyPage() {
   }
 
   // ── Modifier le niveau ────────────────────────────────────────
+
+  async function handleSaveRecruiting(familyId) {
+    setRecruitSaving(true)
+    const minLvl = recruitMinLevel === '' ? null : Math.max(1, parseInt(recruitMinLevel, 10) || 1)
+    await supabase.from('families').update({
+      tags:       recruitTags,
+      recruiting: recruitOpen,
+      min_level:  minLvl,
+    }).eq('id', familyId)
+    setRecruitSaving(false)
+    await loadAll()
+  }
 
   async function handleSaveLevel(familyId) {
     const lvl = Math.min(30, Math.max(1, levelInput))
@@ -588,6 +612,65 @@ export default function FamilyPage() {
                           </>
                         )
                       })()}
+
+                      {/* Recrutement (tête uniquement) */}
+                      {isHead && (
+                        <div className={styles.recruitSection}>
+                          <h3 className={styles.panelTitle}>{t('family.recruitingTitle')}</h3>
+
+                          {/* Toggle recrutement ouvert */}
+                          <label className={styles.recruitToggle}>
+                            <input
+                              type="checkbox"
+                              checked={recruitOpen}
+                              onChange={e => setRecruitOpen(e.target.checked)}
+                            />
+                            {t('family.recruiting')}
+                          </label>
+
+                          {/* Niveau mini */}
+                          <div className={styles.recruitRow}>
+                            <span className={styles.recruitLabel}>{t('family.minLevelLabel')}</span>
+                            <input
+                              type="number"
+                              min="1"
+                              className={styles.levelInput}
+                              value={recruitMinLevel}
+                              onChange={e => setRecruitMinLevel(e.target.value)}
+                              placeholder={t('family.minLevelPh')}
+                              style={{ width: 70 }}
+                            />
+                          </div>
+
+                          {/* Tags */}
+                          <div className={styles.tagsGrid}>
+                            {FAMILY_TAGS.map(tag => (
+                              <label key={tag.slug} className={styles.tagCheckbox}>
+                                <input
+                                  type="checkbox"
+                                  checked={recruitTags.includes(tag.slug)}
+                                  onChange={e => {
+                                    setRecruitTags(prev =>
+                                      e.target.checked
+                                        ? [...prev, tag.slug]
+                                        : prev.filter(s => s !== tag.slug)
+                                    )
+                                  }}
+                                />
+                                {t(`family.tags.${tag.slug}`)}
+                              </label>
+                            ))}
+                          </div>
+
+                          <button
+                            className={styles.btnSaveLevel}
+                            onClick={() => handleSaveRecruiting(family.id)}
+                            disabled={recruitSaving}
+                          >
+                            {recruitSaving ? '…' : t('family.saveRecruiting')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })()}
