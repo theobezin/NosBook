@@ -294,7 +294,7 @@ create policy "raid_records_read_own"
 create policy "raid_records_admin_read"
   on public.raid_records for select to authenticated
   using (exists (
-    select 1 from public.profiles where id = auth.uid() and is_admin = true
+    select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true)
   ));
 
 create policy "raid_records_insert_own"
@@ -304,7 +304,7 @@ create policy "raid_records_insert_own"
 create policy "raid_records_admin_update"
   on public.raid_records for update to authenticated
   using (exists (
-    select 1 from public.profiles where id = auth.uid() and is_admin = true
+    select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true)
   ));
 
 -- ────────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ create policy "market_reports_select"
   on public.market_reports for select
   using (
     auth.uid() = reported_by
-    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+    or exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true))
   );
 
 create policy "market_reports_insert"
@@ -385,7 +385,7 @@ create policy "market_reports_insert"
 
 create policy "market_reports_admin_update"
   on public.market_reports for update
-  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+  using (exists (select 1 from public.profiles where id = auth.uid() and (is_admin = true or is_moderator = true)));
 
 -- ────────────────────────────────────────────────────────────
 -- RLS — market_follows

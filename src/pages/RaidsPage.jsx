@@ -579,9 +579,14 @@ export default function RaidsPage() {
           </div>
 
           {isAuthenticated ? (
-            <Button variant="solid" size="sm" onClick={() => setShowSubmit(true)}>
-              + {t('raids.submitBtn')}
-            </Button>
+            <>
+              <Button variant="solid" size="sm" onClick={() => setShowSubmit(true)}>
+                + {t('raids.submitBtn')}
+              </Button>
+              <Link to="/submissions">
+                <Button variant="ghost" size="sm">{t('raids.mySubmissions')}</Button>
+              </Link>
+            </>
           ) : (
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">{t('raids.submitBtn')}</Button>
