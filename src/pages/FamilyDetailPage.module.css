@@ -522,6 +522,64 @@
   justify-content: center;
 }
 
+/* ── Recrutement ─────────────────────────────── */
+.recruitToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.recruitRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 10px;
+}
+.recruitLabel {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.tagsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 12px;
+}
+.tagCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.tagCheckbox:has(input:checked) {
+  border-color: var(--gold-dim);
+  color: var(--gold-light);
+  background: var(--gold-faint);
+}
+.tagCheckbox input { display: none; }
+.btnSaveRecruit {
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--gold-faint);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold-light);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnSaveRecruit:hover:not(:disabled) { background: #c9a84c44; }
+.btnSaveRecruit:disabled { opacity: 0.5; cursor: default; }
+
 /* ── Skeleton ─────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: 200% 0 }

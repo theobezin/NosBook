@@ -129,19 +129,20 @@
 .cardHeader {
   padding: 14px 18px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   cursor: pointer;
-  flex-wrap: wrap;
 }
 .cardHeader:hover { background: rgba(255,255,255,0.02); }
 
 .cardLeft {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .familyName {
