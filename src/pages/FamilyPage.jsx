@@ -1,7 +1,7 @@
 // ============================================================
-// FamilyPage — Gestion de la famille par personnage
+// FamilyPage — Vue d'ensemble des affiliations de famille
 // Chaque personnage peut appartenir à une famille différente.
-// Rôles : Tête > Assistant > Gardien > Membre
+// La gestion complète se fait via /families/:id
 // ============================================================
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
@@ -51,8 +51,6 @@ function getLevelColor(level) {
   return (LEVEL_COLORS.find(b => level <= b.max) ?? LEVEL_COLORS[LEVEL_COLORS.length - 1]).color
 }
 
-const ROLE_ORDER = { head: 0, assistant: 1, guardian: 2, member: 3 }
-
 function RoleBadge({ role, t }) {
   const cls = { head: styles.roleHead, assistant: styles.roleAssistant, guardian: styles.roleGuardian, member: styles.roleMember }[role] ?? styles.roleMember
   return <span className={`${styles.roleBadge} ${cls}`}>{t(`family.roles.${role}`)}</span>
@@ -61,20 +59,18 @@ function RoleBadge({ role, t }) {
 // ── Page principale ───────────────────────────────────────────
 export default function FamilyPage() {
   const { user, isAuthenticated } = useAuth()
-  const { t, lang } = useLang()
+  const { t } = useLang()
 
   const [loading,       setLoading]       = useState(true)
-  const [characters,    setCharacters]    = useState([])      // personnages du joueur
-  const [memberships,   setMemberships]   = useState({})      // charId → { family, role, memberId }
-  const [managingCharId, setManagingCharId] = useState(null)  // charId dont on gère la famille
-  const [familyMembers, setFamilyMembers] = useState([])      // membres de la famille gérée
-  const [friends,       setFriends]       = useState([])      // amis sans famille
-  const [friendFamilyIds, setFriendFamilyIds] = useState(new Set()) // profile_ids avec famille
+  const [characters,    setCharacters]    = useState([])
+  const [memberships,   setMemberships]   = useState({})
 
   // Formulaire création
   const [createForCharId, setCreateForCharId] = useState(null)
   const [createName,      setCreateName]      = useState('')
   const [createServer,    setCreateServer]    = useState('undercity')
+  const [createDesc,      setCreateDesc]      = useState('')
+  const [createDiscord,   setCreateDiscord]   = useState('')
   const [createLoading,   setCreateLoading]   = useState(false)
   const [createErr,       setCreateErr]       = useState(null)
 
@@ -88,11 +84,8 @@ export default function FamilyPage() {
   const [recruitSaving,     setRecruitSaving]     = useState(false)
 
   // Confirmation
+  // Confirmation quitter
   const [confirm, setConfirm] = useState(null)
-  const [editingLevel,  setEditingLevel]  = useState(false)
-  const [levelInput,    setLevelInput]    = useState(1)
-
-  // ── Chargement ───────────────────────────────────────────────
 
   useEffect(() => {
     if (!hasSupabase || !user?.id) { setLoading(false); return }
@@ -101,13 +94,11 @@ export default function FamilyPage() {
 
   async function loadAll() {
     setLoading(true)
-    // 0. Serveur du profil (pré-remplissage du formulaire)
+
     const { data: prof } = await supabase
       .from('profiles').select('server').eq('id', user.id).single()
-    const profileServer = prof?.server ?? 'undercity'
-    setCreateServer(profileServer)
+    setCreateServer(prof?.server ?? 'undercity')
 
-    // 1. Personnages du joueur
     const { data: chars } = await supabase
       .from('characters')
       .select('id, name, class, level, hero_level')
@@ -116,7 +107,6 @@ export default function FamilyPage() {
     const charList = chars ?? []
     setCharacters(charList)
 
-    // 2. Memberships de ces personnages
     if (charList.length > 0) {
       const charIds = charList.map(c => c.id)
       const { data: mRows } = await supabase
@@ -130,8 +120,6 @@ export default function FamilyPage() {
       setMemberships(map)
     }
 
-    // 3. Amis et leurs memberships
-    await loadFriends()
     setLoading(false)
   }
 
@@ -183,7 +171,7 @@ export default function FamilyPage() {
   async function handleCreate(e) {
     e.preventDefault()
     const name   = createName.trim()
-    const charId = createForCharId // capture avant tout setState
+    const charId = createForCharId
     if (!name)   { setCreateErr(t('family.errNameRequired')); return }
     if (!charId) { setCreateErr(t('family.errCreate')); return }
     setCreateLoading(true)
@@ -191,7 +179,7 @@ export default function FamilyPage() {
 
     const { data: fam, error } = await supabase
       .from('families')
-      .insert({ name, server: createServer, head_id: user.id })
+      .insert({ name, server: createServer, head_id: user.id, description: createDesc.trim() || null, discord_url: createDiscord.trim() || null })
       .select()
       .single()
 
@@ -209,7 +197,6 @@ export default function FamilyPage() {
     })
 
     if (memErr) {
-      // Rollback : supprimer la famille créée
       await supabase.from('families').delete().eq('id', fam.id)
       setCreateErr(t('family.errCreate'))
       setCreateLoading(false)
@@ -217,33 +204,21 @@ export default function FamilyPage() {
     }
 
     setCreateName('')
+    setCreateDesc('')
+    setCreateDiscord('')
     setCreateForCharId(null)
     setCreateLoading(false)
     await loadAll()
-    setManagingCharId(charId)
-    await loadFamilyMembers(fam.id)
   }
-
-  // ── Quitter ───────────────────────────────────────────────────
 
   function askLeave(charId) {
     const mem = memberships[charId]
     if (!mem) return
-    if (mem.role === 'head' && familyMembers.length > 1) {
-      setCreateErr(t('family.leaveHeadError'))
-      return
-    }
     setConfirm({
       message: t('family.leaveConfirm'),
       onConfirm: async () => {
         setConfirm(null)
-        if (mem.role === 'head') {
-          await supabase.from('families').delete().eq('id', mem.family.id)
-        } else {
-          await supabase.from('family_members').delete().eq('id', mem.memberId)
-        }
-        setManagingCharId(null)
-        setFamilyMembers([])
+        await supabase.from('family_members').delete().eq('id', mem.memberId)
         await loadAll()
       },
     })
@@ -362,16 +337,14 @@ export default function FamilyPage() {
       ) : (
         <div className={styles.charList}>
           {characters.map(char => {
-            const mem       = memberships[char.id]
-            const charCls   = CLASSES[char.class] ?? CLASSES.Archer
-            const isManaged = managingCharId === char.id
-            const canManage = mem && (mem.role === 'head' || mem.role === 'assistant')
+            const mem        = memberships[char.id]
+            const charCls    = CLASSES[char.class] ?? CLASSES.Archer
             const levelColor = mem?.family ? getLevelColor(mem.family.level) : null
+            const canManage  = mem && (mem.role === 'head' || mem.role === 'assistant')
 
             return (
               <div key={char.id} className={styles.charSection}>
-                {/* Carte du personnage */}
-                <div className={`${styles.charCard} ${isManaged ? styles.charCardActive : ''}`}
+                <div className={`${styles.charCard} ${createForCharId === char.id ? styles.charCardActive : ''}`}
                   style={{ '--cls': charCls.color }}
                 >
                   <div className={styles.charAvatar} style={{ borderColor: charCls.color + '88' }}>
@@ -384,7 +357,10 @@ export default function FamilyPage() {
                     </span>
                     {mem?.family ? (
                       <span className={styles.charFamily} style={{ color: levelColor }}>
-                        🏠 {mem.family.name}
+                        🏠{' '}
+                        <Link to={`/families/${mem.family.id}`} className={styles.familyLink} style={{ color: levelColor }}>
+                          {mem.family.name}
+                        </Link>
                         <span className={styles.charFamilyLevel}>Niv.{mem.family.level}</span>
                         <span className={styles.serverTag}>{t(`raids.server.${mem.family.server}`)}</span>
                         <RoleBadge role={mem.role} t={t} />
@@ -397,16 +373,15 @@ export default function FamilyPage() {
                     {mem ? (
                       <>
                         {canManage && (
-                          <button
-                            className={`${styles.btnManage} ${isManaged ? styles.btnManageActive : ''}`}
-                            onClick={() => handleManage(char.id)}
-                          >
-                            {isManaged ? '▴' : t('family.manageBtn')}
+                          <Link to={`/families/${mem.family.id}`} className={styles.btnManage}>
+                            {t('family.manageBtn')}
+                          </Link>
+                        )}
+                        {mem.role !== 'head' && (
+                          <button className={styles.btnLeave} onClick={() => askLeave(char.id)}>
+                            {t('family.leaveBtn')}
                           </button>
                         )}
-                        <button className={styles.btnLeave} onClick={() => askLeave(char.id)}>
-                          {t('family.leaveBtn')}
-                        </button>
                       </>
                     ) : (
                       <button
@@ -447,10 +422,25 @@ export default function FamilyPage() {
                         {createLoading ? t('family.creating') : t('family.confirmCreate')}
                       </Button>
                     </div>
+                    <textarea
+                      className={styles.createTextarea}
+                      value={createDesc}
+                      onChange={e => setCreateDesc(e.target.value)}
+                      placeholder={t('family.descPh')}
+                      rows={2}
+                      maxLength={300}
+                      disabled={createLoading}
+                    />
+                    <input
+                      className={styles.createInput}
+                      value={createDiscord}
+                      onChange={e => setCreateDiscord(e.target.value)}
+                      placeholder={t('family.discordUrlPh')}
+                      disabled={createLoading}
+                    />
                     {createErr && <p className={styles.err}>{createErr}</p>}
                   </form>
                 )}
-
                 {/* Panneau de gestion */}
                 {isManaged && mem?.family && (() => {
                   const family      = mem.family

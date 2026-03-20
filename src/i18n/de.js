@@ -611,6 +611,8 @@ export default {
     you:             '(du)',
     leaveBtn:        'Familie verlassen',
     leaveConfirm:    'Diese Familie verlassen?',
+    dissolveBtn:     'Familie auflösen',
+    dissolveConfirm: 'Diese Familie auflösen? Alle Mitglieder werden entfernt.',
     leaveHeadError:  'Ernenne zuerst ein neues Oberhaupt.',
     errLeave:        'Fehler beim Verlassen. Bitte erneut versuchen.',
     kick:            'Rauswerfen',
@@ -645,6 +647,10 @@ export default {
       lol: 'LoL',
       hn:  'Außerhalb Nostale',
     },
+    descPh:        'Stellt eure Familie vor…',
+    discordUrlPh:  'https://discord.gg/…',
+    editInfoBtn:   'Bearbeiten',
+    saveInfo:      'Speichern',
   },
   familiesList: {
     title:           'Familien',
@@ -675,6 +681,13 @@ export default {
     errAlreadyInFamily: 'Dieser Charakter ist bereits in einer Familie.',
     errRequestSent:     'Eine Anfrage ist bereits ausstehend.',
     errJoinRequest:     'Fehler beim Senden. Bitte erneut versuchen.',
+  },
+  familyDetail: {
+    back:     '← Familien',
+    notFound: 'Familie nicht gefunden.',
+    head:     'Anführer',
+    manage:   'Verwalten',
+    discord:  'Discord beitreten',
   },
   raids: {
     badge:                 '⚔️ PVE-Rangliste · Speedrun',

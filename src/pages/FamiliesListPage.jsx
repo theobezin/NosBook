@@ -66,7 +66,9 @@ function FamilyCard({ family, t, lang, canManage, isMember, user, isAuthenticate
 
   const levelColor = getLevelColor(family.level)
   const memberCount = family.family_members?.length ?? 0
-  const headUsername = family.profiles?.username ?? '—'
+  const headUsername = family.profiles?.username ?? ''
+  const headMember   = family.family_members?.find(m => m.role === 'head')
+  const headCharName = headMember?.characters?.name ?? (headUsername || '—')
   const serverLabel = t(`raids.server.${family.server ?? 'undercity'}`)
   const tags = family.tags ?? []
 
@@ -148,9 +150,14 @@ function FamilyCard({ family, t, lang, canManage, isMember, user, isAuthenticate
       >
         <div className={styles.cardLeft}>
           <div className={styles.cardNameRow}>
-            <span className={styles.familyName} style={{ color: levelColor }}>
-              🏠 {family.name}
-            </span>
+           <Link
+            to={`/families/${family.id}`}
+            className={styles.familyName}
+            style={{ color: levelColor }}
+            onClick={e => e.stopPropagation()}
+          >
+            🏠 {family.name}
+          </Link>
             <span className={styles.familyLvl} style={{ borderColor: levelColor, color: levelColor }}>
               {t('family.level')} {family.level}
             </span>
@@ -179,11 +186,15 @@ function FamilyCard({ family, t, lang, canManage, isMember, user, isAuthenticate
             {t('familiesList.head')} :{' '}
             <Link to={`/players/${headUsername}`} className={styles.headLink}
               onClick={e => e.stopPropagation()}>
-              {headUsername}
+              {headCharName}
             </Link>
           </span>
           {canManage && (
-            <Link to="/family" className={styles.manageLink} onClick={e => e.stopPropagation()}>
+            <Link
+              to={`/families/${family.id}`}
+              className={styles.manageLink}
+              onClick={e => e.stopPropagation()}
+            >
               {t('familiesList.manageBtn')}
             </Link>
           )}
@@ -475,6 +486,7 @@ export default function FamiliesListPage() {
     supabase
       .from('families')
       .select('id, name, level, server, tags, recruiting, min_level, profiles!head_id(username), family_members(character_id)')
+      .select('id, name, level, server,  tags, recruiting, min_level, profiles!head_id(username), family_members(character_id, role, characters(name))')
       .order('level', { ascending: false })
       .order('created_at', { ascending: true })
       .then(({ data }) => {

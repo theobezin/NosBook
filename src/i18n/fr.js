@@ -611,6 +611,8 @@ export default {
     you:             '(toi)',
     leaveBtn:        'Quitter la famille',
     leaveConfirm:    'Quitter cette famille ?',
+    dissolveBtn:     'Dissoudre la famille',
+    dissolveConfirm: 'Dissoudre cette famille ? Tous les membres seront expulsés.',
     leaveHeadError:  'Nomme un nouveau chef avant de quitter.',
     errLeave:        'Erreur lors du départ. Réessaie.',
     kick:            'Expulser',
@@ -645,6 +647,10 @@ export default {
       lol: 'LoL',
       hn:  'Hors Nostale',
     },
+    descPh:        'Présente ta famille…',
+    discordUrlPh:  'https://discord.gg/…',
+    editInfoBtn:   'Modifier',
+    saveInfo:      'Enregistrer',
   },
   familiesList: {
     title:           'Familles',
@@ -675,6 +681,13 @@ export default {
     errAlreadyInFamily: 'Ce personnage est déjà dans une famille.',
     errRequestSent:     'Une demande est déjà en attente.',
     errJoinRequest:     'Erreur lors de l\'envoi. Réessaie.',
+  },
+  familyDetail: {
+    back:     '← Familles',
+    notFound: 'Famille introuvable.',
+    head:     'Chef',
+    manage:   'Gérer',
+    discord:  'Rejoindre le Discord',
   },
   raids: {
     badge:                 '⚔️ Classement PVE · Speedrun',

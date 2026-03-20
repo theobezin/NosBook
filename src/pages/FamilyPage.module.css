@@ -119,6 +119,12 @@
 }
 
 /* ── Boutons de la carte ──────────────────────── */
+.familyLink {
+  text-decoration: none;
+  font-weight: 600;
+}
+.familyLink:hover { text-decoration: underline; }
+
 .btnManage {
   background: rgba(201, 168, 76, 0.08);
   border: 1px solid rgba(201, 168, 76, 0.3);
@@ -128,8 +134,10 @@
   padding: 5px 12px;
   cursor: pointer;
   transition: background 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
 }
-.btnManage:hover, .btnManageActive {
+.btnManage:hover {
   background: rgba(201, 168, 76, 0.16);
 }
 
@@ -559,3 +567,69 @@
   gap: 10px;
   justify-content: center;
 }
+
+/* ── Description / Discord ────────────────────── */
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 4px;
+  border-top: 1px solid #2a2d38;
+}
+
+.familyDesc {
+  font-size: 0.84rem;
+  color: #a0a0c0;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.discordBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #5865f222;
+  border: 1px solid #5865f266;
+  border-radius: 8px;
+  color: #8fa0ff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  text-decoration: none;
+  width: fit-content;
+  transition: background 0.15s;
+}
+.discordBtn:hover { background: #5865f244; }
+
+.btnEditInfo {
+  background: transparent;
+  border: 1px solid #3a3d50;
+  border-radius: 6px;
+  color: #7a7a9a;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  width: fit-content;
+}
+.btnEditInfo:hover { color: #c9a84c; border-color: #c9a84c; }
+
+.infoActions {
+  display: flex;
+  gap: 8px;
+}
+
+.createTextarea {
+  width: 100%;
+  background: #111318;
+  border: 1px solid #3a3d50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0f0;
+  font-size: 0.88rem;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.createTextarea:focus { border-color: #4499ff; }

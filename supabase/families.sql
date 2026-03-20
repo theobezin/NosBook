@@ -268,3 +268,6 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.accept_join_request(uuid) TO authenticated;
+-- Migration : description et lien discord
+ALTER TABLE public.families ADD COLUMN IF NOT EXISTS description text;
+ALTER TABLE public.families ADD COLUMN IF NOT EXISTS discord_url text;
