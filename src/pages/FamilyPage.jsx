@@ -10,6 +10,7 @@ import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES } from '@/lib/mockData'
 import { SERVERS } from '@/lib/market'
+import { FAMILY_TAGS } from '@/lib/families'
 import Button from '@/components/ui/Button'
 import styles from './FamilyPage.module.css'
 
@@ -73,6 +74,16 @@ export default function FamilyPage() {
   const [createLoading,   setCreateLoading]   = useState(false)
   const [createErr,       setCreateErr]       = useState(null)
 
+  // Feedback invitation
+  const [invitedIds, setInvitedIds] = useState(new Set())
+
+  // Recrutement (tags, recruiting, min_level)
+  const [recruitTags,       setRecruitTags]       = useState([])
+  const [recruitOpen,       setRecruitOpen]       = useState(false)
+  const [recruitMinLevel,   setRecruitMinLevel]   = useState('')
+  const [recruitSaving,     setRecruitSaving]     = useState(false)
+
+  // Confirmation
   // Confirmation quitter
   const [confirm, setConfirm] = useState(null)
 
@@ -100,7 +111,7 @@ export default function FamilyPage() {
       const charIds = charList.map(c => c.id)
       const { data: mRows } = await supabase
         .from('family_members')
-        .select('id, character_id, role, family_id, families(id, name, level, server, head_id)')
+        .select('id, character_id, role, family_id, families(id, name, level, server, head_id, tags, recruiting, min_level)')
         .in('character_id', charIds)
       const map = {}
       ;(mRows ?? []).forEach(m => {
@@ -111,6 +122,51 @@ export default function FamilyPage() {
 
     setLoading(false)
   }
+
+  async function loadFriends() {
+    const { data: rows } = await supabase
+      .from('friendships')
+      .select('requester_id, addressee_id')
+      .eq('status', 'accepted')
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+
+    if (!rows || rows.length === 0) { setFriends([]); return }
+    const friendIds = rows.map(r => r.requester_id === user.id ? r.addressee_id : r.requester_id)
+
+    const [{ data: profiles }, { data: fmRows }] = await Promise.all([
+      supabase.from('profiles').select('id, username, avatar_url').in('id', friendIds),
+      // Compte par profile_id (au moins un personnage en famille = "a une famille")
+      supabase.from('family_members').select('profile_id').in('profile_id', friendIds),
+    ])
+    setFriendFamilyIds(new Set((fmRows ?? []).map(m => m.profile_id)))
+    setFriends(profiles ?? [])
+  }
+
+  async function loadFamilyMembers(familyId) {
+    const { data } = await supabase
+      .from('family_members')
+      .select('id, role, character_id, profile_id, joined_at, characters(name, class), profiles(username)')
+      .eq('family_id', familyId)
+      .order('joined_at')
+    setFamilyMembers(data ?? [])
+  }
+
+  // ── Sélection du panneau de gestion ──────────────────────────
+
+  function handleManage(charId) {
+    if (managingCharId === charId) { setManagingCharId(null); setEditingLevel(false); return }
+    setManagingCharId(charId)
+    setEditingLevel(false)
+    const mem = memberships[charId]
+    if (mem?.family) {
+      loadFamilyMembers(mem.family.id)
+      setRecruitTags(mem.family.tags ?? [])
+      setRecruitOpen(mem.family.recruiting ?? false)
+      setRecruitMinLevel(mem.family.min_level ?? '')
+    }
+  }
+
+  // ── Créer une famille ─────────────────────────────────────────
 
   async function handleCreate(e) {
     e.preventDefault()
@@ -166,6 +222,89 @@ export default function FamilyPage() {
         await loadAll()
       },
     })
+  }
+
+  // ── Expulser ──────────────────────────────────────────────────
+
+  function askKick(member) {
+    setConfirm({
+      message: t('family.kickConfirm'),
+      onConfirm: async () => {
+        setConfirm(null)
+        await supabase.from('family_members').delete().eq('id', member.id)
+        setFamilyMembers(prev => prev.filter(m => m.id !== member.id))
+      },
+    })
+  }
+
+  // ── Changer de rôle ───────────────────────────────────────────
+
+  async function handleChangeRole(member, newRole) {
+    const myMem = memberships[managingCharId]
+    if (newRole === 'head') {
+      await supabase.from('family_members').update({ role: 'head' }).eq('id', member.id)
+      await supabase.from('families').update({ head_id: member.profile_id }).eq('id', myMem.family.id)
+      await supabase.from('family_members').update({ role: 'assistant' }).eq('id', myMem.memberId)
+      await loadAll()
+      setManagingCharId(null)
+    } else {
+      await supabase.from('family_members').update({ role: newRole }).eq('id', member.id)
+      setFamilyMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m))
+    }
+  }
+
+  // ── Inviter un ami ────────────────────────────────────────────
+
+  async function handleInvite(friend) {
+    const myMem = memberships[managingCharId]
+    if (!myMem) return
+    await supabase.from('notifications').insert({
+      user_id:         friend.id,
+      type:            'family_invite',
+      content_preview: myMem.family.name,
+      related_user_id: user.id,
+      family_id:       myMem.family.id,
+    })
+    setInvitedIds(prev => new Set([...prev, friend.id]))
+  }
+
+  // ── Ajouter un propre personnage ──────────────────────────────
+
+  async function handleAddMyChar(char) {
+    const myMem = memberships[managingCharId]
+    if (!myMem) return
+    const { error } = await supabase.from('family_members').insert({
+      family_id:    myMem.family.id,
+      character_id: char.id,
+      profile_id:   user.id,
+      role:         'member',
+    })
+    if (!error) {
+      await loadAll()
+      await loadFamilyMembers(myMem.family.id)
+    }
+  }
+
+  // ── Modifier le niveau ────────────────────────────────────────
+
+  async function handleSaveRecruiting(familyId) {
+    setRecruitSaving(true)
+    const minLvl = recruitMinLevel === '' ? null : Math.max(1, parseInt(recruitMinLevel, 10) || 1)
+    await supabase.from('families').update({
+      tags:       recruitTags,
+      recruiting: recruitOpen,
+      min_level:  minLvl,
+    }).eq('id', familyId)
+    setRecruitSaving(false)
+    await loadAll()
+  }
+
+  async function handleSaveLevel(familyId) {
+    const lvl = Math.min(30, Math.max(1, levelInput))
+    await supabase.from('families').update({ level: lvl }).eq('id', familyId)
+    setEditingLevel(false)
+    await loadAll()
+    await loadFamilyMembers(familyId)
   }
 
   // ── Rendu ─────────────────────────────────────────────────────
@@ -302,6 +441,229 @@ export default function FamilyPage() {
                     {createErr && <p className={styles.err}>{createErr}</p>}
                   </form>
                 )}
+                {/* Panneau de gestion */}
+                {isManaged && mem?.family && (() => {
+                  const family      = mem.family
+                  const levelColor  = getLevelColor(family.level)
+                  const sortedMembers = [...familyMembers].sort(
+                    (a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9)
+                  )
+                  const invitableFriends = friends.filter(f => !friendFamilyIds.has(f.id))
+                  const isHead = mem.role === 'head'
+
+                  return (
+                    <div className={styles.managePanel}>
+                      {/* En-tête famille */}
+                      <div className={styles.familyHeader}>
+                        <span className={styles.familyName} style={{ color: levelColor }}>
+                          {family.name}
+                        </span>
+                        {isHead && editingLevel ? (
+                          <div className={styles.levelEditRow}>
+                            <input
+                              type="number" min="1" max="30"
+                              className={styles.levelInput}
+                              value={levelInput}
+                              onChange={e => setLevelInput(Number(e.target.value))}
+                            />
+                            <button className={styles.btnSaveLevel} onClick={() => handleSaveLevel(family.id)}>✓</button>
+                            <button className={styles.btnCancelLevel} onClick={() => setEditingLevel(false)}>✕</button>
+                          </div>
+                        ) : (
+                          <span
+                            className={styles.familyLvl}
+                            style={{ borderColor: levelColor, color: levelColor, cursor: isHead ? 'pointer' : 'default' }}
+                            title={isHead ? t('family.editLevelHint') : undefined}
+                            onClick={isHead ? () => { setLevelInput(family.level); setEditingLevel(true) } : undefined}
+                          >
+                            {t('family.level')} {family.level}{isHead && ' ✎'}
+                          </span>
+                        )}
+                        <span className={styles.serverTag}>{t(`raids.server.${family.server}`)}</span>
+                        <span className={styles.familyCount}>
+                          {familyMembers.length} {t('family.members')}
+                        </span>
+                      </div>
+
+                      {/* Membres */}
+                      <h3 className={styles.panelTitle}>{t('family.membersTitle')}</h3>
+                      <div className={styles.memberList}>
+                        {sortedMembers.map(m => {
+                          const isMe   = m.profile_id === user.id
+                          const charName = m.characters?.name ?? '—'
+                          const uname  = m.profiles?.username ?? '—'
+                          // Kick : chef peut kick tout sauf lui-même et la tête
+                          //        assistant peut kick gardien/membre seulement
+                          const canKick = !isMe && (
+                            (isHead && m.role !== 'head') ||
+                            (mem.role === 'assistant' && (m.role === 'guardian' || m.role === 'member'))
+                          )
+                          const actions = []
+                          if (!isMe && isHead && m.role !== 'head') {
+                            // Seule la tête peut promouvoir/rétrograder un assistant
+                            // Seule la tête peut promouvoir quelqu'un en assistant
+                            if (m.role !== 'assistant') actions.push({ label: t('family.makeAssistant'), role: 'assistant' })
+                            if (m.role !== 'guardian')  actions.push({ label: t('family.makeGuardian'),  role: 'guardian' })
+                            if (m.role !== 'member')    actions.push({ label: t('family.makeMember'),    role: 'member' })
+                            // Seul un assistant peut devenir tête (la tête devient alors assistant)
+                            if (m.role === 'assistant') actions.push({ label: t('family.makeHead'), role: 'head' })
+                          }
+                          // Assistant : peut gérer gardien ↔ membre uniquement (pas les autres assistants)
+                          if (!isMe && mem.role === 'assistant' && m.role === 'member')
+                            actions.push({ label: t('family.makeGuardian'), role: 'guardian' })
+                          if (!isMe && mem.role === 'assistant' && m.role === 'guardian')
+                            actions.push({ label: t('family.makeMember'), role: 'member' })
+
+                          return (
+                            <div key={m.id} className={styles.memberCard}>
+                              <div className={styles.memberInfo}>
+                                <div className={styles.memberNameRow}>
+                                  <span className={styles.memberName}>{charName}</span>
+                                  {isMe && <span className={styles.youBadge}>{t('family.you')}</span>}
+                                </div>
+                                <div className={styles.memberMeta}>
+                                  <Link to={`/players/${uname}`} className={styles.memberChar}>🗡 {uname}</Link>
+                                  <RoleBadge role={m.role} t={t} />
+                                  <span className={styles.joinedAt}>
+                                    {t('family.joinedAt')} {new Date(m.joined_at).toLocaleDateString(
+                                      lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US',
+                                      { day: 'numeric', month: 'short', year: 'numeric' }
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              {(actions.length > 0 || canKick) && (
+                                <div className={styles.memberActions}>
+                                  {actions.map(a => (
+                                    <button
+                                      key={a.role}
+                                      className={a.role === 'head' ? styles.btnMakeHead : styles.btnRole}
+                                      onClick={() => handleChangeRole(m, a.role)}
+                                    >{a.label}</button>
+                                  ))}
+                                  {canKick && (
+                                    <button className={styles.btnKick} onClick={() => askKick(m)}>
+                                      {t('family.kick')}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Invitations */}
+                      <h3 className={styles.panelTitle}>{t('family.inviteTitle')}</h3>
+                      {invitableFriends.length === 0 ? (
+                        <p className={styles.empty}>{t('family.inviteEmpty')}</p>
+                      ) : (
+                        <div className={styles.inviteList}>
+                          {invitableFriends.map(f => {
+                            const sent = invitedIds.has(f.id)
+                            return (
+                              <div key={f.id} className={styles.inviteRow}>
+                                <span className={styles.inviteName}>{f.username}</span>
+                                <button
+                                  className={sent ? styles.btnInvited : styles.btnInvite}
+                                  onClick={() => !sent && handleInvite(f)}
+                                  disabled={sent}
+                                >
+                                  {sent ? t('family.inviteSent') : t('family.inviteBtn')}
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Ajouter mes autres personnages */}
+                      {(() => {
+                        const myFreeChars = characters.filter(c => !memberships[c.id])
+                        if (myFreeChars.length === 0) return null
+                        return (
+                          <>
+                            <h3 className={styles.panelTitle}>{t('family.addMyCharsTitle')}</h3>
+                            <div className={styles.inviteList}>
+                              {myFreeChars.map(c => {
+                                const charCls = CLASSES[c.class] ?? CLASSES.Archer
+                                return (
+                                  <div key={c.id} className={styles.inviteRow}>
+                                    <span className={styles.inviteName} style={{ color: charCls.color }}>
+                                      {charCls.icon} {c.name}
+                                    </span>
+                                    <button className={styles.btnInvite} onClick={() => handleAddMyChar(c)}>
+                                      {t('family.addCharBtn')}
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </>
+                        )
+                      })()}
+
+                      {/* Recrutement (tête uniquement) */}
+                      {isHead && (
+                        <div className={styles.recruitSection}>
+                          <h3 className={styles.panelTitle}>{t('family.recruitingTitle')}</h3>
+
+                          {/* Toggle recrutement ouvert */}
+                          <label className={styles.recruitToggle}>
+                            <input
+                              type="checkbox"
+                              checked={recruitOpen}
+                              onChange={e => setRecruitOpen(e.target.checked)}
+                            />
+                            {t('family.recruiting')}
+                          </label>
+
+                          {/* Niveau mini */}
+                          <div className={styles.recruitRow}>
+                            <span className={styles.recruitLabel}>{t('family.minLevelLabel')}</span>
+                            <input
+                              type="number"
+                              min="1"
+                              className={styles.levelInput}
+                              value={recruitMinLevel}
+                              onChange={e => setRecruitMinLevel(e.target.value)}
+                              placeholder={t('family.minLevelPh')}
+                              style={{ width: 70 }}
+                            />
+                          </div>
+
+                          {/* Tags */}
+                          <div className={styles.tagsGrid}>
+                            {FAMILY_TAGS.map(tag => (
+                              <label key={tag.slug} className={styles.tagCheckbox}>
+                                <input
+                                  type="checkbox"
+                                  checked={recruitTags.includes(tag.slug)}
+                                  onChange={e => {
+                                    setRecruitTags(prev =>
+                                      e.target.checked
+                                        ? [...prev, tag.slug]
+                                        : prev.filter(s => s !== tag.slug)
+                                    )
+                                  }}
+                                />
+                                {t(`family.tags.${tag.slug}`)}
+                              </label>
+                            ))}
+                          </div>
+
+                          <button
+                            className={styles.btnSaveLevel}
+                            onClick={() => handleSaveRecruiting(family.id)}
+                            disabled={recruitSaving}
+                          >
+                            {recruitSaving ? '…' : t('family.saveRecruiting')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}

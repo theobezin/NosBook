@@ -475,6 +475,55 @@
 }
 .btnSaveLevel:hover { background: #c9a84c44; }
 
+/* ── Section recrutement ── */
+.recruitSection {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2d3a;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recruitToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #e8e0d0;
+  cursor: pointer;
+}
+.recruitToggle input { accent-color: #c9a84c; width: 16px; height: 16px; cursor: pointer; }
+.recruitRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.recruitLabel { font-size: 0.85rem; color: #9ca3af; }
+.tagsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tagCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #c9d1d9;
+  background: #1a1d27;
+  border: 1px solid #2a2d3a;
+  border-radius: 20px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tagCheckbox:has(input:checked) {
+  border-color: #c9a84c;
+  background: #c9a84c18;
+  color: #c9a84c;
+}
+.tagCheckbox input { accent-color: #c9a84c; display: none; }
+
 .btnCancelLevel {
   background: transparent;
   border: 1px solid #3a3d50;

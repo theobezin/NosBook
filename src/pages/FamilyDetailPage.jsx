@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { CLASSES } from '@/lib/mockData'
+import { FAMILY_TAGS } from '@/lib/families'
 import Button from '@/components/ui/Button'
 import styles from './FamilyDetailPage.module.css'
 
@@ -146,6 +147,12 @@ export default function FamilyDetailPage() {
   const [levelInput,     setLevelInput]     = useState(1)
   const [confirm,        setConfirm]        = useState(null)
 
+  // Recrutement
+  const [recruitTags,     setRecruitTags]     = useState([])
+  const [recruitOpen,     setRecruitOpen]     = useState(false)
+  const [recruitMinLevel, setRecruitMinLevel] = useState('')
+  const [recruitSaving,   setRecruitSaving]   = useState(false)
+
   // ── Chargement ────────────────────────────────────────────────
 
   useEffect(() => {
@@ -157,7 +164,7 @@ export default function FamilyDetailPage() {
     setLoading(true)
     const [{ data: fam, error }, { data: mems }] = await Promise.all([
       supabase.from('families')
-        .select('id, name, level, server, description, discord_url, created_at, head_id, profiles!head_id(username)')
+        .select('id, name, level, server, description, discord_url, created_at, head_id, tags, recruiting, min_level, profiles!head_id(username)')
         .eq('id', familyId)
         .single(),
       supabase.from('family_members')
@@ -165,7 +172,14 @@ export default function FamilyDetailPage() {
         .eq('family_id', familyId)
         .order('joined_at', { ascending: true }),
     ])
-    if (error || !fam) { setNotFound(true) } else { setFamily(fam) }
+    if (error || !fam) {
+      setNotFound(true)
+    } else {
+      setFamily(fam)
+      setRecruitTags(fam.tags ?? [])
+      setRecruitOpen(fam.recruiting ?? false)
+      setRecruitMinLevel(fam.min_level ?? '')
+    }
     setMembers(mems ?? [])
     setLoading(false)
   }
@@ -275,6 +289,17 @@ export default function FamilyDetailPage() {
     await supabase.from('families').update({ level: lvl }).eq('id', familyId)
     setEditingLevel(false)
     await loadFamily()
+  }
+
+  async function handleSaveRecruiting() {
+    setRecruitSaving(true)
+    const minLvl = recruitMinLevel === '' ? null : Math.max(1, parseInt(recruitMinLevel, 10) || 1)
+    await supabase.from('families').update({
+      tags:       recruitTags,
+      recruiting: recruitOpen,
+      min_level:  minLvl,
+    }).eq('id', familyId)
+    setRecruitSaving(false)
   }
 
   function askLeaveOrDissolve() {
@@ -508,6 +533,62 @@ export default function FamilyDetailPage() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Recrutement (tête uniquement) */}
+      {isHead && (
+        <div className={styles.manageSection}>
+          <h3 className={styles.panelTitle}>{t('family.recruitingTitle')}</h3>
+
+          <label className={styles.recruitToggle}>
+            <input
+              type="checkbox"
+              checked={recruitOpen}
+              onChange={e => setRecruitOpen(e.target.checked)}
+            />
+            {t('family.recruiting')}
+          </label>
+
+          <div className={styles.recruitRow}>
+            <span className={styles.recruitLabel}>{t('family.minLevelLabel')}</span>
+            <input
+              type="number"
+              min="1"
+              className={styles.levelInput}
+              value={recruitMinLevel}
+              onChange={e => setRecruitMinLevel(e.target.value)}
+              placeholder={t('family.minLevelPh')}
+              style={{ width: 70 }}
+            />
+          </div>
+
+          <div className={styles.tagsGrid}>
+            {FAMILY_TAGS.map(tag => (
+              <label key={tag.slug} className={styles.tagCheckbox}>
+                <input
+                  type="checkbox"
+                  checked={recruitTags.includes(tag.slug)}
+                  onChange={e => {
+                    setRecruitTags(prev =>
+                      e.target.checked
+                        ? [...prev, tag.slug]
+                        : prev.filter(s => s !== tag.slug)
+                    )
+                  }}
+                />
+                {t(`family.tags.${tag.slug}`)}
+              </label>
+            ))}
+          </div>
+
+          <button
+            className={styles.btnSaveRecruit}
+            onClick={handleSaveRecruiting}
+            disabled={recruitSaving}
+          >
+            {recruitSaving ? '…' : t('family.saveRecruiting')}
+          </button>
         </div>
       )}
 
