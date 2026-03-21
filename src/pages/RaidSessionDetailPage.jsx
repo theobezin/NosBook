@@ -40,11 +40,26 @@ function fmtDuration(minutes) {
 
 const SERVER_COLORS_DETAIL = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
 
+const OG_BASE    = 'https://nos-book.vercel.app/api/og-session'
+const OG_IMG_BASE = 'https://gdwdayxfblmfbjtxybtv.supabase.co/functions/v1/og-session'
+
 function SessionHeader({ session, raid, lang, t, regCount }) {
   const dateStr  = fmtDate(session.date, lang)
   const timeStr  = session.time ? session.time.slice(0, 5) : t('session.noTime')
   const endTime  = computeEndTime(session.time, session.duration_minutes)
   const duration = fmtDuration(session.duration_minutes)
+  const [copied, setCopied]   = useState(false)
+  const [sharing, setSharing] = useState(false)
+
+  const handleShare = async () => {
+    setSharing(true)
+    // Pré-génère l'image en Storage pour que Discord la fetche instantanément
+    await fetch(`${OG_IMG_BASE}?id=${session.id}&img=1`).catch(() => {})
+    await navigator.clipboard.writeText(`${OG_BASE}?id=${session.id}`)
+    setSharing(false)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className={styles.header} style={{ '--raid-color': raid.color }}>
@@ -85,6 +100,9 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
           <span className={styles.badge}>🏴 {session.teams.length} {t('detail.teams')}</span>
         )}
       </div>
+      <button className={styles.shareBtn} onClick={handleShare} disabled={sharing}>
+        {sharing ? '⏳' : copied ? '✓' : '🔗'} {sharing ? t('session.shareGenerating') : copied ? t('session.shareCopied') : t('session.shareBtn')}
+      </button>
     </div>
   )
 }
