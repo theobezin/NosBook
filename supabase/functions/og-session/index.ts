@@ -140,7 +140,7 @@ async function generateImage(
   session:  Record<string, unknown>,
   raid:     { name: string; color: string; icon: string; hc: boolean },
   regCount: number,
-  players:  { name: string; sp: string | null }[],
+  players:  { name: string; sp: string | null; team: string }[],
 ): Promise<Uint8Array> {
   await Promise.all([loadFonts(), ensureWasm()])
 
@@ -153,24 +153,43 @@ async function generateImage(
   const leader      = session.leader_username as string | null
   const raidColor   = raid.color
 
-  // Split players into rows of 7 (no flexWrap in Satori)
-  const shown   = players.slice(0, 14)
-  const row1    = shown.slice(0, 7)
-  const row2    = shown.slice(7, 14)
-  const hasRows = shown.length > 0
+  const PER_ROW = 10
+
+  // Group by team preserving insertion order
+  const teamMap = new Map<string, { name: string; sp: string | null }[]>()
+  for (const p of players) {
+    if (!teamMap.has(p.team)) teamMap.set(p.team, [])
+    teamMap.get(p.team)!.push({ name: p.name, sp: p.sp })
+  }
+  const multiTeam = teamMap.size > 1
+
+  // Build display rows: each team split into chunks of PER_ROW, cap total at 4 rows
+  type DisplayRow = { label: string | null; ps: { name: string; sp: string | null }[] }
+  const displayRows: DisplayRow[] = []
+  for (const [teamName, ps] of teamMap) {
+    for (let i = 0; i < ps.length; i += PER_ROW) {
+      if (displayRows.length >= 4) break
+      displayRows.push({ label: multiTeam && i === 0 ? teamName : null, ps: ps.slice(i, i + PER_ROW) })
+    }
+    if (displayRows.length >= 4) break
+  }
+  const hasRows = displayRows.length > 0
 
   function playerChip(p: { name: string; sp: string | null }): SatoriEl {
-    return el('div', { style: { display: 'flex', alignItems: 'center', gap: '5px', marginRight: '12px' } },
+    return el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px' } },
       p.sp
-        ? el('img', { src: p.sp, width: 32, height: 32, style: { borderRadius: '5px' } })
-        : el('div', { style: { display: 'flex', width: '32px', height: '32px', background: '#1a1d2a', borderRadius: '5px' } }),
-      el('span', { style: { color: '#c0c0d8', fontSize: '18px' } }, p.name),
+        ? el('img', { src: p.sp, width: 26, height: 26, style: { borderRadius: '4px' } })
+        : el('div', { style: { display: 'flex', width: '26px', height: '26px', background: '#1a1d2a', borderRadius: '4px' } }),
+      el('span', { style: { color: '#c0c0d8', fontSize: '15px' } }, p.name),
     )
   }
 
-  function playerRow(ps: { name: string; sp: string | null }[]): SatoriEl {
+  function displayRow(row: DisplayRow): SatoriEl {
     return el('div', { style: { display: 'flex', alignItems: 'center' } },
-      ...ps.map(playerChip),
+      row.label
+        ? el('span', { style: { color: '#555570', fontSize: '13px', width: '62px', flexShrink: '0' } }, row.label)
+        : multiTeam ? el('div', { style: { display: 'flex', width: '62px', flexShrink: '0' } }) : null,
+      ...row.ps.map(playerChip),
     )
   }
 
@@ -185,15 +204,15 @@ async function generateImage(
     },
   },
     // Top accent bar
-    el('div', { style: { display: 'flex', height: '8px', background: raidColor, width: '100%' } }),
+    el('div', { style: { display: 'flex', height: '6px', background: raidColor, width: '100%' } }),
 
-    // Main content row
+    // Main content row — padding réduit pour laisser plus de place aux joueurs
     el('div', {
       style: {
         display:    'flex',
         flex:       '1',
-        padding:    '32px 56px',
-        gap:        '44px',
+        padding:    '18px 48px',
+        gap:        '36px',
         alignItems: 'center',
       },
     },
@@ -203,16 +222,16 @@ async function generateImage(
           display:       'flex',
           flexDirection: 'column',
           alignItems:    'center',
-          gap:           '12px',
-          width:         '190px',
+          gap:           '10px',
+          width:         '160px',
           flexShrink:    '0',
         },
       },
         el('img', {
           src:    raidIconUrl,
-          width:  170,
-          height: 170,
-          style:  { borderRadius: '20px', border: `3px solid ${raidColor}55` },
+          width:  140,
+          height: 140,
+          style:  { borderRadius: '16px', border: `3px solid ${raidColor}55` },
         }),
         raid.hc
           ? el('div', {
@@ -221,17 +240,17 @@ async function generateImage(
                 background:   '#ff475722',
                 border:       '1px solid #ff475766',
                 borderRadius: '6px',
-                padding:      '4px 12px',
+                padding:      '3px 10px',
               },
             },
-              el('span', { style: { color: '#ff4757', fontSize: '16px', fontWeight: 700, letterSpacing: '2px' } }, 'HARDCORE'),
+              el('span', { style: { color: '#ff4757', fontSize: '13px', fontWeight: 700, letterSpacing: '2px' } }, 'HARDCORE'),
             )
           : null,
-        el('span', { style: { color: '#c9a96e', fontSize: '16px', fontWeight: 700, letterSpacing: '4px' } }, 'NOSBOOK'),
+        el('span', { style: { color: '#c9a96e', fontSize: '14px', fontWeight: 700, letterSpacing: '4px' } }, 'NOSBOOK'),
       ),
 
       // Vertical divider
-      el('div', { style: { display: 'flex', width: '2px', alignSelf: 'stretch', background: '#1e2230', margin: '12px 0' } }),
+      el('div', { style: { display: 'flex', width: '2px', alignSelf: 'stretch', background: '#1e2230', margin: '8px 0' } }),
 
       // Right: session info
       el('div', {
@@ -239,66 +258,47 @@ async function generateImage(
           display:        'flex',
           flexDirection:  'column',
           flex:           '1',
-          gap:            '10px',
+          gap:            '7px',
           justifyContent: 'center',
         },
       },
-        // Raid name
-        el('span', {
-          style: { color: raidColor, fontSize: '72px', fontWeight: 700, lineHeight: '1.0' },
-        }, raid.name),
-
-        // Server + min level
-        el('div', { style: { display: 'flex', gap: '12px', alignItems: 'center', marginTop: '4px' } },
+        el('span', { style: { color: raidColor, fontSize: '58px', fontWeight: 700, lineHeight: '1.0' } }, raid.name),
+        el('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } },
           el('span', {
             style: {
-              color:        serverColor,
-              fontSize:     '26px',
-              border:       `1px solid ${serverColor}55`,
-              borderRadius: '30px',
-              padding:      '3px 16px',
+              color: serverColor, fontSize: '22px',
+              border: `1px solid ${serverColor}55`, borderRadius: '30px', padding: '2px 14px',
             },
           }, serverLabel),
-          minLevel > 0
-            ? el('span', { style: { color: '#888899', fontSize: '26px' } }, `HN ${minLevel}+`)
-            : null,
+          minLevel > 0 ? el('span', { style: { color: '#888899', fontSize: '22px' } }, `HN ${minLevel}+`) : null,
         ),
-
-        // Separator
-        el('div', { style: { display: 'flex', width: '80px', height: '3px', background: raidColor, margin: '6px 0' } }),
-
-        // Date
-        el('span', { style: { color: '#d0d0e0', fontSize: '38px' } }, dateStr),
-
-        // Leader + spots on same line
-        el('div', { style: { display: 'flex', gap: '24px', alignItems: 'center' } },
-          leader
-            ? el('span', { style: { color: '#b0b0c8', fontSize: '28px' } }, `Chef : ${leader}`)
-            : null,
-          el('span', { style: { color: '#d0d0e0', fontSize: '28px' } }, `${regCount} / ${maxPlayers} inscrits`),
+        el('div', { style: { display: 'flex', width: '70px', height: '3px', background: raidColor } }),
+        el('span', { style: { color: '#d0d0e0', fontSize: '30px' } }, dateStr),
+        el('div', { style: { display: 'flex', gap: '20px', alignItems: 'center' } },
+          leader ? el('span', { style: { color: '#b0b0c8', fontSize: '22px' } }, `Chef : ${leader}`) : null,
+          el('span', { style: { color: '#d0d0e0', fontSize: '22px' } }, `${regCount} / ${maxPlayers} inscrits`),
         ),
       ),
     ),
 
-    // Participants section (non-bench players with their SP)
+    // Participants section — par équipe
     hasRows
       ? el('div', {
           style: {
             display:       'flex',
             flexDirection: 'column',
-            padding:       '12px 56px',
-            gap:           '8px',
+            padding:       '10px 48px',
+            gap:           '6px',
             borderTop:     '1px solid #181b24',
             background:    '#0b0d13',
           },
         },
-          playerRow(row1),
-          row2.length > 0 ? playerRow(row2) : null,
+          ...displayRows.map(row => displayRow(row)),
         )
       : null,
 
     // Bottom accent bar
-    el('div', { style: { display: 'flex', height: '8px', background: raidColor, width: '100%' } }),
+    el('div', { style: { display: 'flex', height: '6px', background: raidColor, width: '100%' } }),
   )
 
   const svg = await satori(image, {
@@ -343,7 +343,7 @@ Deno.serve(async (req: Request) => {
   // Only non-bench players (team_name !== null) for the image
   const players = ((regs ?? []) as Reg[])
     .filter(r => r.team_name !== null && r.player_username)
-    .map(r => ({ name: r.player_username as string, sp: r.sp_card_icon ?? null }))
+    .map(r => ({ name: r.player_username as string, sp: r.sp_card_icon ?? null, team: r.team_name as string }))
   const raid = getRaid(session.raid_slug)
 
   const supabaseUrl   = Deno.env.get('SUPABASE_URL')!
@@ -353,15 +353,7 @@ Deno.serve(async (req: Request) => {
   // ── Serve PNG image — génère + stocke en Storage ─────────────────────────
   if (img === '1') {
     try {
-      // Serve from Storage if already cached
-      const head = await fetch(storagePngUrl, { method: 'HEAD' })
-      if (head.ok) {
-        return new Response(null, {
-          status: 302,
-          headers: { 'Location': storagePngUrl, 'Cache-Control': 'public, max-age=3600' },
-        })
-      }
-      // Generate, upload to Storage, return PNG
+      // Always regenerate (frais à chaque Partager) + upload en Storage pour Discord
       await supabase.storage.createBucket('og-images', { public: true }).catch(() => {})
       const png = await generateImage(session, raid, regCount, players)
       await supabase.storage.from('og-images').upload(objectPath, png, {
