@@ -137,11 +137,10 @@ async function loadFonts() {
 }
 
 async function generateImage(
-  session:     Record<string, unknown>,
-  raid:        { name: string; color: string; icon: string; hc: boolean },
-  regCount:    number,
-  spIcons:     string[],
-  playerNames: string[],
+  session:  Record<string, unknown>,
+  raid:     { name: string; color: string; icon: string; hc: boolean },
+  regCount: number,
+  players:  { name: string; sp: string | null }[],
 ): Promise<Uint8Array> {
   await Promise.all([loadFonts(), ensureWasm()])
 
@@ -153,8 +152,27 @@ async function generateImage(
   const maxPlayers  = session.max_players as number
   const leader      = session.leader_username as string | null
   const raidColor   = raid.color
-  const hasSP       = spIcons.length > 0
-  const hasPlayers  = playerNames.length > 0
+
+  // Split players into rows of 7 (no flexWrap in Satori)
+  const shown   = players.slice(0, 14)
+  const row1    = shown.slice(0, 7)
+  const row2    = shown.slice(7, 14)
+  const hasRows = shown.length > 0
+
+  function playerChip(p: { name: string; sp: string | null }): SatoriEl {
+    return el('div', { style: { display: 'flex', alignItems: 'center', gap: '5px', marginRight: '12px' } },
+      p.sp
+        ? el('img', { src: p.sp, width: 32, height: 32, style: { borderRadius: '5px' } })
+        : el('div', { style: { display: 'flex', width: '32px', height: '32px', background: '#1a1d2a', borderRadius: '5px' } }),
+      el('span', { style: { color: '#c0c0d8', fontSize: '18px' } }, p.name),
+    )
+  }
+
+  function playerRow(ps: { name: string; sp: string | null }[]): SatoriEl {
+    return el('div', { style: { display: 'flex', alignItems: 'center' } },
+      ...ps.map(playerChip),
+    )
+  }
 
   const image = el('div', {
     style: {
@@ -262,35 +280,20 @@ async function generateImage(
       ),
     ),
 
-    // Participants section
-    (hasPlayers || hasSP)
+    // Participants section (non-bench players with their SP)
+    hasRows
       ? el('div', {
           style: {
             display:       'flex',
             flexDirection: 'column',
-            padding:       '14px 56px',
-            gap:           '10px',
+            padding:       '12px 56px',
+            gap:           '8px',
             borderTop:     '1px solid #181b24',
             background:    '#0b0d13',
           },
         },
-          // Player names — simple text (no flexWrap, much faster in Satori)
-          hasPlayers
-            ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-                el('span', { style: { color: '#555570', fontSize: '20px' } }, 'Inscrits :'),
-                el('span', { style: { color: '#c0c0d8', fontSize: '20px' } }, playerNames.slice(0, 14).join('  ·  ')),
-              )
-            : null,
-
-          // SP icons
-          hasSP
-            ? el('div', { style: { display: 'flex', gap: '7px', alignItems: 'center' } },
-                el('span', { style: { color: '#44445a', fontSize: '18px', marginRight: '4px' } }, 'SP :'),
-                ...spIcons.slice(0, 16).map(src =>
-                  el('img', { src, width: 40, height: 40, style: { borderRadius: '6px' } }),
-                ),
-              )
-            : null,
+          playerRow(row1),
+          row2.length > 0 ? playerRow(row2) : null,
         )
       : null,
 
@@ -329,16 +332,19 @@ Deno.serve(async (req: Request) => {
     supabase.from('raid_sessions').select('*').eq('id', id).single(),
     supabase
       .from('raid_session_registrations')
-      .select('sp_card_icon, player_username', { count: 'exact' })
+      .select('sp_card_icon, player_username, team_name', { count: 'exact' })
       .eq('session_id', id),
   ])
 
   if (!session) return new Response('Session not found', { status: 404 })
 
-  const regCount    = count ?? 0
-  const spIcons     = [...new Set((regs ?? []).map((r: Record<string, string>) => r.sp_card_icon).filter(Boolean))] as string[]
-  const playerNames = [...new Set((regs ?? []).map((r: Record<string, string>) => r.player_username).filter(Boolean))] as string[]
-  const raid        = getRaid(session.raid_slug)
+  type Reg = { sp_card_icon: string | null; player_username: string | null; team_name: string | null }
+  const regCount = count ?? 0
+  // Only non-bench players (team_name !== null) for the image
+  const players = ((regs ?? []) as Reg[])
+    .filter(r => r.team_name !== null && r.player_username)
+    .map(r => ({ name: r.player_username as string, sp: r.sp_card_icon ?? null }))
+  const raid = getRaid(session.raid_slug)
 
   const supabaseUrl   = Deno.env.get('SUPABASE_URL')!
   const objectPath    = `${id}.png`
@@ -357,7 +363,7 @@ Deno.serve(async (req: Request) => {
       }
       // Generate, upload to Storage, return PNG
       await supabase.storage.createBucket('og-images', { public: true }).catch(() => {})
-      const png = await generateImage(session, raid, regCount, spIcons, playerNames)
+      const png = await generateImage(session, raid, regCount, players)
       await supabase.storage.from('og-images').upload(objectPath, png, {
         contentType: 'image/png', cacheControl: '3600', upsert: true,
       }).catch(() => {})
