@@ -153,7 +153,8 @@ async function generateImage(
   const leader      = session.leader_username as string | null
   const raidColor   = raid.color
 
-  const PER_ROW = 10
+  // 5 players per row → 4 rows max = 20 players total
+  const PER_ROW = 5
 
   // Group by team preserving insertion order
   const teamMap = new Map<string, { name: string; sp: string | null }[]>()
@@ -176,20 +177,27 @@ async function generateImage(
   const hasRows = displayRows.length > 0
 
   function playerChip(p: { name: string; sp: string | null }): SatoriEl {
-    return el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px' } },
+    return el('div', {
+      style: {
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: '6px', width: '200px',
+      },
+    },
       p.sp
-        ? el('img', { src: p.sp, width: 26, height: 26, style: { borderRadius: '4px' } })
-        : el('div', { style: { display: 'flex', width: '26px', height: '26px', background: '#1a1d2a', borderRadius: '4px' } }),
-      el('span', { style: { color: '#c0c0d8', fontSize: '15px' } }, p.name),
+        ? el('img', { src: p.sp, width: 64, height: 64, style: { borderRadius: '8px' } })
+        : el('div', { style: { display: 'flex', width: '64px', height: '64px', background: '#1a1d2a', borderRadius: '8px' } }),
+      el('span', { style: { color: '#d0d0e8', fontSize: '17px', textAlign: 'center', maxWidth: '190px' } }, p.name),
     )
   }
 
   function displayRow(row: DisplayRow): SatoriEl {
-    return el('div', { style: { display: 'flex', alignItems: 'center' } },
+    return el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
       row.label
-        ? el('span', { style: { color: '#555570', fontSize: '13px', width: '62px', flexShrink: '0' } }, row.label)
-        : multiTeam ? el('div', { style: { display: 'flex', width: '62px', flexShrink: '0' } }) : null,
-      ...row.ps.map(playerChip),
+        ? el('span', { style: { color: `${raidColor}cc`, fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' } }, row.label)
+        : null,
+      el('div', { style: { display: 'flex', gap: '8px' } },
+        ...row.ps.map(playerChip),
+      ),
     )
   }
 
@@ -206,96 +214,97 @@ async function generateImage(
     // Top accent bar
     el('div', { style: { display: 'flex', height: '6px', background: raidColor, width: '100%' } }),
 
-    // Main content row — padding réduit pour laisser plus de place aux joueurs
+    // ── Compact top banner ─────────────────────────────────────────────────────
     el('div', {
       style: {
         display:    'flex',
-        flex:       '1',
-        padding:    '18px 48px',
-        gap:        '36px',
         alignItems: 'center',
+        gap:        '24px',
+        padding:    '14px 48px',
+        background: '#0b0d13',
       },
     },
-      // Left: icon + branding
-      el('div', {
-        style: {
-          display:       'flex',
-          flexDirection: 'column',
-          alignItems:    'center',
-          gap:           '10px',
-          width:         '160px',
-          flexShrink:    '0',
-        },
-      },
-        el('img', {
-          src:    raidIconUrl,
-          width:  140,
-          height: 140,
-          style:  { borderRadius: '16px', border: `3px solid ${raidColor}55` },
-        }),
-        raid.hc
-          ? el('div', {
-              style: {
-                display:      'flex',
-                background:   '#ff475722',
-                border:       '1px solid #ff475766',
-                borderRadius: '6px',
-                padding:      '3px 10px',
-              },
-            },
-              el('span', { style: { color: '#ff4757', fontSize: '13px', fontWeight: 700, letterSpacing: '2px' } }, 'HARDCORE'),
-            )
-          : null,
-        el('span', { style: { color: '#c9a96e', fontSize: '14px', fontWeight: 700, letterSpacing: '4px' } }, 'NOSBOOK'),
-      ),
+      // Small raid icon
+      el('img', {
+        src:    raidIconUrl,
+        width:  80,
+        height: 80,
+        style:  { borderRadius: '10px', border: `2px solid ${raidColor}55`, flexShrink: '0' },
+      }),
 
       // Vertical divider
-      el('div', { style: { display: 'flex', width: '2px', alignSelf: 'stretch', background: '#1e2230', margin: '8px 0' } }),
+      el('div', { style: { display: 'flex', width: '2px', height: '70px', background: `${raidColor}55`, flexShrink: '0' } }),
 
-      // Right: session info
-      el('div', {
-        style: {
-          display:        'flex',
-          flexDirection:  'column',
-          flex:           '1',
-          gap:            '7px',
-          justifyContent: 'center',
-        },
-      },
-        el('span', { style: { color: raidColor, fontSize: '58px', fontWeight: 700, lineHeight: '1.0' } }, raid.name),
+      // Raid name + HC badge
+      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: '0' } },
+        el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+          el('span', { style: { color: raidColor, fontSize: '40px', fontWeight: 700, lineHeight: '1.0' } }, raid.name),
+          raid.hc
+            ? el('div', {
+                style: {
+                  display: 'flex', background: '#ff475722', border: '1px solid #ff475766',
+                  borderRadius: '6px', padding: '3px 8px', alignSelf: 'center',
+                },
+              },
+                el('span', { style: { color: '#ff4757', fontSize: '12px', fontWeight: 700, letterSpacing: '2px' } }, 'HC'),
+              )
+            : null,
+        ),
         el('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } },
           el('span', {
             style: {
-              color: serverColor, fontSize: '22px',
-              border: `1px solid ${serverColor}55`, borderRadius: '30px', padding: '2px 14px',
+              color: serverColor, fontSize: '16px',
+              border: `1px solid ${serverColor}55`, borderRadius: '20px', padding: '1px 10px',
             },
           }, serverLabel),
-          minLevel > 0 ? el('span', { style: { color: '#888899', fontSize: '22px' } }, `HN ${minLevel}+`) : null,
+          minLevel > 0 ? el('span', { style: { color: '#888899', fontSize: '16px' } }, `HN ${minLevel}+`) : null,
         ),
-        el('div', { style: { display: 'flex', width: '70px', height: '3px', background: raidColor } }),
-        el('span', { style: { color: '#d0d0e0', fontSize: '30px' } }, dateStr),
-        el('div', { style: { display: 'flex', gap: '20px', alignItems: 'center' } },
-          leader ? el('span', { style: { color: '#b0b0c8', fontSize: '22px' } }, `Chef : ${leader}`) : null,
-          el('span', { style: { color: '#d0d0e0', fontSize: '22px' } }, `${regCount} / ${maxPlayers} inscrits`),
+      ),
+
+      // Spacer
+      el('div', { style: { display: 'flex', flex: '1' } }),
+
+      // Date + leader + spots
+      el('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' } },
+        el('span', { style: { color: '#d0d0e0', fontSize: '20px' } }, dateStr),
+        el('div', { style: { display: 'flex', gap: '16px', alignItems: 'center' } },
+          leader ? el('span', { style: { color: '#a0a0b8', fontSize: '16px' } }, `Chef : ${leader}`) : null,
+          el('span', {
+            style: {
+              color: '#d0d0e0', fontSize: '16px',
+              background: `${raidColor}22`, borderRadius: '20px', padding: '2px 12px',
+              border: `1px solid ${raidColor}44`,
+            },
+          }, `${regCount} / ${maxPlayers} inscrits`),
         ),
+        el('span', { style: { color: '#c9a96e', fontSize: '12px', fontWeight: 700, letterSpacing: '4px' } }, 'NOSBOOK'),
       ),
     ),
 
-    // Participants section — par équipe
+    // Divider
+    el('div', { style: { display: 'flex', height: '1px', background: '#1e2230', width: '100%' } }),
+
+    // ── Large players section ──────────────────────────────────────────────────
     hasRows
       ? el('div', {
           style: {
-            display:       'flex',
-            flexDirection: 'column',
-            padding:       '10px 48px',
-            gap:           '6px',
-            borderTop:     '1px solid #181b24',
-            background:    '#0b0d13',
+            display:        'flex',
+            flex:           '1',
+            flexDirection:  'column',
+            justifyContent: 'center',
+            padding:        '16px 48px',
+            gap:            '20px',
           },
         },
           ...displayRows.map(row => displayRow(row)),
         )
-      : null,
+      : el('div', {
+          style: {
+            display: 'flex', flex: '1', alignItems: 'center', justifyContent: 'center',
+          },
+        },
+          el('span', { style: { color: '#444460', fontSize: '22px' } }, 'Aucun inscrit pour le moment'),
+        ),
 
     // Bottom accent bar
     el('div', { style: { display: 'flex', height: '6px', background: raidColor, width: '100%' } }),
@@ -332,18 +341,18 @@ Deno.serve(async (req: Request) => {
     supabase.from('raid_sessions').select('*').eq('id', id).single(),
     supabase
       .from('raid_session_registrations')
-      .select('sp_card_icon, player_username, team_name', { count: 'exact' })
+      .select('sp_card_icon, character_snapshot, team_name', { count: 'exact' })
       .eq('session_id', id),
   ])
 
   if (!session) return new Response('Session not found', { status: 404 })
 
-  type Reg = { sp_card_icon: string | null; player_username: string | null; team_name: string | null }
+  type Reg = { sp_card_icon: string | null; character_snapshot: { name: string } | null; team_name: string | null }
   const regCount = count ?? 0
   // Only non-bench players (team_name !== null) for the image
   const players = ((regs ?? []) as Reg[])
-    .filter(r => r.team_name !== null && r.player_username)
-    .map(r => ({ name: r.player_username as string, sp: r.sp_card_icon ?? null, team: r.team_name as string }))
+    .filter(r => r.team_name !== null && r.character_snapshot?.name)
+    .map(r => ({ name: r.character_snapshot!.name, sp: r.sp_card_icon ?? null, team: r.team_name as string }))
   const raid = getRaid(session.raid_slug)
 
   const supabaseUrl   = Deno.env.get('SUPABASE_URL')!
