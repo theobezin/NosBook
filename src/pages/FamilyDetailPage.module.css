@@ -353,6 +353,47 @@
 }
 .btnInvite:hover { background: rgba(201,168,76,0.12); }
 
+/* ── Demandes d'adhésion ──────────────────────────── */
+.requestBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #c9a84c;
+  color: #0b0d13;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.joinRequestRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.joinRequestInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.joinRequestPlayer {
+  font-size: 0.75rem;
+  color: #6a6a8a;
+}
+
+.joinRequestActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .btnInvited {
   background: rgba(93,200,93,0.1);
   border: 1px solid rgba(93,200,93,0.3);
@@ -456,6 +497,68 @@
   box-sizing: border-box;
 }
 .createInput:focus { border-color: #4499ff; }
+
+/* ── Rejoindre ────────────────────────────────── */
+.joinSection {
+  background: #1a1d24;
+  border: 1px solid #2a2d38;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.joinRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.joinSelect {
+  background: #0e1018;
+  border: 1px solid #2a2d38;
+  border-radius: 6px;
+  color: #d0d0e8;
+  font-size: 0.85rem;
+  padding: 5px 8px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.btnJoin {
+  background: transparent;
+  border: 1px solid #4499ff;
+  border-radius: 6px;
+  color: #4499ff;
+  font-size: 0.8rem;
+  padding: 5px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.btnJoin:hover:not(:disabled) { background: rgba(68,153,255,0.12); }
+.btnJoin:disabled { opacity: 0.5; cursor: default; }
+
+.joinSentMsg {
+  color: #5dc85d;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.joinNoChar {
+  color: #6a6a8a;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.joinError {
+  color: #cc5555;
+  font-size: 0.8rem;
+  margin: 0;
+}
 
 /* ── Quitter / Dissoudre ──────────────────────── */
 .leaveSection {

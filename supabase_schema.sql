@@ -1362,3 +1362,24 @@ grant execute on function public.get_profile_top1_raids(uuid) to authenticated, 
 -- 4. Redéployer confirm_market_sale (ajout DELETE market_follows à la vente)
 --    cf. bloc FUNCTION: confirm_market_sale ci-dessus
 
+-- ────────────────────────────────────────────────────────────
+-- MIGRATION N — demandes d'adhésion famille + anti-spam
+-- ────────────────────────────────────────────────────────────
+-- Exécuter le fichier supabase/families.sql en entier (append en bas du fichier).
+-- Il contient :
+--   • TABLE  family_join_requests (id, family_id, character_id, profile_id,
+--             status pending|accepted|rejected, created_at, resolved_at)
+--   • INDEX + RLS (lecture : tête/assistants + demandeur)
+--   • FUNCTION request_join_family(uuid, text)     — remplace l'ancienne version
+--       → anti-spam cooldown 7 jours après un refus (RAISE 'request_cooldown')
+--   • FUNCTION accept_join_request(uuid)           — remplace l'ancienne version
+--       → met à jour family_join_requests en plus
+--   • FUNCTION decline_join_request(uuid)          — nouvelle
+--       → depuis NotificationsPage (refus via notif)
+--   • FUNCTION handle_family_request(uuid, text)   — nouvelle
+--       → depuis FamilyDetailPage (tête/assistant, accepte ou refuse par p_request_id)
+-- Front-end :
+--   • FamilyDetailPage : panneau "Demandes d'adhésion" visible pour isManaging
+--   • NotificationsPage : decline appelle decline_join_request RPC (plus de DELETE direct)
+--   • FamiliesListPage : gère l'erreur 'request_cooldown' → i18n familiesList.errRequestCooldown
+
