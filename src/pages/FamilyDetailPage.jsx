@@ -147,6 +147,16 @@ export default function FamilyDetailPage() {
   const [levelInput,     setLevelInput]     = useState(1)
   const [confirm,        setConfirm]        = useState(null)
 
+  // Demandes d'adhésion
+  const [joinRequests,    setJoinRequests]    = useState([])
+
+  // Rejoindre la famille (non-membres)
+  const [joinChars,       setJoinChars]       = useState([])
+  const [joinPickCharId,  setJoinPickCharId]  = useState(null)
+  const [joinSent,        setJoinSent]        = useState(false)
+  const [joinSending,     setJoinSending]     = useState(false)
+  const [joinError,       setJoinError]       = useState(null)
+
   // Recrutement
   const [recruitTags,     setRecruitTags]     = useState([])
   const [recruitOpen,     setRecruitOpen]     = useState(false)
@@ -196,7 +206,13 @@ export default function FamilyDetailPage() {
   useEffect(() => {
     if (!isManaging || !user?.id || !hasSupabase) return
     loadManagementData()
+    loadJoinRequests()
   }, [isManaging, user?.id])
+
+  useEffect(() => {
+    if (!family || !user?.id || myMember || !family.recruiting || !hasSupabase) return
+    loadJoinChars()
+  }, [family?.id, user?.id, myMember])
 
   async function loadManagementData() {
     // Personnages libres (pas encore dans une famille)
@@ -233,6 +249,57 @@ export default function FamilyDetailPage() {
     setFriends(profiles ?? [])
   }
 
+  async function loadJoinChars() {
+    const { data: allChars } = await supabase
+      .from('characters')
+      .select('id, name, class, hero_level, server')
+      .eq('profile_id', user.id)
+    const eligible = (allChars ?? []).filter(c =>
+      c.server === family.server &&
+      (family.min_level == null || (c.hero_level ?? 0) >= family.min_level)
+    )
+    if (eligible.length === 0) { setJoinChars([]); return }
+    const { data: existing } = await supabase
+      .from('family_members')
+      .select('character_id')
+      .in('character_id', eligible.map(c => c.id))
+    const usedIds = new Set((existing ?? []).map(m => m.character_id))
+    const free = eligible.filter(c => !usedIds.has(c.id))
+    setJoinChars(free)
+    if (free.length > 0 && !joinPickCharId) setJoinPickCharId(free[0].id)
+  }
+
+  async function handleJoinRequest() {
+    if (!joinPickCharId) return
+    setJoinSending(true)
+    setJoinError(null)
+    const { error } = await supabase.rpc('request_join_family', {
+      p_family_id:    familyId,
+      p_character_id: joinPickCharId,
+    })
+    setJoinSending(false)
+    if (error) {
+      const msg = error.message ?? ''
+      if (msg.includes('not_recruiting'))          setJoinError(t('familiesList.errNotRecruiting'))
+      else if (msg.includes('already_in_family'))  setJoinError(t('familiesList.errAlreadyInFamily'))
+      else if (msg.includes('request_already_sent')) setJoinError(t('familiesList.errRequestSent'))
+      else if (msg.includes('request_cooldown'))   setJoinError(t('familiesList.errRequestCooldown'))
+      else setJoinError(t('familiesList.errJoinRequest'))
+    } else {
+      setJoinSent(true)
+    }
+  }
+
+  async function loadJoinRequests() {
+    const { data } = await supabase
+      .from('family_join_requests')
+      .select('id, character_id, profile_id, created_at, characters(name, class), profiles(username)')
+      .eq('family_id', familyId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+    setJoinRequests(data ?? [])
+  }
+
   // ── Actions de gestion ────────────────────────────────────────
 
   async function handleChangeRole(member, newRole) {
@@ -257,6 +324,17 @@ export default function FamilyDetailPage() {
         setMembers(prev => prev.filter(m => m.id !== member.id))
       },
     })
+  }
+
+  async function handleFamilyRequest(requestId, action) {
+    const { error } = await supabase.rpc('handle_family_request', {
+      p_request_id: requestId,
+      p_action:     action,
+    })
+    if (!error) {
+      setJoinRequests(prev => prev.filter(r => r.id !== requestId))
+      if (action === 'accept') await loadFamily()
+    }
   }
 
   async function handleInvite(friend) {
@@ -486,6 +564,55 @@ export default function FamilyDetailPage() {
         </div>
       </div>
 
+      {/* Demandes d'adhésion (tête / assistant) */}
+      {isManaging && (
+        <div className={styles.manageSection}>
+          <h3 className={styles.panelTitle}>
+            {t('family.joinRequestsTitle')}
+            {joinRequests.length > 0 && (
+              <span className={styles.requestBadge}>{joinRequests.length}</span>
+            )}
+          </h3>
+          {joinRequests.length === 0 ? (
+            <p className={styles.emptySmall}>{t('family.joinRequestsEmpty')}</p>
+          ) : (
+            <div className={styles.inviteList}>
+              {joinRequests.map(r => {
+                const charCls  = CLASSES[r.characters?.class] ?? CLASSES.Archer
+                const charName = r.characters?.name ?? '—'
+                const uname    = r.profiles?.username ?? '—'
+                return (
+                  <div key={r.id} className={styles.joinRequestRow}>
+                    <div className={styles.joinRequestInfo}>
+                      <span className={styles.inviteName} style={{ color: charCls.color }}>
+                        {charCls.icon} {charName}
+                      </span>
+                      <span className={styles.joinRequestPlayer}>
+                        🗡 {uname}
+                      </span>
+                    </div>
+                    <div className={styles.joinRequestActions}>
+                      <button
+                        className={styles.btnInvite}
+                        onClick={() => handleFamilyRequest(r.id, 'accept')}
+                      >
+                        {t('family.joinRequestAccept')}
+                      </button>
+                      <button
+                        className={styles.btnKick}
+                        onClick={() => handleFamilyRequest(r.id, 'decline')}
+                      >
+                        {t('family.joinRequestDecline')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Inviter des amis */}
       {isManaging && (
         <div className={styles.manageSection}>
@@ -589,6 +716,43 @@ export default function FamilyDetailPage() {
           >
             {recruitSaving ? '…' : t('family.saveRecruiting')}
           </button>
+        </div>
+      )}
+
+      {/* Rejoindre la famille (non-membre, recrutement ouvert) */}
+      {user && !myMember && family.recruiting && (
+        <div className={styles.joinSection}>
+          {joinSent ? (
+            <p className={styles.joinSentMsg}>✓ {t('familiesList.joinRequestSent')}</p>
+          ) : joinChars.length === 0 ? (
+            <p className={styles.joinNoChar}>
+              {family.min_level != null
+                ? t('familiesList.noCharForLevel', { n: family.min_level })
+                : t('familiesList.noCharForServer')}
+            </p>
+          ) : (
+            <div className={styles.joinRow}>
+              <select
+                className={styles.joinSelect}
+                value={joinPickCharId ?? ''}
+                onChange={e => setJoinPickCharId(e.target.value)}
+              >
+                {joinChars.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.hero_level ? ` (H${c.hero_level})` : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                className={styles.btnJoin}
+                onClick={handleJoinRequest}
+                disabled={joinSending || !joinPickCharId}
+              >
+                {joinSending ? '…' : t('familiesList.joinRequest')}
+              </button>
+            </div>
+          )}
+          {joinError && <p className={styles.joinError}>{joinError}</p>}
         </div>
       )}
 

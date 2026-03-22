@@ -10,9 +10,10 @@ import styles from './NotificationsPage.module.css'
 const RAID_MAP = Object.fromEntries(RAIDS.map(r => [r.slug, r]))
 
 const MARKET_TYPES      = ['market_outbid', 'market_offer_accepted', 'market_offer_rejected', 'market_new_offer', 'listing_comment']
-const FAMILY_TYPE       = 'family_invite'
+const FAMILY_TYPE          = 'family_invite'
 const FAMILY_JOIN_REQUEST  = 'family_join_request'
 const FAMILY_JOIN_ACCEPTED = 'family_join_accepted'
+const FAMILY_JOIN_DECLINED = 'family_join_declined'
 
 export default function NotificationsPage() {
   const { user, isAuthenticated } = useAuth()
@@ -94,14 +95,13 @@ export default function NotificationsPage() {
   const handleJoinRequest = async (n, accept) => {
     if (accept) {
       await supabase.rpc('accept_join_request', { p_notif_id: n.id })
-      // La RPC supprime toutes les notifs liées + envoie notif au demandeur
-      setNotifs(prev => prev.filter(notif =>
-        !(notif.type === FAMILY_JOIN_REQUEST && notif.family_id === n.family_id && notif.character_id === n.character_id)
-      ))
     } else {
-      setNotifs(prev => prev.filter(notif => notif.id !== n.id))
-      await supabase.from('notifications').delete().eq('id', n.id)
+      await supabase.rpc('decline_join_request', { p_notif_id: n.id })
     }
+    // Les deux RPCs suppriment TOUTES les notifs de cette demande
+    setNotifs(prev => prev.filter(notif =>
+      !(notif.type === FAMILY_JOIN_REQUEST && notif.family_id === n.family_id && notif.character_id === n.character_id)
+    ))
   }
 
   const handleFriendRequest = async (n, accept) => {
@@ -180,9 +180,10 @@ export default function NotificationsPage() {
           {displayed.map(n => {
             const raid = RAID_MAP[n.session_raid_name]
             const isFriendRequest    = n.type === 'friend_request'
-            const isFamilyInvite    = n.type === FAMILY_TYPE
-            const isFamilyJoinReq   = n.type === FAMILY_JOIN_REQUEST
+            const isFamilyInvite       = n.type === FAMILY_TYPE
+            const isFamilyJoinReq      = n.type === FAMILY_JOIN_REQUEST
             const isFamilyJoinAccepted = n.type === FAMILY_JOIN_ACCEPTED
+            const isFamilyJoinDeclined = n.type === FAMILY_JOIN_DECLINED
             const isMarket          = MARKET_TYPES.includes(n.type)
             return (
               <div
@@ -190,7 +191,7 @@ export default function NotificationsPage() {
                 className={`${styles.notifCard} ${!n.read ? styles.notifUnread : ''}`}
               >
                 <div className={styles.notifIcon}>
-                  {isFamilyInvite || isFamilyJoinReq || isFamilyJoinAccepted ? (
+                  {isFamilyInvite || isFamilyJoinReq || isFamilyJoinAccepted || isFamilyJoinDeclined ? (
                     <span className={styles.cancelledIcon}>🏠</span>
                   ) : isFriendRequest ? (
                     <span className={styles.cancelledIcon}>👥</span>
@@ -224,6 +225,8 @@ export default function NotificationsPage() {
                       ? t('notif.familyJoinRequest')
                       : isFamilyJoinAccepted
                       ? t('notif.familyJoinAccepted')
+                      : isFamilyJoinDeclined
+                      ? t('notif.familyJoinDeclined')
                       : isFriendRequest
                       ? t('notif.friendRequest')
                       : n.type === 'session_cancelled'
@@ -284,6 +287,13 @@ export default function NotificationsPage() {
                       <strong>{n.content_preview}</strong>
                     </p>
                   )}
+                  {/* Demande refusée (vue du demandeur) */}
+                  {isFamilyJoinDeclined && n.content_preview && (
+                    <p className={styles.notifPreview}>
+                      {t('notif.familyJoinDeclinedSub')}{' '}
+                      <strong>{n.content_preview}</strong>
+                    </p>
+                  )}
                   {isFriendRequest && n.content_preview && (
                     <p className={styles.notifPreview}>
                       <Link to={`/players/${n.content_preview}`} className={styles.friendLink}>
@@ -323,7 +333,7 @@ export default function NotificationsPage() {
                   {n.type === 'listing_comment' && n.content_preview && (
                     <p className={styles.notifPreview}>{n.content_preview}</p>
                   )}
-                  {!isFriendRequest && n.type !== 'session_invite' && !isMarket && !isFamilyJoinReq && !isFamilyJoinAccepted && !isFamilyInvite && n.content_preview && (
+                  {!isFriendRequest && n.type !== 'session_invite' && !isMarket && !isFamilyJoinReq && !isFamilyJoinAccepted && !isFamilyJoinDeclined && !isFamilyInvite && n.content_preview && (
                     <p className={styles.notifPreview}>"{n.content_preview}"</p>
                   )}
                   <p className={styles.notifTime}>

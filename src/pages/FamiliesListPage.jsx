@@ -118,9 +118,10 @@ function FamilyCard({ family, t, lang, canManage, isMember, user, isAuthenticate
     setJoinSending(false)
     if (error) {
       const msg = error.message ?? ''
-      if (msg.includes('not_recruiting'))      setJoinError(t('familiesList.errNotRecruiting'))
+      if (msg.includes('not_recruiting'))         setJoinError(t('familiesList.errNotRecruiting'))
       else if (msg.includes('already_in_family')) setJoinError(t('familiesList.errAlreadyInFamily'))
       else if (msg.includes('request_already_sent')) setJoinError(t('familiesList.errRequestSent'))
+      else if (msg.includes('request_cooldown'))  setJoinError(t('familiesList.errRequestCooldown'))
       else setJoinError(t('familiesList.errJoinRequest'))
     } else {
       setJoinSent(true)

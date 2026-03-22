@@ -242,7 +242,7 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
 
 function BenchPanel({
   members, isLeader, isAuthenticated, myRegistrations, maxChars,
-  onRegister, onUnregister, onDragStart, onViewChar, onInviteFriends, session, t,
+  onRegister, onUnregister, onDragStart, onViewChar, onInviteFriends, onInviteFamily, session, t,
 }) {
   const canRegister  = isAuthenticated && myRegistrations.length < maxChars
   const alreadyInAll = isAuthenticated && myRegistrations.length >= maxChars
@@ -301,6 +301,14 @@ function BenchPanel({
             style={{ marginTop: '0.5rem', width: '100%' }}
           >
             👥 {t('detail.inviteFriendsBtn')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onInviteFamily}
+            style={{ marginTop: '0.4rem', width: '100%' }}
+          >
+            🏠 {t('detail.inviteFamilyBtn')}
           </Button>
         </>
       ) : (
@@ -662,6 +670,162 @@ function InviteFriendsModal({ session, user, regs, onClose, t }) {
   )
 }
 
+// ── InviteFamilyModal ─────────────────────────────────────────────────────────
+
+function InviteFamilyModal({ session, user, regs, onClose, t }) {
+  const [loading,    setLoading]    = useState(true)
+  const [families,   setFamilies]   = useState([])   // [{ id, name, members: [{id, username}] }]
+  const [familyIdx,  setFamilyIdx]  = useState(0)
+  const [selected,   setSelected]   = useState([])
+  const [sending,    setSending]    = useState(false)
+  const [done,       setDone]       = useState(false)
+
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  useEffect(() => {
+    if (!hasSupabase || !user?.id) { setLoading(false); return }
+
+    // Récupère toutes les familles du user via ses membres
+    supabase
+      .from('family_members')
+      .select('family_id, families(id, name)')
+      .eq('profile_id', user.id)
+      .then(async ({ data: myMems }) => {
+        if (!myMems?.length) { setLoading(false); return }
+
+        const registeredIds = new Set(regs.map(r => r.player_id))
+        const familyIds = [...new Set(myMems.map(m => m.family_id))]
+
+        // Pour chaque famille, récupère les autres membres non-inscrits
+        const results = await Promise.all(
+          familyIds.map(async (fid) => {
+            const famName = myMems.find(m => m.family_id === fid)?.families?.name ?? fid
+            const { data: mems } = await supabase
+              .from('family_members')
+              .select('profile_id, profiles(id, username)')
+              .eq('family_id', fid)
+              .neq('profile_id', user.id)
+            const eligible = (mems ?? [])
+              .filter(m => !registeredIds.has(m.profile_id) && m.profiles?.username)
+              .map(m => ({ id: m.profile_id, username: m.profiles.username }))
+            // Déduplique par profile_id (un joueur peut avoir plusieurs persos dans la même famille)
+            const seen = new Set()
+            const unique = eligible.filter(m => {
+              if (seen.has(m.id)) return false
+              seen.add(m.id)
+              return true
+            })
+            return { id: fid, name: famName, members: unique }
+          })
+        )
+        setFamilies(results.filter(f => f.members.length > 0))
+        setLoading(false)
+      })
+  }, [user?.id])
+
+  const currentFamily = families[familyIdx] ?? null
+
+  const toggle = (id) =>
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const handleSend = async () => {
+    if (!selected.length || !currentFamily) return
+    setSending(true)
+    const myUsername = user?.user_metadata?.username || user?.email?.split('@')[0]
+    await supabase.from('notifications').insert(
+      selected.map(uid => ({
+        user_id:           uid,
+        type:              'session_invite',
+        session_id:        session.id,
+        session_raid_name: session.raid_slug,
+        content_preview:   myUsername,
+        related_user_id:   user.id,
+      }))
+    )
+    setSending(false)
+    setDone(true)
+  }
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHead}>
+          <h3 className={styles.modalTitle}>🏠 {t('detail.inviteFamilyTitle')}</h3>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {done ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-dim)', padding: '1rem 0' }}>
+              ✅ {t('detail.inviteSent')}
+            </p>
+          ) : loading ? (
+            <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '1rem 0' }}>…</p>
+          ) : families.length === 0 ? (
+            <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '1rem 0' }}>
+              {t('detail.inviteFamilyNoMembers')}
+            </p>
+          ) : (
+            <>
+              {/* Sélecteur de famille si le joueur en a plusieurs */}
+              {families.length > 1 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                  {families.map((f, i) => (
+                    <button
+                      key={f.id}
+                      className={`${styles.charPickItem} ${i === familyIdx ? styles.charPickItemSelected : ''}`}
+                      style={{ flex: 'none' }}
+                      onClick={() => { setFamilyIdx(i); setSelected([]) }}
+                    >
+                      🏠 {f.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className={styles.charPickList}>
+                {currentFamily?.members.map(m => {
+                  const checked = selected.includes(m.id)
+                  return (
+                    <button
+                      key={m.id}
+                      className={`${styles.charPickItem} ${checked ? styles.charPickItemSelected : ''}`}
+                      onClick={() => toggle(m.id)}
+                    >
+                      <span>👤</span>
+                      <span className={styles.charName}>{m.username}</span>
+                      {checked && <span className={styles.checkMark}>✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+        {!done && (
+          <div className={styles.modalFoot}>
+            <Button variant="ghost" onClick={onClose}>{t('session.cancel')}</Button>
+            <Button
+              variant="solid"
+              onClick={handleSend}
+              disabled={sending || !selected.length || loading || families.length === 0}
+            >
+              {sending ? '…' : t('detail.inviteConfirm')}
+            </Button>
+          </div>
+        )}
+        {done && (
+          <div className={styles.modalFoot}>
+            <Button variant="solid" onClick={onClose}>{t('session.close')}</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── CharacterDetailModal ──────────────────────────────────────────────────────
 
 const RANK_ORDER = { C: 0, B: 1, A: 2, S: 3 }
@@ -983,6 +1147,7 @@ export default function RaidSessionDetailPage() {
   const [showInvite,    setShowInvite]    = useState(false)
   const [showCancel,    setShowCancel]    = useState(false)
   const [cancelling,    setCancelling]    = useState(false)
+  const [showInviteFamily, setShowInviteFamily] = useState(false)
   const [spTarget,    setSPTarget]    = useState(null)
   const [charTarget,  setCharTarget]  = useState(null)
   const dragIdRef = useRef(null)
@@ -1154,6 +1319,7 @@ export default function RaidSessionDetailPage() {
           onDragStart={handleDragStart}
           onViewChar={setCharTarget}
           onInviteFriends={() => setShowInvite(true)}
+          onInviteFamily={() => setShowInviteFamily(true)}
           session={session}
           t={t}
         />
@@ -1178,6 +1344,15 @@ export default function RaidSessionDetailPage() {
           alreadyNames={alreadyNames}
           onClose={() => setShowRegister(false)}
           onSuccess={() => { setShowRegister(false); loadData() }}
+          t={t}
+        />
+      )}
+      {showInviteFamily && (
+        <InviteFamilyModal
+          session={session}
+          user={user}
+          regs={regs}
+          onClose={() => setShowInviteFamily(false)}
           t={t}
         />
       )}
