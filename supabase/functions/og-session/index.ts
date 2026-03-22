@@ -371,7 +371,7 @@ Deno.serve(async (req: Request) => {
       return new Response(png, {
         headers: {
           'Content-Type':   'image/png',
-          'Cache-Control':  'public, max-age=3600',
+          'Cache-Control':  'no-store',
           'Access-Control-Allow-Origin': '*',
         },
       })
@@ -384,7 +384,7 @@ Deno.serve(async (req: Request) => {
 
   // ── Serve HTML avec OG meta ──────────────────────────────────────────────
   // Utilise l'URL Storage si l'image a déjà été pré-générée (via bouton Partager)
-  const sessionUrl = `${APP_URL}/raid-sessions/${id}`
+  const sessionUrl = `${APP_URL}/raids/${id}`
   let imageUrl = `${FN_BASE}?id=${encodeURIComponent(id)}&img=1`
   try {
     const head = await fetch(storagePngUrl, { method: 'HEAD' })
