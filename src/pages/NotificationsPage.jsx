@@ -283,15 +283,17 @@ export default function NotificationsPage() {
                   {/* Demande acceptée (vue du demandeur) */}
                   {isFamilyJoinAccepted && n.content_preview && (
                     <p className={styles.notifPreview}>
-                      {t('notif.familyJoinAcceptedSub')}{' '}
-                      <strong>{n.content_preview}</strong>
+                      {t('notif.familyJoinAcceptedPre')}{' '}
+                      <strong>{n.content_preview}</strong>{' '}
+                      {t('notif.familyJoinAcceptedPost')}
                     </p>
                   )}
                   {/* Demande refusée (vue du demandeur) */}
                   {isFamilyJoinDeclined && n.content_preview && (
                     <p className={styles.notifPreview}>
-                      {t('notif.familyJoinDeclinedSub')}{' '}
-                      <strong>{n.content_preview}</strong>
+                      {t('notif.familyJoinDeclinedPre')}{' '}
+                      <strong>{n.content_preview}</strong>{' '}
+                      {t('notif.familyJoinDeclinedPost')}
                     </p>
                   )}
                   {isFriendRequest && n.content_preview && (
