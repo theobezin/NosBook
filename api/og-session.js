@@ -101,7 +101,7 @@ export default async function handler(req, res) {
 
   const raid        = getRaid(session.raid_slug)
   const storagePng  = `${SUPABASE_URL}/storage/v1/object/public/og-images/${id}.png`
-  const sessionUrl  = `${APP_URL}/raid-sessions/${id}`
+  const sessionUrl  = `${APP_URL}/raids/${id}`
   const serverLabel = session.server === 'undercity' ? 'Undercity' : 'Dragonveil'
   const dateStr     = formatDate(session.date, session.time, session.duration_minutes)
   const title       = `${raid.name}${raid.hc ? ' (HC)' : ''} \u00b7 ${serverLabel}`
