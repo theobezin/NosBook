@@ -13,6 +13,7 @@ import AdminRaidsPage        from '@/pages/AdminRaidsPage'
 import MySubmissionsPage    from '@/pages/MySubmissionsPage'
 import NotificationsPage    from '@/pages/NotificationsPage'
 import AuthPage             from '@/pages/AuthPage'
+import ResetPasswordPage    from '@/pages/ResetPasswordPage'
 import NotFoundPage      from '@/pages/NotFoundPage'
 import PlannerPage       from '@/pages/PlannerPage'
 import MarketPage          from '@/pages/MarketPage'
@@ -49,7 +50,8 @@ export default function App() {
           <Route path="/admin/raids"     element={withLayout(AdminRaidsPage)}    />
           <Route path="/submissions"     element={withLayout(MySubmissionsPage)} />
           <Route path="/notifications"   element={withLayout(NotificationsPage)} />
-          <Route path="/auth"            element={withLayout(AuthPage)}          />
+          <Route path="/auth"                  element={withLayout(AuthPage)}          />
+          <Route path="/auth/reset-password"  element={withLayout(ResetPasswordPage)} />
           <Route path="/planner"         element={<PageLayout fullWidth><PlannerPage /></PageLayout>} />
           <Route path="/market"            element={withLayout(MarketPage)}          />
           <Route path="/market/:id"      element={withLayout(ListingDetailPage)} />

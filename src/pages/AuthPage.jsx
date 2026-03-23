@@ -9,8 +9,8 @@ import styles from './AuthPage.module.css'
 export default function AuthPage() {
   const [params]              = useSearchParams()
   const navigate              = useNavigate()
-  const { signIn, signUp }    = useAuth()
-  const { t }                 = useLang()
+  const { signIn, signUp, resetPassword } = useAuth()
+  const { t }                             = useLang()
 
   const initialMode           = params.get('mode') === 'register' ? 'register' : 'login'
   const [mode, setMode]       = useState(initialMode)
@@ -37,8 +37,10 @@ export default function AuthPage() {
   }
 
   const handleSubmit = async () => {
-    const err = validate()
-    if (err) { setError(err); return }
+    if (mode !== 'forgot') {
+      const err = validate()
+      if (err) { setError(err); return }
+    }
     setLoading(true)
     setError('')
 
@@ -46,10 +48,15 @@ export default function AuthPage() {
       const { error } = await signIn({ email: form.email, password: form.password })
       if (error) setError(t('auth.errCredentials'))
       else navigate('/profile')
-    } else {
+    } else if (mode === 'register') {
       const { error } = await signUp({ email: form.email, password: form.password, username: form.username })
       if (error) setError(error.message || t('auth.errGeneric'))
       else setSuccess(t('auth.success'))
+    } else if (mode === 'forgot') {
+      if (!form.email) { setError(t('auth.errRequired')); setLoading(false); return }
+      const { error } = await resetPassword({ email: form.email })
+      if (error) setError(error.message || t('auth.errGeneric'))
+      else setSuccess(t('auth.forgotSuccess'))
     }
     setLoading(false)
   }
@@ -80,7 +87,7 @@ export default function AuthPage() {
         </div>
 
         <p className={styles.subtitle}>
-          {mode === 'login' ? t('auth.subtitleLogin') : t('auth.subtitleRegister')}
+          {mode === 'login' ? t('auth.subtitleLogin') : mode === 'register' ? t('auth.subtitleRegister') : t('auth.forgotSubtitle')}
         </p>
 
         {success ? (
@@ -116,16 +123,18 @@ export default function AuthPage() {
               autoComplete="email"
             />
 
-            <Input
-              label={t('auth.password')}
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={set('password')}
-              placeholder={mode === 'register' ? t('auth.minPassword') : '••••••••'}
-              required
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            />
+            {mode !== 'forgot' && (
+              <Input
+                label={t('auth.password')}
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={set('password')}
+                placeholder={mode === 'register' ? t('auth.minPassword') : '••••••••'}
+                required
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              />
+            )}
 
             {mode === 'register' && (
               <Input
@@ -150,12 +159,20 @@ export default function AuthPage() {
             <Button variant="solid" size="lg" fullWidth onClick={handleSubmit} disabled={loading}>
               {loading
                 ? t('auth.loading')
-                : mode === 'login' ? t('auth.btnSignIn') : t('auth.btnCreate')}
+                : mode === 'login' ? t('auth.btnSignIn')
+                : mode === 'register' ? t('auth.btnCreate')
+                : t('auth.btnSendReset')}
             </Button>
 
             {mode === 'login' && (
               <p className={styles.forgotLink}>
-                {t('auth.forgotPassword')} <a href="#">{t('auth.resetLink')}</a>
+                {t('auth.forgotPassword')} <a href="#" onClick={(e) => { e.preventDefault(); switchMode('forgot') }}>{t('auth.resetLink')}</a>
+              </p>
+            )}
+
+            {mode === 'forgot' && (
+              <p className={styles.forgotLink}>
+                <a href="#" onClick={(e) => { e.preventDefault(); switchMode('login') }}>{t('auth.backToLogin')}</a>
               </p>
             )}
           </div>
