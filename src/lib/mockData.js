@@ -811,8 +811,58 @@ export const RING_TRANSLATIONS = {
   "Anneau à dimensiomant":               { en: "Dimensionite Ring",               de: "Dimensiomanten-Ring" },
 }
 
+// ── Necklace translations ──────────────────────────────────────────────────
+export const NECKLACE_TRANSLATIONS = {
+  "Collier ordinaire":                        { en: "Regular Necklace",                      de: "Gewöhnliche Halskette" },
+  "Collier de chien de l'enfer":              { en: "Hellhound Necklace",                    de: "Halsband eines Höllenhundes" },
+  "Collier en or simple":                     { en: "Simple Gold Necklace",                  de: "Einfache goldene Halskette" },
+  "Collier en or raffiné":                    { en: "Refined Gold Necklace",                 de: "Veredelte goldene Halskette" },
+  "Collier de mano antique":                  { en: "Ancient Mano Necklace",                 de: "Antike Manohalskette" },
+  "Collier de mano noble":                    { en: "Noble Mano Necklace",                   de: "Edle Manohalskette" },
+  "Collier œil de chat":                      { en: "Cat's Eye Necklace",                    de: "Katzenaugenhalskette" },
+  "Collier œil de chat noble":                { en: "Noble Cat's Eye Necklace",              de: "Edle Katzenaugenhalskette" },
+  "Collier œil de chat luxueux":              { en: "Luxurious Cat's Eye Necklace",          de: "Luxuriöse Katzenaugenhalskette" },
+  "Collier en cristal":                       { en: "Crystal Necklace",                      de: "Kristallhalskette" },
+  "Collier en cristal noble":                 { en: "Noble Crystal Necklace",                de: "Edle Kristallhalskette" },
+  "Collier en cristal antique":               { en: "Ancient Crystal Necklace",              de: "Antike Kristallhalskette" },
+  "Collier à diamant":                        { en: "Diamond Necklace",                      de: "Diamantenhalskette" },
+  "Collier à diamant noble":                  { en: "Noble Diamond Necklace",                de: "Edle Diamanthalskette" },
+  "Collier à diamant antique":                { en: "Ancient Diamond Necklace",              de: "Antike Diamanthalskette" },
+  "Collier à diamant luxueux":                { en: "Luxurious Diamond Necklace",            de: "Luxuriöse Diamanthalskette" },
+  "Collier d'orichalque noble":               { en: "Noble Orichalcum Necklace",             de: "Edle Oriharconhalskette" },
+  "Collier de pleine lune":                   { en: "Full Moon Amulet",                      de: "Vollmondhalskette" },
+  "Collier d'orichalque antique":             { en: "Ancient Orichalcum Necklace",           de: "Antike Oriharconhalskette" },
+  "Collier du héros oublié J":                { en: "Necklace of the Forgotten Hero J",      de: "Halskette des vergessenen Helden J" },
+  "Collier de Diareason":                     { en: "Diareason Necklace",                    de: "Diareasons Halskette" },
+  "Collier d'améthyste":                      { en: "Amethyst Necklace",                     de: "Amethysthalskette" },
+  "Collier de Rudiselrun":                    { en: "Rudiselrun's Necklace",                 de: "Rudiselruns Halskette" },
+  "Collier avec l'énergie de la liche":       { en: "Lich Energy Necklace",                  de: "Halskette mit der Energie des Lichs" },
+  "Collier du chien de braise":               { en: "Blaze Hound's Collar",                  de: "Halsband des Gluthundes" },
+  "Collier de Kertos":                        { en: "Kertos' Collar",                        de: "Halsband von Kertos" },
+  "Collier de Kedenoss":                      { en: "Kedenoss Necklace",                     de: "Kedenoss' Halskette" },
+  "Collier de jade":                          { en: "Jade Necklace",                         de: "Jadehalskette" },
+  "Collier d'obsidienne":                     { en: "Obsidian Necklace",                     de: "Obsidian-Halskette" },
+  "Collier de Zénas":                         { en: "Zenas' Necklace",                       de: "Zenas' Halskette" },
+  "Collier d'Érénia":                         { en: "Erenia's Necklace",                     de: "Erenias Halskette" },
+  "Collier en cuivre de Mullan":              { en: "Mullan Copper Necklace",                de: "Mullan-Kupferhalskette" },
+  "Collier d'os de tricératops":              { en: "Triceratops Bone Necklace",             de: "Triceratopsknochen-Halskette" },
+  "Collier occulte":                          { en: "Occult Necklace",                       de: "Okkulte Halskette" },
+  "Collier en argent de Mullan":              { en: "Mullan Silver Necklace",                de: "Mullan-Silberhalskette" },
+  "Collier de Laurena":                       { en: "Laurena's Necklace",                    de: "Laurenas Halskette" },
+  "Collier du cœur des bêtes":               { en: "Beastheart Necklace",                   de: "Bestienherz-Halskette" },
+  "Collier portebonheur draconien":           { en: "Draconian Lucky Chain",                 de: "Drakonier-Glückskette" },
+  "Collier draconique blanc":                 { en: "White Dragon Necklace",                 de: "Weiße Drachenhalskette" },
+  "Collier draconique":                       { en: "Dragon Necklace",                       de: "Drachenhalskette" },
+  "Collier d'engrenage":                      { en: "Gearwheel Necklace",                    de: "Zahnradhalskette" },
+  "Collier de Hatus":                         { en: "Hatus' Necklace",                       de: "Hatus' Halskette" },
+  "Collier d'engrenage argenté":              { en: "Silver Gearwheel Necklace",             de: "Silberne Zahnradhalskette" },
+  "Collier élémentaire":                      { en: "Element Necklace",                      de: "Elementhalskette" },
+  "Collier de l'aventurier dimensionnel":     { en: "Dimension Adventurer's Necklace",       de: "Halskette des Dimension-Abenteurers" },
+  "Collier à dimensiomant":                   { en: "Dimensionite Necklace",                 de: "Dimensiomanten-Halskette" },
+}
+
 // Merge point for future category translations (armors, hats, gloves, etc.)
-export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS }
+export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS, ...NECKLACE_TRANSLATIONS }
 
 // ── Secondary weapons (armes secondaires) by class ────────────────────────
 export const SECONDARY_WEAPONS = {
