@@ -3,7 +3,7 @@ import { Link }    from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLang } from '@/i18n'
 import { useCharacters } from '@/hooks/useCharacters'
-import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, NOSMATES, PARTNERS, PARTNER_SPECIALISTS, PARTNER_CLASS_COLORS, PARTNER_SP_RANKS, PARTNER_SP_RANK_COLORS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, STAT_KEYS, EQUIP_KEYS, SPECIAL_KEYS, SPECIALISTS, SP_WINGS, WEAPONS, SECONDARY_WEAPONS, ARMORS, HATS, GLOVES, SHOES, NECKLACES, RINGS, BRACELETS, COSTUME_WINGS, COSTUME_TOPS, COSTUME_BOTTOMS, COSTUME_WEAPONS, FAIRIES, FAIRY_RUNE_EFFECTS, FAIRY_RUNE_RANK_COLORS, TATTOOS, NOSMATES, PARTNERS, PARTNER_SPECIALISTS, PARTNER_CLASS_COLORS, PARTNER_SP_RANKS, PARTNER_SP_RANK_COLORS, TRAINING_BOOKS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR, getItemName } from '@/lib/mockData'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { SERVER_COLORS } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -150,7 +150,7 @@ function CreateModal({ onClose, onCreate, server }) {
 // ── WeaponModal ────────────────────────────────────────────────────────────
 
 function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, equippedWeapon }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [query, setQuery] = useState('')
 
   const allWeapons = Array.isArray(weaponsSource) ? weaponsSource : (weaponsSource[char.class] ?? [])
@@ -161,7 +161,7 @@ function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, 
   })
 
   const filtered = available.filter(w =>
-    w.name.toLowerCase().includes(query.toLowerCase())
+    getItemName(w, lang).toLowerCase().includes(query.toLowerCase())
   )
 
   const equipped = equippedWeapon
@@ -196,7 +196,7 @@ function WeaponModal({ char, onClose, onSelect, weaponsSource = WEAPONS, title, 
                   onClick={() => { onSelect({ name: w.name, icon: w.icon }); onClose() }}
                 >
                   <img src={w.icon} alt="" className={styles.weaponItemIcon} />
-                  <span className={styles.weaponItemName}>{w.name}</span>
+                  <span className={styles.weaponItemName}>{getItemName(w, lang)}</span>
                   <span className={styles.weaponItemLevel}>
                     {w.minHero !== null
                       ? `${t('weapon.heroReq')} ${w.minHero}`
@@ -616,12 +616,12 @@ function MultiSelectModal({ title, items, char, equipped, onClose, onSave }) {
 // ── EquipmentTab ───────────────────────────────────────────────────────────
 
 // Helper to build the display text for a weapon-like slot
-function weaponDisplayInfo(w, rarities) {
+function weaponDisplayInfo(w, rarities, lang) {
   if (!w) return { text: null, rarity: null }
   const rarity  = w.rarity ? rarities.find(r => r.key === w.rarity) : null
   const suffix  = (w.improvement ?? 0) > 0 ? ` +${w.improvement}` : ''
   const prefix  = rarity?.label ? `${rarity.label} : ` : ''
-  return { text: `${prefix}${w.name}${suffix}`, rarity }
+  return { text: `${prefix}${getItemName(w, lang)}${suffix}`, rarity }
 }
 
 // Reusable weapon card display (shell + runic effects)
@@ -654,7 +654,7 @@ function WeaponCard({ w }) {
 }
 
 function EquipmentTab({ char, onUpdate }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [showWeapon,         setShowWeapon]         = useState(false)
   const [showEnhance,        setShowEnhance]        = useState(false)
   const [showShell,          setShowShell]          = useState(false)
@@ -705,11 +705,11 @@ function EquipmentTab({ char, onUpdate }) {
   const costumeBottom  = Array.isArray(char.equipment.costumeBottom)  ? char.equipment.costumeBottom  : []
   const costumeWeapon  = Array.isArray(char.equipment.costumeWeapon)  ? char.equipment.costumeWeapon  : []
 
-  const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES)
-  const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES)
-  const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES)
-  const { text: glovesText,  rarity: glovesRarity  } = weaponDisplayInfo(gloves,  WEAPON_RARITIES)
-  const { text: shoesText,   rarity: shoesRarity   } = weaponDisplayInfo(shoes,   WEAPON_RARITIES)
+  const { text: weaponText,  rarity: weaponRarity  } = weaponDisplayInfo(weapon,  WEAPON_RARITIES, lang)
+  const { text: offhandText, rarity: offhandRarity } = weaponDisplayInfo(offhand, WEAPON_RARITIES, lang)
+  const { text: armorText,   rarity: armorRarity   } = weaponDisplayInfo(armor,   WEAPON_RARITIES, lang)
+  const { text: glovesText,  rarity: glovesRarity  } = weaponDisplayInfo(gloves,  WEAPON_RARITIES, lang)
+  const { text: shoesText,   rarity: shoesRarity   } = weaponDisplayInfo(shoes,   WEAPON_RARITIES, lang)
 
   return (
     <div className={styles.equipTabList}>
@@ -887,7 +887,7 @@ function EquipmentTab({ char, onUpdate }) {
           {necklace ? (
             <span className={styles.equipTabFilled}>
               <img src={necklace.icon} alt="" className={styles.equipTabIcon} />
-              {necklace.name}
+              {getItemName(necklace, lang)}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
@@ -908,7 +908,7 @@ function EquipmentTab({ char, onUpdate }) {
           {ring ? (
             <span className={styles.equipTabFilled}>
               <img src={ring.icon} alt="" className={styles.equipTabIcon} />
-              {ring.name}
+              {getItemName(ring, lang)}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
@@ -929,7 +929,7 @@ function EquipmentTab({ char, onUpdate }) {
           {bracelet ? (
             <span className={styles.equipTabFilled}>
               <img src={bracelet.icon} alt="" className={styles.equipTabIcon} />
-              {bracelet.name}
+              {getItemName(bracelet, lang)}
             </span>
           ) : (
             <span className={styles.equipTabEmpty}>{t('equipKeys.empty')}</span>
