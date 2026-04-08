@@ -765,8 +765,54 @@ export const SECONDARY_WEAPON_TRANSLATIONS = {
   "Bouclier runique de Thor":                                 { en: "Thor's Rune Shield",                           de: "Thors Runenschild" },
 }
 
+// ── Ring translations ──────────────────────────────────────────────────────
+export const RING_TRANSLATIONS = {
+  "Anneau de mano antique":              { en: "Ancient Mano Ring",               de: "Antiker Manoring" },
+  "Bague de mano noble":                 { en: "Noble Mano Ring",                 de: "Edler Manoring" },
+  "Anneau œil de chat":                  { en: "Cat's Eye Ring",                  de: "Katzenaugenring" },
+  "Anneau œil de chat noble":            { en: "Noble Cat's Eye Ring",            de: "Edler Katzenaugenring" },
+  "Bague en cristal":                    { en: "Crystal Ring",                    de: "Kristallring" },
+  "Bague en cristal antique":            { en: "Ancient Crystal Ring",            de: "Antiker Kristallring" },
+  "Bague en cristal noble":              { en: "Noble Crystal Ring",              de: "Edler Kristallring" },
+  "Bague en cristal luxueuse":           { en: "Luxurious Crystal Ring",          de: "Luxuriöser Kristallring" },
+  "Anneau à diamant":                    { en: "Diamond Ring",                    de: "Diamantring" },
+  "Anneau en diamant antique":           { en: "Ancient Diamond Ring",            de: "Antiker Diamantring" },
+  "Anneau à diamant noble":              { en: "Noble Diamond Ring",              de: "Edler Diamantring" },
+  "Anneau à diamant luxueux":            { en: "Luxurious Diamond Ring",          de: "Luxuriöser Diamantenring" },
+  "Anneau aquatique":                    { en: "Aquamarine Ring",                 de: "Aquamarinring" },
+  "Bague d'orichalque noble":            { en: "Noble Orichalcum Ring",           de: "Edler Oriharconring" },
+  "Anneau de pleine lune":               { en: "Full Moon Ring",                  de: "Vollmondring" },
+  "Bague d'orichalque antique":          { en: "Ancient Orichalcum Ring",         de: "Antiker Oriharconring" },
+  "Anneau du héros oublié S":            { en: "Ring of the Forgotten Hero S",    de: "Ring des vergessenen Helden S" },
+  "Anneau de Diareason":                 { en: "Diareason Ring",                  de: "Diareasons Ring" },
+  "Anneau bleu de Radal":                { en: "Radal's Blue Ring",               de: "Radals blauer Ring" },
+  "Anneau rouge de Radal":               { en: "Radal's Red Ring",                de: "Radals roter Ring" },
+  "Anneau de Rudiselrun":                { en: "Rudiselrun's Ring",               de: "Rudiselruns Ring" },
+  "Anneau avec l'énergie de la liche":   { en: "Lich Energy Ring",                de: "Ring mit der Energie des Lichs" },
+  "Anneau du phénix":                    { en: "Phoenix Ring",                    de: "Ring des Phönix" },
+  "Anneau de Graal":                     { en: "Grail's Ring",                    de: "Ring des Gral" },
+  "Anneau de Kedenoss":                  { en: "Kedenoss Ring",                   de: "Kedenoss' Ring" },
+  "Anneau de jade":                      { en: "Jade Ring",                       de: "Jadering" },
+  "Anneau de Zénas":                     { en: "Zenas' Ring",                     de: "Zenas' Ring" },
+  "Anneau d'Érénia":                     { en: "Erenia's Ring",                   de: "Erenias Ring" },
+  "Anneau d'obsidienne":                 { en: "Obsidian Ring",                   de: "Obsidianring" },
+  "Anneau de griffon":                   { en: "Gryphon Ring",                    de: "Greifenring" },
+  "Anneau de jade des esprits":          { en: "Jade Spirit Ring",                de: "Jadering der Geister" },
+  "Anneau de Laurena":                   { en: "Laurena's Ring",                  de: "Laurenas Ring" },
+  "Anneau des héros orcs":               { en: "Orc Hero Ring",                   de: "Ring der Ork-Helden" },
+  "Anneau céleste":                      { en: "Heavenly Ring",                   de: "Himmlischer Ring" },
+  "Anneau de cristal draconique":        { en: "Dragon Crystal Ring",             de: "Drachenkristall-Ring" },
+  "Anneau de griffe draconique":         { en: "Dragon Claw Ring",                de: "Drachenklauen-Ring" },
+  "Anneau d'engrenage":                  { en: "Gearwheel Ring",                  de: "Zahnradring" },
+  "Anneau de Calvina":                   { en: "Calvinas' Ring",                  de: "Calvinas' Ring" },
+  "Anneau d'engrenage argenté":          { en: "Silver Gearwheel Ring",           de: "Silberner Zahnradring" },
+  "Anneau élémentaire":                  { en: "Element Ring",                    de: "Elementring" },
+  "Bague de l'aventurier dimensionnel":  { en: "Dimension Adventurer's Ring",     de: "Ring des Dimension-Abenteurers" },
+  "Anneau à dimensiomant":               { en: "Dimensionite Ring",               de: "Dimensiomanten-Ring" },
+}
+
 // Merge point for future category translations (armors, hats, gloves, etc.)
-export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS }
+export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS }
 
 // ── Secondary weapons (armes secondaires) by class ────────────────────────
 export const SECONDARY_WEAPONS = {
