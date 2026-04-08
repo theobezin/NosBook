@@ -44,8 +44,20 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
+  const resetPassword = async ({ email }) => {
+    if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+    return supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+  }
+
+  const updatePassword = async ({ password }) => {
+    if (!hasSupabase) return { error: { message: 'Supabase non configuré' } }
+    return supabase.auth.updateUser({ password })
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, signIn, signUp, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
