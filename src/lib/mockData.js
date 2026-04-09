@@ -1459,8 +1459,60 @@ export const GLOVE_TRANSLATIONS = {
   "Gants démesurés de Nézarun":                    { en: "Nezarun's Unbridled Gloves",            de: "Nezaruns ungebändigte Handschuhe" },
 }
 
-// Merge point for future category translations (costume tops, costume weapons)
-export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS, ...NECKLACE_TRANSLATIONS, ...BRACELET_TRANSLATIONS, ...SHOE_TRANSLATIONS, ...HAT_TRANSLATIONS, ...ARMOR_TRANSLATIONS, ...COSTUME_WINGS_TRANSLATIONS, ...COSTUME_BOTTOM_TRANSLATIONS, ...GLOVE_TRANSLATIONS }
+// ── Costume Weapon translations ────────────────────────────────────────────
+export const COSTUME_WEAPON_TRANSLATIONS = {
+  // Swordsman
+  "Apparence de batte de baseball":           { en: "Baseball Bat Skin",                     de: "Baseballschläger-Skin" },
+  "Apparence de batte à diablotin":           { en: "Imp Cudgel Skin",                        de: "Impschläger-Skin" },
+  "Mégalame steampunk":                       { en: "Steampunk Chronoblade",                 de: "Steampunk-Gigantoklinge" },
+  "Apparence pelle à gâteau des 10 ans":      { en: "10th Anniversary Cake Knife Skin",      de: "Kuchenmesser-Skin zum 10. Jahrestag" },
+  "Sapin de Noël":                            { en: "Christmas Tree",                        de: "Weihnachtsbaum" },
+  "Makaira surgelé":                          { en: "Frozen Swordfish",                      de: "Gefrorener Speerfisch" },
+  "Épée givrée":                              { en: "Frost Sword",                           de: "Frostschwert" },
+  "Épée en chocolat":                         { en: "Sweet Chocolate Sword",                 de: "Süßes Schokoladenschwert" },
+  "Sabre laser":                              { en: "Laser Sword",                           de: "Laserschwert" },
+  "Épée florale":                             { en: "Floral Sword",                          de: "Blumenschwert" },
+  "Melon tranchant":                          { en: "Watermelon Sword",                      de: "Melonenklinge" },
+  "Épée du gardien du zodiaque":              { en: "Zodiac Keeper's Sword",                 de: "Schwert des Zodiakwächters" },
+  // Archer
+  "Apparence d'arc de compétition":           { en: "Recurve Bow Skin",                      de: "Sportbogen-Skin" },
+  "Apparence d'arc à fleur exotique":         { en: "Wildflower Bow Skin",                   de: "Wildblütenbogen-Skin" },
+  "Arc mécanique steampunk":                  { en: "Steampunk Clockwork Bow",               de: "Steampunk-Uhrwerkbogen" },
+  "Arc de sucre d'orge":                      { en: "Candy Bow",                             de: "Zuckerstangenbogen" },
+  "Arc de kraken":                            { en: "Octobow",                               de: "Krakenbogen" },
+  "Arc givré":                                { en: "Frost Bow",                             de: "Frostbogen" },
+  "Arc en chocolat":                          { en: "Sweet Chocolate Bow",                   de: "Süßer Schokoladenbogen" },
+  "Arc laser":                                { en: "Laser Bow",                             de: "Laserbogen" },
+  "Arc floral":                               { en: "Floral Bow",                            de: "Blumenbogen" },
+  "Arc banane":                               { en: "Banana Bow",                            de: "Bananenbogen" },
+  "Apparence gâteau des 10 ans":              { en: "10th Anniversary Cake Skin",            de: "Kuchen-Skin zum 10. Jahrestag" },
+  "Arc du gardien du zodiaque":               { en: "Zodiac Keeper's Bow",                   de: "Bogen des Zodiakwächters" },
+  // Mage
+  "Apparence de raquette de tennis":          { en: "Tennis Racquet Skin",                   de: "Tennisschläger-Skin" },
+  "Apparence Uchiwa":                         { en: "Uchiwa Skin",                           de: "Uchiwa-Skin" },
+  "Bâton-scie steampunk":                     { en: "Steampunk Geared Wand",                 de: "Steampunk-Sägezahnstab" },
+  "Clochette de Noël":                        { en: "Christmas Bell",                        de: "Weihnachtsglöckchen" },
+  "Bâton corail":                             { en: "Coral Wand",                            de: "Korallenstab" },
+  "Baguette magique givrée":                  { en: "Frost Wand",                            de: "Frostzauberstab" },
+  "Baguette magique en chocolat":             { en: "Sweet Chocolate Wand",                  de: "Süßer Schokoladenzauberstab" },
+  "Baguette laser":                           { en: "Laser Wand",                            de: "Laserzauberstab" },
+  "Baguette magique florale":                 { en: "Floral Wand",                           de: "Blumenzauberstab" },
+  "Bâton melon":                              { en: "Watermelon Wand",                       de: "Melonenstab" },
+  "Apparence pétards des 10 ans":             { en: "10th Anniversary Firecracker Skin",     de: "Böller-Skin zum 10. Jahrestag" },
+  "Baguette magique du gardien du zodiaque":  { en: "Zodiac Keeper's Wand",                  de: "Zauberstab des Zodiakwächters" },
+  // Martial
+  "Pince de homard":                          { en: "Lobster Claw",                          de: "Hummerschere" },
+  "Gants givrés":                             { en: "Frost Gauntlets",                       de: "Frosthandschuhe" },
+  "Gants en chocolat":                        { en: "Sweet Chocolate Gauntlets",             de: "Süße Schokoladenhandschuhe" },
+  "Gant laser":                               { en: "Laser Glove",                           de: "Laserhandschuh" },
+  "Gantelet floral":                          { en: "Floral Gauntlets",                      de: "Blumenpanzerhandschuh" },
+  "Gants d'horloger steampunk":               { en: "Steampunk Clockwork Gauntlet",          de: "Steampunk-Uhrwerkhandschuh" },
+  "Gantelets ananas":                         { en: "Pineapple Gauntlets",                   de: "Ananashandschützer" },
+  "Poing du gardien du zodiaque":             { en: "Zodiac Keeper's Gauntlets",             de: "Faust des Zodiakwächters" },
+}
+
+// Merge point for future category translations (costume tops)
+export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS, ...NECKLACE_TRANSLATIONS, ...BRACELET_TRANSLATIONS, ...SHOE_TRANSLATIONS, ...HAT_TRANSLATIONS, ...ARMOR_TRANSLATIONS, ...COSTUME_WINGS_TRANSLATIONS, ...COSTUME_BOTTOM_TRANSLATIONS, ...GLOVE_TRANSLATIONS, ...COSTUME_WEAPON_TRANSLATIONS }
 
 // ── Secondary weapons (armes secondaires) by class ────────────────────────
 export const SECONDARY_WEAPONS = {
