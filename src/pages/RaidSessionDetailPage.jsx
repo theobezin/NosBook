@@ -40,7 +40,7 @@ function fmtDuration(minutes) {
 
 const SERVER_COLORS_DETAIL = { undercity: '#7c6ce0', dragonveil: '#e06c5a' }
 
-const OG_BASE    = 'https://nos-book.vercel.app/api/og-session'
+const OG_BASE    = 'https://nosbook.app/api/og-session'
 const OG_IMG_BASE = 'https://gdwdayxfblmfbjtxybtv.supabase.co/functions/v1/og-session'
 
 function SessionHeader({ session, raid, lang, t, regCount }) {

@@ -1,6 +1,6 @@
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY
-const APP_URL      = 'https://nos-book.vercel.app'
+const APP_URL      = 'https://nosbook.app'
 const FN_BASE      = 'https://gdwdayxfblmfbjtxybtv.supabase.co/functions/v1/og-session'
 
 const RAIDS_MAP = {

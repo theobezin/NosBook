@@ -9,7 +9,7 @@ async function ensureWasm() {
   wasmReady = true
 }
 
-const APP_URL = 'https://nos-book.vercel.app'
+const APP_URL = 'https://nosbook.app'
 const FN_BASE = 'https://gdwdayxfblmfbjtxybtv.supabase.co/functions/v1/og-session'
 
 // ── Lookup raids ──────────────────────────────────────────────────────────────
