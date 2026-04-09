@@ -861,8 +861,57 @@ export const NECKLACE_TRANSLATIONS = {
   "Collier à dimensiomant":                   { en: "Dimensionite Necklace",                 de: "Dimensiomanten-Halskette" },
 }
 
+// ── Bracelet translations ──────────────────────────────────────────────────
+export const BRACELET_TRANSLATIONS = {
+  "Bracelet à la mode":                       { en: "Fashionable Bracelet",                  de: "Modischer Armreif" },
+  "Bracelet de mano antique":                 { en: "Ancient Mano Bracelet",                 de: "Antiker Manoarmreif" },
+  "Bracelet de mano noble":                   { en: "Noble Mano Bracelet",                   de: "Edler Manoarmreif" },
+  "Bracelet de mano luxueux":                 { en: "Luxurious Mano Bracelet",               de: "Luxuriöser Manoarmreif" },
+  "Bracelet œil de chat ancestral":           { en: "Cat's Eye Bracelet",                    de: "Katzenaugenarmreif" },
+  "Bracelet œil de chat noble":               { en: "Noble Cat's Eye Bracelet",              de: "Edler Katzenaugenarmreif" },
+  "Bracelet œil de chat luxueux":             { en: "Luxurious Cat's Eye Bracelet",          de: "Luxuriöser Katzenaugenarmreif" },
+  "Bracelet en cristal":                      { en: "Crystal Bracelet",                      de: "Kristallarmreif" },
+  "Bracelet en cristal noble":                { en: "Noble Crystal Bracelet",                de: "Edler Kristallarmreif" },
+  "Bracelet en cristal antique":              { en: "Ancient Crystal Bracelet",              de: "Antiker Kristallarmreif" },
+  "Bracelet en cristal luxueux":              { en: "Luxurious Crystal Bracelet",            de: "Luxuriöser Kristallarmreif" },
+  "Bracelet à diamants":                      { en: "Diamond Bracelet",                      de: "Diamantenarmreif" },
+  "Bracelet à diamant noble":                 { en: "Noble Diamond Bracelet",                de: "Edler Diamantarmreif" },
+  "Bracelet à diamant antique":               { en: "Ancient Diamond Bracelet",              de: "Antiker Diamantarmreif" },
+  "Bracelet à diamant luxueux":               { en: "Luxurious Diamond Bracelet",            de: "Luxuriöser Diamantenarmreif" },
+  "Bracelet à émeraude":                      { en: "Emerald Bracelet",                      de: "Smaragdarmreif" },
+  "Bracelet d'orichalque noble":              { en: "Noble Orichalcum Bracelet",             de: "Edler Oriharconarmreif" },
+  "Bracelet de pleine lune":                  { en: "Full Moon Bracelet",                    de: "Vollmondarmreif" },
+  "Bracelet d'orichalque antique":            { en: "Ancient Orichalcum Bracelet",           de: "Antiker Oriharconarmreif" },
+  "Bracelet du héros oublié M":               { en: "Bracelet of the Forgotten Hero M",      de: "Armreif des vergessenen Helden M" },
+  "Bracelet de Diareason":                    { en: "Diareason Bracelet",                    de: "Diareasons Armreif" },
+  "Bracelet de Rudiselrun":                   { en: "Rudiselrun's Bracelet",                 de: "Rudiselruns Armreif" },
+  "Bracelet avec l'énergie de la liche":      { en: "Lich Energy Bracelet",                  de: "Armreif mit der Energie des Lichs" },
+  "Bracelet du géant de flammes":             { en: "Flame Giant Bracelet",                  de: "Armreif des Flammengiganten" },
+  "Bracelet de Katol":                        { en: "Katol's Bracelet",                      de: "Katols Armreif" },
+  "Bracelet de Kedenoss":                     { en: "Kedenoss Bracelet",                     de: "Kedenoss' Armreif" },
+  "Bracelet de jade":                         { en: "Jade Bracelet",                         de: "Jadearmreif" },
+  "Bracelet de pierre sekrass":               { en: "Sekraz Stone Bracelet",                 de: "Sekrass-Steinarmreif" },
+  "Bracelet draconien traditionnel":          { en: "Traditional Draconian Bracelet",        de: "Traditioneller Drakonier-Armreif" },
+  "Bracelet de Zénas":                        { en: "Zenas' Bracelet",                       de: "Zenas' Armreif" },
+  "Bracelet d'Érénia":                        { en: "Erenia's Bracelet",                     de: "Erenias Armreif" },
+  "Bracelet au loa serpent":                  { en: "Snake Loa Bracelet",                    de: "Armreif des Schlangen-Loa" },
+  "Bracelet en cuivre de Mullan":             { en: "Mullan Copper Bracelet",                de: "Mullan-Kupferarmreif" },
+  "Bracelet en argent de Mullan":             { en: "Mullan Silver Bracelet",                de: "Mullan-Silberarmreif" },
+  "Bracelet de Laurena":                      { en: "Laurena's Bracelet",                    de: "Laurenas Armreif" },
+  "Bracelet au roi des esprits":              { en: "Spirit King's Bracelet",                de: "Armreif des Geisterkönigs" },
+  "Bracelet d'os de tricératops":             { en: "Triceratops Bone Bracelet",             de: "Triceratopsknochen-Armreif" },
+  "Bracelet de cristal draconique":           { en: "Dragon Crystal Bracelet",               de: "Drachenkristall-Armreif" },
+  "Bracelet draconique gravé":                { en: "Carved Dragon Bracelet",                de: "Geschnitzter Drachenarmreif" },
+  "Ruban d'engrenage":                        { en: "Gearwheel Band",                        de: "Zahnradband" },
+  "Ceinture de Calvina":                      { en: "Calvinas' Band",                        de: "Calvinas' Gurt" },
+  "Ruban à vapeur":                           { en: "Steam Band",                            de: "Dampfband" },
+  "Ruban élémentaire":                        { en: "Element Band",                          de: "Elementband" },
+  "Bracelet de l'aventurier dimensionnel":    { en: "Dimension Adventurer's Bracelet",       de: "Armreif des Dimension-Abenteurers" },
+  "Bracelet à dimensiomant":                  { en: "Dimensionite Bracelet",                 de: "Dimensiomanten-Armreif" },
+}
+
 // Merge point for future category translations (armors, hats, gloves, etc.)
-export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS, ...NECKLACE_TRANSLATIONS }
+export const ITEM_TRANSLATIONS = { ...WEAPON_TRANSLATIONS, ...SECONDARY_WEAPON_TRANSLATIONS, ...RING_TRANSLATIONS, ...NECKLACE_TRANSLATIONS, ...BRACELET_TRANSLATIONS }
 
 // ── Secondary weapons (armes secondaires) by class ────────────────────────
 export const SECONDARY_WEAPONS = {
