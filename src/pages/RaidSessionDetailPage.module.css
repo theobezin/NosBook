@@ -302,6 +302,63 @@
   border-color: rgba(201, 168, 76, 0.25);
 }
 
+.charCardGuest {
+  border-color: rgba(156, 163, 175, 0.3);
+  opacity: 0.85;
+}
+
+.teamSlotGuest {
+  border-color: rgba(156, 163, 175, 0.3);
+  opacity: 0.85;
+}
+
+.guestBadge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border: 1px solid rgba(156, 163, 175, 0.35);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.guestForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.guestLabel {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 0.1rem;
+}
+
+.guestInput {
+  background: var(--bg-input, rgba(255,255,255,0.05));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.88rem;
+  padding: 0.45rem 0.65rem;
+  outline: none;
+  width: 100%;
+}
+
+.guestInput:focus {
+  border-color: var(--gold-dim);
+}
+
+.guestClassGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+}
+
 .charCardClickable {
   cursor: pointer;
 }
@@ -452,6 +509,15 @@
   font-style: italic;
   text-align: center;
   padding: 1rem 0.5rem;
+}
+
+.benchActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
 }
 
 .benchInfo {

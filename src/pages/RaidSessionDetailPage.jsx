@@ -5,7 +5,7 @@ import { useCharacters } from '@/hooks/useCharacters'
 import { useLang } from '@/i18n'
 import { supabase, hasSupabase } from '@/lib/supabase'
 import { RAIDS } from '@/lib/raids'
-import { CLASSES, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
+import { CLASSES, SPECIALISTS, WEAPON_RARITIES, SHELL_EFFECTS, SHELL_RANK_COLORS, RUNIC_EFFECTS, RUNIC_COLOR } from '@/lib/mockData'
 import Button from '@/components/ui/Button'
 import styles from './RaidSessionDetailPage.module.css'
 
@@ -112,14 +112,14 @@ function SessionHeader({ session, raid, lang, t, regCount }) {
 function CharacterCard({
   reg, isLeader, isOwn,
   onAssignSP, onRemoveFromTeam, onClick,
-  draggable, onDragStart,
+  draggable, onDragStart, onRemoveGuest, t,
 }) {
   const snap = reg.character_snapshot ?? {}
   const cls  = CLASSES[snap.class]
 
   return (
     <div
-      className={`${styles.charCard} ${isOwn ? styles.charCardOwn : ''} ${onClick ? styles.charCardClickable : ''}`}
+      className={`${styles.charCard} ${isOwn ? styles.charCardOwn : ''} ${reg.is_guest ? styles.charCardGuest : ''} ${onClick ? styles.charCardClickable : ''}`}
       draggable={draggable}
       onDragStart={draggable ? (e) => onDragStart(e, reg.id) : undefined}
       onClick={onClick ? () => onClick(reg) : undefined}
@@ -128,9 +128,12 @@ function CharacterCard({
         {cls?.icon ?? '?'}
       </span>
       <div className={styles.charInfo}>
-        <span className={styles.charName}>{snap.name}</span>
+        <span className={styles.charName}>
+          {snap.name}
+          {reg.is_guest && <span className={styles.guestBadge}>{t('detail.guestBadge')}</span>}
+        </span>
         <span className={styles.charLevel}>
-          Lv.{snap.level}{snap.heroLevel > 0 ? ` · H${snap.heroLevel}` : ''}
+          {snap.level ? `Lv.${snap.level}${snap.heroLevel > 0 ? ` · H${snap.heroLevel}` : ''}` : snap.class}
         </span>
       </div>
 
@@ -147,7 +150,7 @@ function CharacterCard({
         <button
           className={`${styles.charBtn} ${styles.charBtnRemove}`}
           onClick={e => { e.stopPropagation(); onRemoveFromTeam(reg.id) }}
-          title="Retirer de l'équipe"
+          title={t('detail.removeFromTeam')}
         >
           ✕
         </button>
@@ -158,13 +161,13 @@ function CharacterCard({
 
 // ── TeamSlot ──────────────────────────────────────────────────────────────────
 
-function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart, onClick }) {
+function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onRemoveGuest, onDragStart, onClick, t }) {
   const snap = reg.character_snapshot ?? {}
   const cls  = CLASSES[snap.class]
 
   return (
     <div
-      className={`${styles.teamSlot} ${onClick ? styles.charCardClickable : ''}`}
+      className={`${styles.teamSlot} ${reg.is_guest ? styles.teamSlotGuest : ''} ${onClick ? styles.charCardClickable : ''}`}
       draggable={isLeader}
       onDragStart={isLeader ? (e) => onDragStart(e, reg.id) : undefined}
       onClick={onClick ? () => onClick(reg) : undefined}
@@ -177,8 +180,11 @@ function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart, on
         </span>
       )}
       <div className={styles.teamSlotInfo}>
-        <span className={styles.teamSlotName}>{snap.name}</span>
-        {reg.player_username && (
+        <span className={styles.teamSlotName}>
+          {snap.name}
+          {reg.is_guest && <span className={styles.guestBadge}>{t('detail.guestBadge')}</span>}
+        </span>
+        {reg.player_username && !reg.is_guest && (
           <span className={styles.teamSlotPlayer}>{reg.player_username}</span>
         )}
       </div>
@@ -192,7 +198,7 @@ function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart, on
           <button
             className={`${styles.charBtn} ${styles.charBtnRemove}`}
             onClick={e => { e.stopPropagation(); onRemoveFromTeam(reg.id) }}
-            title="Retirer de l'équipe"
+            title={t('detail.removeFromTeam')}
           >✕</button>
         </>
       )}
@@ -202,7 +208,7 @@ function TeamSlot({ reg, isLeader, onAssignSP, onRemoveFromTeam, onDragStart, on
 
 // ── TeamCard ──────────────────────────────────────────────────────────────────
 
-function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTeam, onDragStart, onViewChar, t }) {
+function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTeam, onRemoveGuest, onDragStart, onViewChar, t }) {
   const [dragOver, setDragOver] = useState(false)
 
   return (
@@ -225,7 +231,9 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
             onDragStart={onDragStart}
             onAssignSP={onAssignSP}
             onRemoveFromTeam={onRemoveFromTeam}
+            onRemoveGuest={onRemoveGuest}
             onClick={onViewChar}
+            t={t}
           />
         ))}
         {members.length === 0 && (
@@ -242,7 +250,7 @@ function TeamCard({ name, members, isLeader, onDrop, onAssignSP, onRemoveFromTea
 
 function BenchPanel({
   members, isLeader, isAuthenticated, myRegistrations, maxChars,
-  onRegister, onUnregister, onDragStart, onViewChar, onInviteFriends, onInviteFamily, session, t,
+  onRegister, onUnregister, onRemoveGuest, onDragStart, onViewChar, onInviteFriends, onInviteFamily, onInviteGuest, session, t,
 }) {
   const canRegister  = isAuthenticated && myRegistrations.length < maxChars
   const alreadyInAll = isAuthenticated && myRegistrations.length >= maxChars
@@ -269,55 +277,64 @@ function BenchPanel({
                 isOwn={myRegistrations.some(r => r.id === reg.id)}
                 draggable={isLeader}
                 onDragStart={onDragStart}
-                onClick={onViewChar}
+                onClick={reg.is_guest ? undefined : onViewChar}
                 onAssignSP={() => {}}
                 onRemoveFromTeam={() => {}}
+                onRemoveGuest={onRemoveGuest}
+                t={t}
               />
-              {(myRegistrations.some(r => r.id === reg.id)) && (
-                <button
-                  className={styles.benchUnregBtn}
-                  onClick={() => onUnregister(reg.id)}
-                  title={t('detail.unregister')}
-                >✕</button>
+              {reg.is_guest ? (
+                isLeader && (
+                  <button
+                    className={styles.benchUnregBtn}
+                    onClick={() => onRemoveGuest(reg.id)}
+                    title={t('detail.removeGuest')}
+                  >✕</button>
+                )
+              ) : (
+                myRegistrations.some(r => r.id === reg.id) && (
+                  <button
+                    className={styles.benchUnregBtn}
+                    onClick={() => onUnregister(reg.id)}
+                    title={t('detail.unregister')}
+                  >✕</button>
+                )
               )}
             </div>
           ))
         )}
       </div>
 
-      {isAuthenticated ? (
-        <>
-          {canRegister ? (
-            <Button variant="solid" size="sm" onClick={onRegister} style={{ marginTop: '0.75rem' }}>
-              + {t('detail.registerBtn')}
+      <div className={styles.benchActions}>
+        {isAuthenticated ? (
+          <>
+            {canRegister ? (
+              <Button variant="solid" size="sm" onClick={onRegister}>
+                + {t('detail.registerBtn')}
+              </Button>
+            ) : alreadyInAll ? (
+              <p className={styles.benchInfo}>{t('detail.alreadyRegistered')}</p>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={onInviteFriends}>
+              👥 {t('detail.inviteFriendsBtn')}
             </Button>
-          ) : alreadyInAll ? (
-            <p className={styles.benchInfo}>{t('detail.alreadyRegistered')}</p>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onInviteFriends}
-            style={{ marginTop: '0.5rem', width: '100%' }}
-          >
-            👥 {t('detail.inviteFriendsBtn')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onInviteFamily}
-            style={{ marginTop: '0.4rem', width: '100%' }}
-          >
-            🏠 {t('detail.inviteFamilyBtn')}
-          </Button>
-        </>
-      ) : (
-        <Link to="/auth?mode=login">
-          <Button variant="ghost" size="sm" style={{ marginTop: '0.75rem', width: '100%' }}>
-            {t('detail.loginToRegister')}
-          </Button>
-        </Link>
-      )}
+            <Button variant="ghost" size="sm" onClick={onInviteFamily}>
+              🏠 {t('detail.inviteFamilyBtn')}
+            </Button>
+            {isLeader && (
+              <Button variant="ghost" size="sm" onClick={onInviteGuest}>
+                👤 {t('detail.inviteGuestBtn')}
+              </Button>
+            )}
+          </>
+        ) : (
+          <Link to="/auth?mode=login">
+            <Button variant="ghost" size="sm" style={{ width: '100%' }}>
+              {t('detail.loginToRegister')}
+            </Button>
+          </Link>
+        )}
+      </div>
     </aside>
   )
 }
@@ -499,7 +516,9 @@ function RegisterModal({ session, userChars, alreadyNames, onClose, onSuccess, t
 
 function SPPickerModal({ reg, onClose, onAssign, t }) {
   const snap = reg.character_snapshot ?? {}
-  const specialists = snap.specialists ?? []
+  const specialists = reg.is_guest
+    ? (SPECIALISTS[snap.class] ?? [])
+    : (snap.specialists ?? [])
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -821,6 +840,87 @@ function InviteFamilyModal({ session, user, regs, onClose, t }) {
             <Button variant="solid" onClick={onClose}>{t('session.close')}</Button>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── GuestInviteModal ──────────────────────────────────────────────────────────
+
+function GuestInviteModal({ session, onClose, onSuccess, t }) {
+  const [pseudo,      setPseudo]      = useState('')
+  const [charClass,   setCharClass]   = useState(Object.keys(CLASSES)[0])
+  const [submitting,  setSubmitting]  = useState(false)
+  const [error,       setError]       = useState('')
+  const { user } = useAuth()
+
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  const handleSubmit = async () => {
+    const name = pseudo.trim()
+    if (!name) return setError(t('detail.guestErrName'))
+    if (!hasSupabase) { onSuccess(); return }
+
+    setSubmitting(true)
+    const { error: dbErr } = await supabase.from('raid_session_registrations').insert({
+      session_id:         session.id,
+      player_id:          null,
+      player_username:    null,
+      is_guest:           true,
+      character_snapshot: { name, class: charClass, specialists: SPECIALISTS[charClass] ?? [] },
+    })
+    setSubmitting(false)
+    if (dbErr) return setError(t('detail.guestErrSave'))
+    onSuccess()
+  }
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHead}>
+          <h3 className={styles.modalTitle}>👤 {t('detail.inviteGuestTitle')}</h3>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          <p className={styles.registerHint}>{t('detail.guestHint')}</p>
+          <div className={styles.guestForm}>
+            <label className={styles.guestLabel}>{t('detail.guestPseudo')}</label>
+            <input
+              className={styles.guestInput}
+              value={pseudo}
+              onChange={e => setPseudo(e.target.value)}
+              placeholder={t('detail.guestPseudoPlaceholder')}
+              maxLength={30}
+              autoFocus
+            />
+            <label className={styles.guestLabel}>{t('detail.guestClass')}</label>
+            <div className={styles.guestClassGrid}>
+              {Object.entries(CLASSES).map(([key, cls]) => (
+                <button
+                  key={key}
+                  className={`${styles.charPickItem} ${charClass === key ? styles.charPickItemSelected : ''}`}
+                  onClick={() => setCharClass(key)}
+                  type="button"
+                >
+                  <span style={{ color: cls.color }}>{cls.icon}</span>
+                  <span>{cls.label}</span>
+                  {charClass === key && <span className={styles.checkMark}>✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+          {error && <div className={styles.fieldError}>{error}</div>}
+        </div>
+        <div className={styles.modalFoot}>
+          <Button variant="ghost" onClick={onClose}>{t('session.cancel')}</Button>
+          <Button variant="solid" onClick={handleSubmit} disabled={submitting || !pseudo.trim()}>
+            {submitting ? '…' : t('detail.guestConfirm')}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -1148,6 +1248,7 @@ export default function RaidSessionDetailPage() {
   const [showCancel,    setShowCancel]    = useState(false)
   const [cancelling,    setCancelling]    = useState(false)
   const [showInviteFamily, setShowInviteFamily] = useState(false)
+  const [showGuestInvite,  setShowGuestInvite]  = useState(false)
   const [spTarget,    setSPTarget]    = useState(null)
   const [charTarget,  setCharTarget]  = useState(null)
   const dragIdRef = useRef(null)
@@ -1222,6 +1323,12 @@ export default function RaidSessionDetailPage() {
 
   // ── Unregister ───────────────────────────────────────────────────────────────
   const handleUnregister = async (regId) => {
+    setRegs(prev => prev.filter(r => r.id !== regId))
+    await supabase.from('raid_session_registrations').delete().eq('id', regId)
+  }
+
+  // ── Remove guest (leader only) ───────────────────────────────────────────────
+  const handleRemoveGuest = async (regId) => {
     setRegs(prev => prev.filter(r => r.id !== regId))
     await supabase.from('raid_session_registrations').delete().eq('id', regId)
   }
@@ -1301,6 +1408,7 @@ export default function RaidSessionDetailPage() {
               onDragStart={handleDragStart}
               onAssignSP={setSPTarget}
               onRemoveFromTeam={handleRemoveFromTeam}
+              onRemoveGuest={handleRemoveGuest}
               onViewChar={setCharTarget}
               t={t}
             />
@@ -1316,10 +1424,12 @@ export default function RaidSessionDetailPage() {
           maxChars={session.max_chars_per_person}
           onRegister={() => setShowRegister(true)}
           onUnregister={handleUnregister}
+          onRemoveGuest={handleRemoveGuest}
           onDragStart={handleDragStart}
           onViewChar={setCharTarget}
           onInviteFriends={() => setShowInvite(true)}
           onInviteFamily={() => setShowInviteFamily(true)}
+          onInviteGuest={() => setShowGuestInvite(true)}
           session={session}
           t={t}
         />
@@ -1353,6 +1463,14 @@ export default function RaidSessionDetailPage() {
           user={user}
           regs={regs}
           onClose={() => setShowInviteFamily(false)}
+          t={t}
+        />
+      )}
+      {showGuestInvite && (
+        <GuestInviteModal
+          session={session}
+          onClose={() => setShowGuestInvite(false)}
+          onSuccess={() => { setShowGuestInvite(false); loadData() }}
           t={t}
         />
       )}
